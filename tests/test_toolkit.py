@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from bs4 import BeautifulSoup
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.labels import F_BODY, F_COUNTRY, F_ROAST
-from coffee_aggregator.sites import toolkit as kit
 from coffee_aggregator.sites.base import ProductRef
 
 if TYPE_CHECKING:
@@ -55,6 +55,12 @@ def test_a_broken_payload_costs_one_record_not_the_run() -> None:
     assert kit.json_object("{not json") == {}
     assert kit.json_object("[1, 2]") == {}
     assert kit.json_object('{"a": 1}') == {"a": 1}
+
+
+def test_records_keeps_only_the_mappings_of_a_list() -> None:
+    assert kit.records([{"a": 1}, "no", 3, {}]) == [{"a": 1}, {}]
+    assert kit.records({"a": 1}) == []
+    assert kit.records(None) == []
 
 
 def test_numbers_narrow_without_believing_a_boolean() -> None:
@@ -190,6 +196,23 @@ def test_description_blocks_break_on_the_markup_not_on_the_text() -> None:
     facts, prose = kit.read_blocks([soup.select_one("div")], kit.vocabulary())
     assert facts.get(F_COUNTRY) == "Kuba"
     assert prose == ["100 % Arabika"]
+
+
+def test_table_rows_reads_two_columns_and_obeys_the_keep_predicate() -> None:
+    soup = BeautifulSoup(
+        "<table><tr><th>Země</th><td>Peru</td></tr>"
+        "<tr><td>Odrůda</td><td>Caturra</td><td>note</td></tr>"
+        "<tr><td>alone</td></tr></table>",
+        "lxml",
+    )
+
+    assert list(kit.table_rows(soup.select("tr"))) == [
+        ("Země", "Peru"),
+        ("Odrůda", "Caturra"),
+    ]
+    assert list(kit.table_rows(soup.select("tr"), keep=lambda cells: len(cells) == 2)) == [
+        ("Země", "Peru")
+    ]
 
 
 # ----------------------------------------------------------------------- build

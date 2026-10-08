@@ -3,18 +3,18 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal
 from urllib.parse import urlencode, urljoin
 
 from bs4 import BeautifulSoup
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import (
     F_CERTIFICATIONS,
     F_COUNTRY,
     F_PROCESS,
     F_WEIGHT,
-    KNOWN_FIELDS,
     TERMS,
     Labels,
     build_map,
@@ -32,9 +32,10 @@ from coffee_aggregator.labels import (
     specialty_grade,
 )
 from coffee_aggregator.models import Coffee, Popularity, Variant
+from coffee_aggregator.platforms.common import ConfiguredSite, common_fields
 from coffee_aggregator.platforms.shoptet import BRAND_KEY
 from coffee_aggregator.sites import html as dom
-from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
+from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -97,20 +98,6 @@ PLATFORM_TERMS: Final[dict[str, str]] = {
 DEFAULT_LABEL_MAP: Final[dict[str, str]] = build_map(TERMS, extra=PLATFORM_TERMS)
 
 
-class ShopifyConfigError(ValueError):
-    """Raised when a shop TOML is missing a key ``ShopifySite`` cannot invent."""
-
-    def __init__(self, path: Path, problem: str) -> None:
-        """Build the error.
-
-        Args:
-            path: The configuration file that is wrong.
-            problem: What is wrong with it.
-        """
-        super().__init__(f"{path}: {problem}")
-        self.path = path
-
-
 @dataclass(slots=True)
 class ShopifyConfig:
     """Everything that differs between two Shopify shops.
@@ -159,26 +146,22 @@ class ShopifyConfig:
             The validated configuration.
 
         Raises:
-            ShopifyConfigError: When a required key is missing or malformed.
+            PlatformConfigError: When a required key is missing or malformed.
         """
-        required = ("site_id", "name", "country", "base_url", "currency")
-        missing = [key for key in required if not config.get(key)]
-        if missing:
-            raise ShopifyConfigError(path, f"missing required key(s): {', '.join(missing)}")
-        country = str(config["country"]).upper()
-        if country not in {"CZ", "SK"}:
-            raise ShopifyConfigError(path, f"country must be CZ or SK, not {country!r}")
-        base_url = str(config["base_url"])
-        label_map = {
-            normalize.fold(key): str(value) for key, value in config.get("label_map", {}).items()
-        }
-        _check_label_map(label_map, config.get("label_map", {}), path)
+        common = common_fields(
+            config,
+            path,
+            default_max_pages=DEFAULT_MAX_PAGES,
+            # products.json quotes bare decimal strings and names no currency
+            # anywhere, so the shop's TOML is the only place it can come from.
+            also_required=("currency",),
+        )
         products_path = str(config["products_path"]) if config.get("products_path") else None
         return cls(
-            site_id=str(config["site_id"]),
-            name=str(config["name"]),
-            country=cast("Literal['CZ', 'SK']", country),
-            base_url=base_url if base_url.endswith("/") else f"{base_url}/",
+            site_id=common.site_id,
+            name=common.name,
+            country=common.country,
+            base_url=common.base_url,
             currency=str(config["currency"]),
             collections=[
                 str(handle).strip("/ ")
@@ -186,35 +169,10 @@ class ShopifyConfig:
                 if str(handle).strip("/ ")
             ],
             products_path=products_path,
-            label_map=label_map,
-            ignore=[normalize.fold(marker) for marker in config.get("ignore", [])],
-            max_pages=int(config.get("max_pages", DEFAULT_MAX_PAGES)),
+            label_map=common.label_map,
+            ignore=common.ignore,
+            max_pages=common.max_pages,
             limit=min(int(config.get("limit", DEFAULT_LIMIT)), MAX_LIMIT),
-        )
-
-
-def _check_label_map(folded: dict[str, str], written: dict[str, Any], path: Path) -> None:
-    """Refuse a ``label_map`` that points a label at a field nobody reads.
-
-    Args:
-        folded: The folded label -> field mapping the TOML asked for.
-        written: The same mapping with the labels as the file spells them.
-        path: The configuration file, for the error message.
-
-    Raises:
-        ShopifyConfigError: When a value is not one of the shared
-            ``KNOWN_FIELDS``, which every platform maps onto so one sink schema
-            serves them all.
-    """
-    spellings = {normalize.fold(label): str(label) for label in written}
-    for label, field_name in folded.items():
-        if field_name in KNOWN_FIELDS:
-            continue
-        valid = ", ".join(sorted(name for name in KNOWN_FIELDS if name))
-        raise ShopifyConfigError(
-            path,
-            f"label_map[{spellings.get(label, label)!r}] = {field_name!r} is not a field; "
-            f"valid fields are: {valid}",
         )
 
 
@@ -251,12 +209,7 @@ def _products(payload: str, url: str) -> list[dict[str, Any]]:
     except ValueError:
         logger.warning("%s: not JSON", url)
         return []
-    if not isinstance(parsed, dict):
-        return []
-    entries = parsed.get("products")
-    if not isinstance(entries, list):
-        return []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    return kit.records(kit.as_dict(parsed).get("products"))
 
 
 def _amount(raw: object) -> float | None:
@@ -294,10 +247,7 @@ def _variants(item: dict[str, Any]) -> list[dict[str, Any]]:
     Returns:
         The variants in Shopify's own order.
     """
-    entries = item.get("variants")
-    if not isinstance(entries, list):
-        return []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    return kit.records(item.get("variants"))
 
 
 def _variant_weight(variant: dict[str, Any]) -> int | None:
@@ -344,11 +294,8 @@ def _images(item: dict[str, Any]) -> list[str]:
     Returns:
         Full-size image URLs, de-duplicated, in Shopify's own order.
     """
-    entries = item.get("images")
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        str(entry.get("src")) for entry in entries if isinstance(entry, dict) and entry.get("src")
+        str(src) for entry in kit.records(item.get("images")) if (src := entry.get("src"))
     )
 
 
@@ -453,18 +400,16 @@ def _read_description(
     if not markup:
         return ([], [])
     soup = BeautifulSoup(markup, "lxml")
-    pairs: list[tuple[str, str]] = []
-    for row in soup.select("tr"):
-        cells = row.select("th, td")
-        if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-            pairs.append((_clean(dom.text(cells[0])), _clean(dom.text(cells[1]))))
+    pairs: list[tuple[str, str]] = [
+        (_clean(label), _clean(value)) for label, value in kit.table_rows(soup.select("tr"))
+    ]
     lines = [_clean(line) for line in dom.lines(soup)]
     found, prose = read_lines(lines, label_map, _pairs_of)
     pairs.extend(found)
     return (pairs, prose)
 
 
-class ShopifySite(SiteAdapter):
+class ShopifySite(ConfiguredSite[ShopifyConfig]):
     """One Shopify shop, parameterised entirely by its :class:`ShopifyConfig`.
 
     Every Shopify storefront publishes its whole catalogue as JSON with no
@@ -474,28 +419,7 @@ class ShopifySite(SiteAdapter):
     """
 
     kind = PLATFORM
-
-    def __init__(self, config: ShopifyConfig) -> None:
-        """Build the adapter.
-
-        Args:
-            config: The shop's validated configuration.
-        """
-        self.config = config
-        self.site_id = config.site_id
-        self.name = config.name
-        self.country = config.country
-        self.base_url = config.base_url
-        self.max_pages = config.max_pages
-        self.label_map = {**DEFAULT_LABEL_MAP, **config.label_map}
-
-    def ignored_names(self) -> tuple[str, ...]:
-        """Return the folded markers of products that are not coffee beans.
-
-        Returns:
-            The shared defaults plus whatever the shop's TOML added.
-        """
-        return (*DEFAULT_IGNORED, *self.config.ignore)
+    default_label_map: ClassVar[dict[str, str]] = DEFAULT_LABEL_MAP
 
     # --- discovery -----------------------------------------------------------
 

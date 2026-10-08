@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-from coffee_aggregator.sites.toolkit.build import (
+from coffee_aggregator.adapters.build import (
     gallery,
     keep,
     package,
     schema_stock,
     stock_state,
 )
-from coffee_aggregator.sites.toolkit.facts import (
+from coffee_aggregator.adapters.facts import (
     Facts,
     read_blocks,
     read_pairs,
     read_text,
+    table_rows,
     vocabulary,
 )
-from coffee_aggregator.sites.toolkit.microdata import ratings, reviews, value
-from coffee_aggregator.sites.toolkit.payload import (
+from coffee_aggregator.adapters.microdata import ratings, reviews, value
+from coffee_aggregator.adapters.payload import (
     as_dict,
     as_list,
     as_number,
@@ -25,10 +26,11 @@ from coffee_aggregator.sites.toolkit.payload import (
     json_object,
     localised,
     looks_like_json,
+    records,
     strings,
 )
-from coffee_aggregator.sites.toolkit.refs import id_from, product_ref, sitemap_refs
-from coffee_aggregator.sites.toolkit.walk import walk_listing
+from coffee_aggregator.adapters.refs import id_from, product_ref, sitemap_refs
+from coffee_aggregator.adapters.walk import walk_listing
 
 __all__ = [
     "Facts",
@@ -50,11 +52,13 @@ __all__ = [
     "read_blocks",
     "read_pairs",
     "read_text",
+    "records",
     "reviews",
     "schema_stock",
     "sitemap_refs",
     "stock_state",
     "strings",
+    "table_rows",
     "value",
     "vocabulary",
     "walk_listing",

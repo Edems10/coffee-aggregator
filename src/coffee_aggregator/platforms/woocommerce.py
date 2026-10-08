@@ -4,18 +4,18 @@ import json
 import logging
 from dataclasses import dataclass, field
 from html import unescape
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, cast
 from urllib.parse import urlencode, urljoin
 
 from bs4 import BeautifulSoup, Tag
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import (
     F_CERTIFICATIONS,
     F_COUNTRY,
     F_PROCESS,
     F_WEIGHT,
-    KNOWN_FIELDS,
     TERMS,
     Labels,
     build_map,
@@ -32,9 +32,13 @@ from coffee_aggregator.labels import (
     specialty_grade,
 )
 from coffee_aggregator.models import Coffee, Popularity, Variant
+from coffee_aggregator.platforms.common import (
+    ConfiguredSite,
+    PlatformConfigError,
+    common_fields,
+)
 from coffee_aggregator.sites import html as dom
-from coffee_aggregator.sites import toolkit as kit
-from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
+from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -71,20 +75,6 @@ PLATFORM_TERMS: Final[dict[str, str]] = {
 }
 
 DEFAULT_LABEL_MAP: Final[dict[str, str]] = build_map(TERMS, extra=PLATFORM_TERMS)
-
-
-class WooConfigError(ValueError):
-    """Raised when a shop TOML is missing a key ``WooSite`` cannot invent."""
-
-    def __init__(self, path: Path, problem: str) -> None:
-        """Build the error.
-
-        Args:
-            path: The configuration file that is wrong.
-            problem: What is wrong with it.
-        """
-        super().__init__(f"{path}: {problem}")
-        self.path = path
 
 
 class StoreApiUnavailableError(RuntimeError):
@@ -159,41 +149,30 @@ class WooConfig:
             The validated configuration.
 
         Raises:
-            WooConfigError: When a required key is missing or malformed.
+            PlatformConfigError: When a required key is missing or malformed.
         """
-        missing = [key for key in ("site_id", "name", "country", "base_url") if not config.get(key)]
-        if missing:
-            raise WooConfigError(path, f"missing required key(s): {', '.join(missing)}")
-        country = str(config["country"]).upper()
-        if country not in {"CZ", "SK"}:
-            raise WooConfigError(path, f"country must be CZ or SK, not {country!r}")
+        common = common_fields(config, path, default_max_pages=DEFAULT_MAX_PAGES)
         mode = str(config.get("mode", "api")).lower()
         if mode not in {"api", "html"}:
-            raise WooConfigError(path, f"mode must be api or html, not {mode!r}")
-        base_url = str(config["base_url"])
-        base_url = base_url if base_url.endswith("/") else f"{base_url}/"
+            raise PlatformConfigError(path, f"mode must be api or html, not {mode!r}")
         categories = [str(url) for url in config.get("category_urls", []) if str(url).strip()]
         if mode == "html" and not categories:
-            raise WooConfigError(
+            raise PlatformConfigError(
                 path, "category_urls must list at least one listing URL in html mode"
             )
-        label_map = {
-            normalize.fold(key): str(value) for key, value in config.get("label_map", {}).items()
-        }
-        _check_label_map(label_map, config.get("label_map", {}), path)
         return cls(
-            site_id=str(config["site_id"]),
-            name=str(config["name"]),
-            country=cast("Literal['CZ', 'SK']", country),
-            base_url=base_url,
+            site_id=common.site_id,
+            name=common.name,
+            country=common.country,
+            base_url=common.base_url,
             mode=cast("Literal['api', 'html']", mode),
-            currency=str(config["currency"]) if config.get("currency") else None,
+            currency=common.currency,
             api_category_ids=_category_ids(config, path),
             api_category_slugs=[str(slug) for slug in config.get("api_category_slugs", [])],
-            category_urls=[urljoin(base_url, url) for url in categories],
-            label_map=label_map,
-            ignore=[normalize.fold(marker) for marker in config.get("ignore", [])],
-            max_pages=int(config.get("max_pages", DEFAULT_MAX_PAGES)),
+            category_urls=[urljoin(common.base_url, url) for url in categories],
+            label_map=common.label_map,
+            ignore=common.ignore,
+            max_pages=common.max_pages,
             per_page=min(int(config.get("per_page", DEFAULT_PER_PAGE)), MAX_PER_PAGE),
         )
 
@@ -209,39 +188,17 @@ def _category_ids(config: dict[str, Any], path: Path) -> list[int]:
         The ids, in the order the file lists them.
 
     Raises:
-        WooConfigError: When an entry is not a whole number.
+        PlatformConfigError: When an entry is not a whole number.
     """
     ids: list[int] = []
     for value in config.get("api_category_ids", []):
         try:
             ids.append(int(value))
         except (TypeError, ValueError) as exc:
-            raise WooConfigError(path, f"api_category_ids must be integers, not {value!r}") from exc
+            raise PlatformConfigError(
+                path, f"api_category_ids must be integers, not {value!r}"
+            ) from exc
     return ids
-
-
-def _check_label_map(folded: dict[str, str], written: dict[str, Any], path: Path) -> None:
-    """Refuse a ``label_map`` that points a label at a field nobody reads.
-
-    Args:
-        folded: The folded label -> field mapping the TOML asked for.
-        written: The same mapping with the labels as the file spells them.
-        path: The configuration file, for the error message.
-
-    Raises:
-        WooConfigError: When a value is not one of Shoptet's ``KNOWN_FIELDS``,
-            which both platforms share so one sink schema serves both.
-    """
-    spellings = {normalize.fold(label): str(label) for label in written}
-    for label, field_name in folded.items():
-        if field_name in KNOWN_FIELDS:
-            continue
-        valid = ", ".join(sorted(name for name in KNOWN_FIELDS if name))
-        raise WooConfigError(
-            path,
-            f"label_map[{spellings.get(label, label)!r}] = {field_name!r} is not a field; "
-            f"valid fields are: {valid}",
-        )
 
 
 def build(config: dict[str, Any], path: Path) -> SiteAdapter:
@@ -313,7 +270,7 @@ def _items(payload: str, url: str) -> list[dict[str, Any]]:
         raise StoreApiUnavailableError(url, f"not JSON: {exc}") from exc
     if not isinstance(parsed, list):
         raise StoreApiUnavailableError(url, f"expected a JSON array, got {type(parsed).__name__}")
-    return [item for item in parsed if isinstance(item, dict)]
+    return kit.records(parsed)
 
 
 def _text_of(markup: str | None) -> str | None:
@@ -362,10 +319,7 @@ def _table_rows(blocks: Iterable[Tag]) -> Iterator[tuple[str | None, str | None]
         One ``(label, value)`` pair per two-cell row.
     """
     for block in blocks:
-        for row in block.select("tr"):
-            cells = row.select("th, td")
-            if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-                yield dom.text(cells[0]), dom.text(cells[1])
+        yield from kit.table_rows(block.select("tr"))
 
 
 def _terms(attribute: dict[str, Any]) -> list[str]:
@@ -377,13 +331,10 @@ def _terms(attribute: dict[str, Any]) -> list[str]:
     Returns:
         The names in API order.
     """
-    terms = attribute.get("terms")
-    if not isinstance(terms, list):
-        return []
     return dom.unique(
-        unescape(str(term.get("name")))
-        for term in terms
-        if isinstance(term, dict) and term.get("name")
+        unescape(str(name))
+        for term in kit.records(attribute.get("terms"))
+        if (name := term.get("name"))
     )
 
 
@@ -400,12 +351,10 @@ def _term_names(item: dict[str, Any]) -> dict[tuple[str, str], str]:
         The lookup table.
     """
     table: dict[tuple[str, str], str] = {}
-    for attribute in item.get("attributes", []):
-        if not isinstance(attribute, dict):
-            continue
+    for attribute in kit.records(item.get("attributes")):
         name = unescape(str(attribute.get("name") or ""))
-        for term in attribute.get("terms") or []:
-            if isinstance(term, dict) and term.get("slug"):
+        for term in kit.records(attribute.get("terms")):
+            if term.get("slug"):
                 table[name, str(term["slug"])] = unescape(str(term.get("name") or term["slug"]))
     return table
 
@@ -443,7 +392,7 @@ def _api_variants(item: dict[str, Any], ref: ProductRef, currency: str | None) -
     Returns:
         The variants, or an empty list for a simple product.
     """
-    variations = [entry for entry in item.get("variations") or [] if isinstance(entry, dict)]
+    variations = kit.records(item.get("variations"))
     if not variations:
         return []
     names = _term_names(item)
@@ -457,8 +406,8 @@ def _api_variants(item: dict[str, Any], ref: ProductRef, currency: str | None) -
                 (unescape(str(axis.get("name") or "")), str(axis.get("value"))),
                 str(axis.get("value")),
             )
-            for axis in entry.get("attributes") or []
-            if isinstance(axis, dict) and axis.get("value")
+            for axis in kit.records(entry.get("attributes"))
+            if axis.get("value")
         ]
         variants.append(
             Variant(
@@ -498,12 +447,8 @@ def _names(entries: object) -> list[str]:
     Returns:
         The names, unescaped and de-duplicated.
     """
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        unescape(str(entry.get("name")))
-        for entry in entries
-        if isinstance(entry, dict) and entry.get("name")
+        unescape(str(name)) for entry in kit.records(entries) if (name := entry.get("name"))
     )
 
 
@@ -516,11 +461,8 @@ def _images(item: dict[str, Any]) -> list[str]:
     Returns:
         Full-size image URLs, de-duplicated, in API order.
     """
-    entries = item.get("images")
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        str(entry.get("src")) for entry in entries if isinstance(entry, dict) and entry.get("src")
+        str(src) for entry in kit.records(item.get("images")) if (src := entry.get("src"))
     )
 
 
@@ -579,13 +521,12 @@ def _json_ld(soup: BeautifulSoup) -> list[dict[str, Any]]:
             parsed = json.loads(script.string or "{}")
         except ValueError:
             continue
-        for entry in parsed if isinstance(parsed, list) else [parsed]:
-            if not isinstance(entry, dict):
-                continue
+        for entry in kit.records(parsed if isinstance(parsed, list) else [parsed]):
             graph = entry.get("@graph")
-            found.extend(node for node in graph if isinstance(node, dict)) if isinstance(
-                graph, list
-            ) else found.append(entry)
+            if isinstance(graph, list):
+                found.extend(kit.records(graph))
+            else:
+                found.append(entry)
     return found
 
 
@@ -620,9 +561,7 @@ def _ld_offer(node: dict[str, Any] | None) -> dict[str, Any]:
     offers = (node or {}).get("offers")
     if isinstance(offers, dict):
         return offers
-    if isinstance(offers, list):
-        return next((offer for offer in offers if isinstance(offer, dict)), {})
-    return {}
+    return next(iter(kit.records(offers)), {})
 
 
 def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
@@ -649,13 +588,9 @@ def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Var
     except ValueError:
         logger.debug("unreadable data-product_variations on %s", ref.url)
         return []
-    if not isinstance(parsed, list):
-        return []
     variants: list[Variant] = []
-    for entry in parsed:
-        if not isinstance(entry, dict):
-            continue
-        labels = [str(value) for value in (entry.get("attributes") or {}).values() if value]
+    for entry in kit.records(parsed):
+        labels = [str(value) for value in kit.as_dict(entry.get("attributes")).values() if value]
         variants.append(
             Variant(
                 external_id=str(entry.get("variation_id")) if entry.get("variation_id") else None,
@@ -670,7 +605,7 @@ def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Var
     return variants
 
 
-class WooSite(SiteAdapter):
+class WooSite(ConfiguredSite[WooConfig]):
     """One WooCommerce shop, parameterised entirely by its :class:`WooConfig`.
 
     Discovery is API-first: the Store API answers on 38 of the 39 Czech and
@@ -681,28 +616,7 @@ class WooSite(SiteAdapter):
     """
 
     kind = PLATFORM
-
-    def __init__(self, config: WooConfig) -> None:
-        """Build the adapter.
-
-        Args:
-            config: The shop's validated configuration.
-        """
-        self.config = config
-        self.site_id = config.site_id
-        self.name = config.name
-        self.country = config.country
-        self.base_url = config.base_url
-        self.max_pages = config.max_pages
-        self.label_map = {**DEFAULT_LABEL_MAP, **config.label_map}
-
-    def ignored_names(self) -> tuple[str, ...]:
-        """Return the folded markers of products that are not coffee beans.
-
-        Returns:
-            The shared defaults plus whatever the shop's TOML added.
-        """
-        return (*DEFAULT_IGNORED, *self.config.ignore)
+    default_label_map: ClassVar[dict[str, str]] = DEFAULT_LABEL_MAP
 
     # --- discovery -----------------------------------------------------------
 
@@ -1013,13 +927,12 @@ class WooSite(SiteAdapter):
             The labels, the description prose, and the short description.
         """
         labels = Labels()
-        for attribute in item.get("attributes", []):
-            if isinstance(attribute, dict):
-                labels.add(
-                    unescape(str(attribute.get("name") or "")),
-                    ", ".join(_terms(attribute)),
-                    self.label_map,
-                )
+        for attribute in kit.records(item.get("attributes")):
+            labels.add(
+                unescape(str(attribute.get("name") or "")),
+                ", ".join(_terms(attribute)),
+                self.label_map,
+            )
         blocks = _blocks(item)
         for label, value in _table_rows(blocks):
             labels.add(label, value, self.label_map)
@@ -1146,8 +1059,7 @@ class WooSite(SiteAdapter):
         )
         for label, value in pairs:
             labels.add(label, value, self.label_map)
-        for key, value in dom.page_meta(soup).items():
-            labels.raw.setdefault(key, value)
+        kit.keep(labels.raw, dom.page_meta(soup))
         offer = _ld_offer(node)
         price, currency = self._html_price(root, offer, ref)
         variants = _html_variants(soup, ref, currency)
@@ -1236,10 +1148,9 @@ def _attribute_rows(root: Tag) -> Iterator[tuple[str | None, str | None]]:
     Yields:
         One ``(label, value)`` pair per row.
     """
-    for row in root.select("table.woocommerce-product-attributes tr, table.shop_attributes tr"):
-        cells = row.select("th, td")
-        if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-            yield dom.text(cells[0]), dom.text(cells[1])
+    yield from kit.table_rows(
+        root.select("table.woocommerce-product-attributes tr, table.shop_attributes tr")
+    )
 
 
 def _description_blocks(soup: BeautifulSoup) -> list[Tag]:
@@ -1271,14 +1182,10 @@ def _html_images(soup: BeautifulSoup, node: dict[str, Any] | None, base_url: str
     Returns:
         Absolute image URLs, de-duplicated, in page order.
     """
-    image = (node or {}).get("image")
-    candidates = [str(image)] if isinstance(image, str) else []
-    candidates.extend(
-        src
-        for tag in soup.select(".woocommerce-product-gallery img")
-        if (src := _image_src(tag)) is not None
-    )
-    return dom.unique(dom.absolute(base_url, url) for url in candidates)
+    headline = kit.as_str((node or {}).get("image"))
+    candidates: list[str | None] = [headline]
+    candidates.extend(_image_src(tag) for tag in soup.select(".woocommerce-product-gallery img"))
+    return kit.gallery(base_url, candidates)
 
 
 def _categories_of(soup: BeautifulSoup, root: Tag) -> list[str]:

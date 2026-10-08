@@ -24,6 +24,7 @@ __all__ = [
     "json_object",
     "localised",
     "looks_like_json",
+    "records",
     "strings",
 ]
 
@@ -50,6 +51,22 @@ def as_list(value: object) -> list[object]:
         The list, or an empty one when the value is of another shape.
     """
     return value if isinstance(value, list) else []
+
+
+def records(value: object) -> list[dict[str, object]]:
+    """Narrow a decoded JSON value to the mappings of a list.
+
+    Every storefront API hangs its real data off an array of objects, and every
+    adapter had re-invented the same pair of guards around it: reject a value
+    that is not a list, then skip the entries that are not objects.
+
+    Args:
+        value: Anything ``json.loads`` produced.
+
+    Returns:
+        The mappings, in order; empty when the value is not a list.
+    """
+    return [item for item in as_list(value) if isinstance(item, dict)]
 
 
 def as_str(value: object) -> str | None:

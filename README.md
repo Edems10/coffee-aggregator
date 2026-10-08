@@ -691,7 +691,9 @@ TEST_DATABASE_URL=postgresql://coffee:coffee@localhost:5432/coffee_test \
 
 Every package's `__init__.py` is a thin re-export — the logic lives in a named
 module next to it: `sites/loader.py` (discovery), `sites/registry.py` (the
-`@register` map), `platforms/loader.py` (platform resolution), `sinks/factory.py`
+`@register` map), `platforms/loader.py` (platform resolution),
+`platforms/common.py` (the config head, the label-map check and the
+`__init__`/`ignored_names` every platform adapter shares), `sinks/factory.py`
 (the sink name → factory map), `http/fetcher.py` (the only place that makes a
 request), `db/migrate.py` (the migration runner), `db/monitoring.py` (the `crawl_run`
 recorder), `fx/cnb.py` and `fx/ecb.py` (the
@@ -699,8 +701,11 @@ rate feeds), `fx/rates.py` (the once-a-day service), `fx/stores.py` and
 `fx/convert.py`, `money.py` (the one place a price is rounded or extrapolated to
 the kilogram), `sinks/records.py` (model → column dictionary, for both
 sinks), `sinks/outbox.py` (model → `CoffeeState` event, and the one place a
-subject is formed) and `publish.py` (the outbox drain). Nothing in the project
-starts with a module docstring or a licence header; `D100`, `D104` and
+subject is formed) and `publish.py` (the outbox drain). `adapters/` is the
+shared reader toolkit every adapter imports as `kit` — bespoke modules under
+`sites/` and platform adapters under `platforms/` alike; it sits outside both so
+neither has a reason to re-implement a reading the other already has. Nothing
+in the project starts with a module docstring or a licence header; `D100`, `D104` and
 `CPY001` are ignored for that reason.
 
 ## Development

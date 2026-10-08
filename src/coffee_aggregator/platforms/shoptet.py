@@ -5,18 +5,18 @@ import logging
 import re
 from dataclasses import dataclass, field
 from itertools import product
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, cast
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import (
     F_CERTIFICATIONS,
     F_COUNTRY,
     F_PROCESS,
     F_SHIP_WEIGHT,
-    KNOWN_FIELDS,
     MAX_FUZZY_LABEL_WORDS,
     TERMS,
     Labels,
@@ -40,12 +40,16 @@ from coffee_aggregator.models import (
     Popularity,
     Variant,
 )
+from coffee_aggregator.platforms.common import (
+    ConfiguredSite,
+    PlatformConfigError,
+    common_fields,
+)
 from coffee_aggregator.sites import html as dom
-from coffee_aggregator.sites import toolkit as kit
-from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
+from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from coffee_aggregator.http import PoliteFetcher
@@ -97,20 +101,6 @@ PLATFORM_TERMS: Final[dict[str, str]] = {
 DEFAULT_LABEL_MAP: Final[dict[str, str]] = build_map(TERMS, extra=PLATFORM_TERMS)
 
 
-class ShoptetConfigError(ValueError):
-    """Raised when a shop TOML is missing a key ``ShoptetSite`` cannot invent."""
-
-    def __init__(self, path: Path, problem: str) -> None:
-        """Build the error.
-
-        Args:
-            path: The configuration file that is wrong.
-            problem: What is wrong with it.
-        """
-        super().__init__(f"{path}: {problem}")
-        self.path = path
-
-
 @dataclass(slots=True)
 class ShoptetConfig:
     """Everything that differs between two Shoptet shops.
@@ -155,59 +145,28 @@ class ShoptetConfig:
             The validated configuration.
 
         Raises:
-            ShoptetConfigError: When a required key is missing or malformed.
+            PlatformConfigError: When a required key is missing or malformed.
         """
-        missing = [key for key in ("site_id", "name", "country", "base_url") if not config.get(key)]
-        if missing:
-            raise ShoptetConfigError(path, f"missing required key(s): {', '.join(missing)}")
+        common = common_fields(config, path, default_max_pages=DEFAULT_MAX_PAGES)
         categories = [str(url) for url in config.get("category_urls", []) if str(url).strip()]
         if not categories:
-            raise ShoptetConfigError(path, "category_urls must list at least one listing URL")
-        country = str(config["country"]).upper()
-        if country not in {"CZ", "SK"}:
-            raise ShoptetConfigError(path, f"country must be CZ or SK, not {country!r}")
+            raise PlatformConfigError(path, "category_urls must list at least one listing URL")
         pagination = str(config.get("pagination", "path")).lower()
         if pagination not in {"path", "query"}:
-            raise ShoptetConfigError(path, f"pagination must be path or query, not {pagination!r}")
-        base_url = str(config["base_url"])
-        label_map = {
-            normalize.fold(key): str(value) for key, value in config.get("label_map", {}).items()
-        }
-        _check_label_map(label_map, config.get("label_map", {}), path)
+            raise PlatformConfigError(path, f"pagination must be path or query, not {pagination!r}")
         return cls(
-            site_id=str(config["site_id"]),
-            name=str(config["name"]),
-            country=cast("Literal['CZ', 'SK']", country),
-            base_url=base_url if base_url.endswith("/") else f"{base_url}/",
-            category_urls=[urljoin(base_url, url) for url in categories],
-            currency=str(config["currency"]) if config.get("currency") else None,
-            label_map=label_map,
-            ignore=[normalize.fold(marker) for marker in config.get("ignore", [])],
-            max_pages=int(config.get("max_pages", DEFAULT_MAX_PAGES)),
+            site_id=common.site_id,
+            name=common.name,
+            country=common.country,
+            base_url=common.base_url,
+            # Joined against the base URL *as written*: a trailing slash is what
+            # decides whether ``urljoin`` keeps a base URL's own path segment.
+            category_urls=[urljoin(str(config["base_url"]), url) for url in categories],
+            currency=common.currency,
+            label_map=common.label_map,
+            ignore=common.ignore,
+            max_pages=common.max_pages,
             pagination=cast("Literal['path', 'query']", pagination),
-        )
-
-
-def _check_label_map(folded: dict[str, str], written: dict[str, Any], path: Path) -> None:
-    """Refuse a ``label_map`` that points a label at a field nobody reads.
-
-    Args:
-        folded: The folded label -> field mapping the TOML asked for.
-        written: The same mapping with the labels as the file spells them.
-        path: The configuration file, for the error message.
-
-    Raises:
-        ShoptetConfigError: When a value is not one of :data:`KNOWN_FIELDS`.
-    """
-    spellings = {normalize.fold(label): str(label) for label in written}
-    for label, field_name in folded.items():
-        if field_name in KNOWN_FIELDS:
-            continue
-        valid = ", ".join(sorted(name for name in KNOWN_FIELDS if name))
-        raise ShoptetConfigError(
-            path,
-            f"label_map[{spellings.get(label, label)!r}] = {field_name!r} is not a field; "
-            f"valid fields are: {valid}",
         )
 
 
@@ -309,13 +268,7 @@ def _parameter_rows(root: Tag) -> Iterator[tuple[str | None, str | None]]:
     for table in root.select(_PARAMETER_TABLE_SELECTOR):
         if not _own(root, table):
             continue
-        for row in table.select("tr"):
-            cells = row.select("th, td")
-            if len(cells) >= 2 and not _holds_variant_control(cells[1]):  # noqa: PLR2004
-                # A cell that *is* the variant picker renders as its whole
-                # widget ("Zvoľte variant Filter Espresso"); the placeholder-free
-                # option list from :func:`_variant_axes` says the same thing.
-                yield dom.text(cells[0]), dom.text(cells[1])
+        yield from kit.table_rows(table.select("tr"), keep=_states_a_parameter)
         terms = table.select("dt")
         definitions = table.select("dd")
         for term, definition in zip(terms, definitions, strict=False):
@@ -331,6 +284,20 @@ _VARIANT_CONTROL_SELECTOR: Final = (
     "select[data-parameter-id], select[name^='parameterValueId'], "
     f"{_PRICE_ID_SELECTOR}, div[data-parameter-id], div[class*='parameter-id-']"
 )
+
+
+def _states_a_parameter(cells: Sequence[Tag]) -> bool:
+    """Say whether a parameter row states a parameter rather than a picker.
+
+    Args:
+        cells: The row's cells.
+
+    Returns:
+        False when the value cell *is* the variant picker, which renders as its
+        whole widget ("Zvoľte variant Filter Espresso"); the placeholder-free
+        option list from :func:`_variant_axes` says the same thing.
+    """
+    return not _holds_variant_control(cells[1])
 
 
 def _holds_variant_control(cell: Tag) -> bool:
@@ -594,10 +561,23 @@ def _table_pairs(block: Tag) -> Iterator[tuple[str | None, str | None]]:
     Yields:
         One ``(label, value)`` pair per two-cell row.
     """
-    for row in block.select("tr"):
-        cells = row.select("th, td")
-        if len(cells) == _PAIR_CELLS:
-            yield dom.text(cells[0]), dom.text(cells[1])
+    yield from kit.table_rows(block.select("tr"), keep=_two_columns_only)
+
+
+def _two_columns_only(cells: Sequence[Tag]) -> bool:
+    """Say whether a description row has exactly a label and a value.
+
+    A description block is prose with a table in it, so a wider row is a layout
+    grid rather than a parameter sheet and reading its first two cells as a
+    pair invents a label.
+
+    Args:
+        cells: The row's cells.
+
+    Returns:
+        True for a two-column row.
+    """
+    return len(cells) == _PAIR_CELLS
 
 
 def _fact_pairs(block: Tag, label_map: dict[str, str]) -> Iterator[tuple[str | None, str | None]]:
@@ -1002,9 +982,7 @@ def _parse_images(root: Tag, base_url: str) -> list[str]:
     # A gallery's lightbox trigger is an anchor with "#" or nothing in its href,
     # which is not a photo; which of the two a shop writes even depends on the
     # HTML parser's version, so neither belongs in the record.
-    return dom.unique(
-        dom.absolute(base_url, url) for url in candidates if _is_image_href(url or "")
-    )
+    return kit.gallery(base_url, candidates, keep_when=_is_image_href)
 
 
 def _is_image_href(href: str) -> bool:
@@ -1127,32 +1105,11 @@ def _json_brand(soup: BeautifulSoup) -> str | None:
 _ROOT_SELECTOR: Final = ".p-detail, .p-detail-inner"
 
 
-class ShoptetSite(SiteAdapter):
+class ShoptetSite(ConfiguredSite[ShoptetConfig]):
     """One Shoptet shop, parameterised entirely by its :class:`ShoptetConfig`."""
 
     kind = PLATFORM
-
-    def __init__(self, config: ShoptetConfig) -> None:
-        """Build the adapter.
-
-        Args:
-            config: The shop's validated configuration.
-        """
-        self.config = config
-        self.site_id = config.site_id
-        self.name = config.name
-        self.country = config.country
-        self.base_url = config.base_url
-        self.max_pages = config.max_pages
-        self.label_map = {**DEFAULT_LABEL_MAP, **config.label_map}
-
-    def ignored_names(self) -> tuple[str, ...]:
-        """Return the folded markers of products that are not coffee beans.
-
-        Returns:
-            The shared defaults plus whatever the shop's TOML added.
-        """
-        return (*DEFAULT_IGNORED, *self.config.ignore)
+    default_label_map: ClassVar[dict[str, str]] = DEFAULT_LABEL_MAP
 
     def page_url(self, category_url: str, page: int) -> str:
         """Return the URL of one page of a category listing.
@@ -1377,8 +1334,7 @@ class ShoptetSite(SiteAdapter):
         labels, prose = _collect_labels(root, self.label_map)
         # Open Graph and <meta> routinely name the origin or the cup notes the
         # visible markup omits; a real parameter row always wins.
-        for key, value in dom.page_meta(soup).items():
-            labels.raw.setdefault(key, value)
+        kit.keep(labels.raw, dom.page_meta(soup))
         brand = _brand(labels, soup)
         if brand is not None:
             labels.raw.setdefault(BRAND_KEY, brand)

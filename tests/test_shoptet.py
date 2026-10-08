@@ -8,9 +8,9 @@ from coffee_aggregator import platforms, sites
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.labels import F_PROCESS, F_WEIGHT, KNOWN_FIELDS, Labels
 from coffee_aggregator.models import ProcessMethod, RoastLevel, RoastProfile
+from coffee_aggregator.platforms.common import PlatformConfigError
 from coffee_aggregator.platforms.shoptet import (
     DEFAULT_LABEL_MAP,
-    ShoptetConfigError,
     ShoptetSite,
 )
 from coffee_aggregator.sinks.records import coffee_record
@@ -434,7 +434,7 @@ def test_a_broken_toml_is_rejected_with_an_actionable_message(
     body: str,
     problem: str,
 ) -> None:
-    with pytest.raises(ShoptetConfigError) as excinfo:
+    with pytest.raises(PlatformConfigError) as excinfo:
         platforms.build_from_config(_write(tmp_path, body))
     assert problem in str(excinfo.value)
 
@@ -509,7 +509,7 @@ def test_a_country_label_that_names_no_country_is_not_used() -> None:
 
 def test_an_unknown_label_map_field_is_rejected(tmp_path: Path) -> None:
     body = MINIMAL_TOML + '\n[label_map]\n"Bližší určení" = "regoin"\n'
-    with pytest.raises(ShoptetConfigError) as excinfo:
+    with pytest.raises(PlatformConfigError) as excinfo:
         platforms.build_from_config(_write(tmp_path, body))
     message = str(excinfo.value)
     assert "Bližší určení" in message
