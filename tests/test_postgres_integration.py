@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -553,7 +554,9 @@ type ReaderConnection = psycopg.Connection[tuple[Any, ...]]
 #: A throwaway LOGIN role that is nothing but a member of `catalogue_reader`,
 #: which is the shape the operator creates for pgweb and for Grafana.
 READER_ROLE = "catalogue_reader_test"
-READER_PASSWORD = "not-a-secret-anything-local-accepts"
+#: Generated per run rather than written down: the role lives for one test and
+#: a literal here is a string every secret scanner is right to shout about.
+READER_PASSWORD = secrets.token_hex(16)
 
 
 @pytest.fixture
