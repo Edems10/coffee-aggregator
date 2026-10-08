@@ -197,10 +197,21 @@ def test_description_blocks_break_on_the_markup_not_on_the_text() -> None:
     [
         ("Skladom", True),
         ("Skladem (3 ks)", True),
+        ("Na skladě", True),
+        ("Na sklade", True),
+        ("Dostupné", True),
+        ("IHNED K ODESLÁNÍ", True),
+        ("In stock", True),
         ("Není skladem", False),
+        ("Nie je skladom", False),
+        ("Není na skladě", False),
+        ("Nie je na sklade", False),
         ("Vyprodáno", False),
         ("Vypredané", False),
+        ("Vyprodané", False),
         ("Nedostupné", False),
+        ("Out of stock", False),
+        ("Sold out", False),
         ("", None),
         ("Doručíme do Vianoc", None),
     ],
@@ -216,10 +227,53 @@ def test_a_negation_wins_over_the_word_it_negates() -> None:
     assert kit.stock_state("Skladem", "Není skladem") is False
 
 
-def test_a_schema_availability_is_in_stock_or_it_is_not() -> None:
-    assert kit.schema_stock("https://schema.org/InStock") is True
-    assert kit.schema_stock("https://schema.org/OutOfStock") is False
-    assert kit.schema_stock(None) is None
+@pytest.mark.parametrize(
+    ("label", "expected"),
+    [
+        ("Hmotnost: 1kg - Není skladem (42 €)", False),
+        ("Hmotnosť: 250g - Nie je skladom (18 €)", False),
+        ("Hmotnost: 500 g - Není na skladě (310 Kč)", False),
+        ("Hmotnosť: 1kg - Nie je na sklade (34 €)", False),
+        ("Hmotnosť: 500g - Skladom >5 ks (34 €)", True),
+        ("Hmotnost: 250 g - Skladem (262 Kč)", True),
+        ("Hmotnost: 3000g - IHNED K ODESLÁNÍ (4 290 Kč)", True),
+    ],
+)
+def test_a_negation_inside_a_variant_label_is_not_read_as_in_stock(
+    label: str,
+    expected: bool,
+) -> None:
+    """A bare "sklad" stem once read every row of this table as in stock.
+
+    The stem lived in Shoptet's own copy of this vocabulary, so every negated
+    wording on the largest platform's 47 shops stored ``available = True``.
+    """
+    assert kit.stock_state(label) is expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("https://schema.org/InStock", True),
+        # A pre-order and a limited run are listed for sale: the owner's call,
+        # with a banner on the web front end telling a pre-order apart.
+        ("https://schema.org/PreOrder", True),
+        ("https://schema.org/LimitedAvailability", True),
+        ("https://schema.org/OutOfStock", False),
+        ("https://schema.org/SoldOut", False),
+        ("https://schema.org/Discontinued", False),
+        ("https://schema.org/BackOrder", False),
+        ("https://schema.org/PreSale", False),
+        ("InStock", True),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_a_schema_availability_reads_one_closed_vocabulary(
+    value: str | None,
+    expected: bool | None,
+) -> None:
+    assert kit.schema_stock(value) is expected
 
 
 def test_a_package_reads_its_weight_off_its_own_label() -> None:

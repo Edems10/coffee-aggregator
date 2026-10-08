@@ -696,3 +696,52 @@ def test_every_shipped_config_is_registered() -> None:
     live = {site_id for site_id in SHIPPED if not is_disabled(site_id)}
     assert live <= registered
     assert registered.isdisjoint(set(SHIPPED) - live)
+
+
+# --- items 34 and 35: one stock vocabulary, shared with the toolkit ----------
+
+
+_COMBINED_SELECT = """
+<html><body><div class="p-detail"><h1>Etiópia Guji</h1>
+  <select name="priceId">
+    <option value="" data-choose="1">Zvoľte variant</option>
+    <option value="1">Hmotnost: 250 g - Skladem (262 Kč)</option>
+    <option value="2">Hmotnost: 1kg - Není skladem (42 €)</option>
+    <option value="3">Hmotnosť: 250g - Nie je skladom (18 €)</option>
+    <option value="4">Hmotnost: 500 g - Není na skladě (310 Kč)</option>
+    <option value="5">Hmotnosť: 1kg - Nie je na sklade (34 €)</option>
+  </select>
+</div></body></html>
+"""
+
+
+def test_a_negated_option_is_not_stored_as_in_stock(tmp_path: Path) -> None:
+    """The in-stock test used to hold the bare stem "sklad", which "není skladem" holds too.
+
+    Every negated wording on the platform therefore stored ``available = True``
+    on 47 shops; the shared vocabulary tests the negations first instead.
+    """
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    coffee = parse(adapter, _COMBINED_SELECT, "1", "https://tiny.sk/etiopia/")
+
+    assert [variant.available for variant in coffee.variants] == [True, False, False, False, False]
+
+
+@pytest.mark.parametrize(
+    ("availability", "expected"),
+    [("InStock", True), ("PreOrder", True), ("LimitedAvailability", True), ("OutOfStock", False)],
+)
+def test_the_page_availability_reads_the_shared_schema_vocabulary(
+    tmp_path: Path,
+    availability: str,
+    expected: bool,
+) -> None:
+    """A pre-order is listed for sale; the web front end marks it with a banner."""
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = f"""
+    <html><body><div class="p-detail"><h1>Etiópia Guji</h1>
+      <span itemprop="availability" content="https://schema.org/{availability}"></span>
+      <table class="detail-parameters"><tr><th>Hmotnosť</th><td>250 g</td></tr></table>
+    </div></body></html>
+    """
+    assert parse(adapter, page, "1", "https://tiny.sk/e/").available is expected
