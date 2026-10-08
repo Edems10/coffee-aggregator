@@ -351,6 +351,62 @@ def test_fetch_many_returns_errors_in_place(http: MockHTTP) -> None:
 
 def test_fetch_many_with_no_urls_makes_no_requests() -> None:
     assert make_fetcher().fetch_many([]) == []
+    assert list(make_fetcher().fetch_each([])) == []
+
+
+def test_fetch_each_hands_the_pages_over_in_order(http: MockHTTP) -> None:
+    http.add(ROBOTS, status=404)
+    for index in range(6):
+        http.add(f"{BASE}/p{index}", body=f"page {index}")
+
+    urls = [f"{BASE}/p{index}" for index in range(6)]
+    results = list(make_fetcher().fetch_each(urls))
+
+    assert [cast("FetchResult", result).text for result in results] == [
+        f"page {index}" for index in range(6)
+    ]
+
+
+def test_fetch_each_never_holds_more_pages_than_it_has_workers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Why this exists: a batch is fifty pages and a page can be 1.1 MB of RAM.
+
+    Measured on the heaviest detail fixtures, eight shop threads each holding
+    a whole batch is 420 MB of bodies against a 512 MB container. A page is
+    counted alive from the moment the fetcher builds it until the last
+    reference to it goes, and only ``workers`` of them may overlap.
+    """
+    live, peak = [0], [0]
+
+    class Page:
+        """Stands in for a response body, and says when it is collected."""
+
+        def __init__(self) -> None:
+            live[0] += 1
+            peak[0] = max(peak[0], live[0])
+
+        def __del__(self) -> None:
+            live[0] -= 1
+
+    workers = 3
+    fetcher = make_fetcher(workers=workers)
+    monkeypatch.setattr(fetcher, "_get_or_error", lambda _url: Page())
+
+    for page in fetcher.fetch_each([f"{BASE}/p{index}" for index in range(30)]):
+        del page
+
+    # the one in the caller's hands on top of the ones in flight
+    assert peak[0] <= workers + 1
+    assert live[0] == 0
+
+
+def test_fetch_many_still_holds_the_whole_batch(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The eager spelling is kept, and the test says what it costs."""
+    fetcher = make_fetcher(workers=3)
+    monkeypatch.setattr(fetcher, "_get_or_error", lambda url: ("page", url))
+
+    assert len(fetcher.fetch_many([f"{BASE}/p{index}" for index in range(30)])) == 30
 
 
 def test_fetch_many_turns_an_unexpected_exception_into_a_fetch_error(

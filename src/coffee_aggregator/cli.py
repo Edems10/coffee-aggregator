@@ -641,6 +641,45 @@ def _sharded(
     )
 
 
+def _crawl_costs(
+    settings: Settings,
+    adapters: Sequence[SiteAdapter],
+    args: argparse.Namespace,
+    monitor: RunMonitor,
+) -> list[pipeline.HostCost]:
+    """Weigh every host so the pool can be handed the longest shop first.
+
+    The signal is last night's own ``crawl_run.duration_s``. The estimate is
+    the fallback and not the other way round, because ``max_pages`` is a
+    ceiling nearly every shop shares, so an estimated ordering is really an
+    ordering by crawl-delay.
+
+    Args:
+        settings: Environment-derived settings, for the per-host delays.
+        adapters: The shops this run will crawl.
+        args: Parsed command line arguments.
+        monitor: Where the run history is read from; a run without a database
+            reads none and falls back to the estimate.
+
+    Returns:
+        One cost per host, most expensive first.
+    """
+    durations = monitor.durations()
+    costs = pipeline.host_costs(
+        adapters,
+        delay_for=_delay_for(settings, args),
+        max_pages=args.max_pages,
+        durations=durations,
+    )
+    logger.info(
+        "ordering %d host(s) by cost; %d of %d shop(s) have a recorded duration",
+        len(costs),
+        sum(1 for site in adapters if site.site_id in durations),
+        len(adapters),
+    )
+    return costs
+
+
 def _delay_for(settings: Settings, args: argparse.Namespace) -> Callable[[str], float]:
     """Return the function that says how slowly one host must be asked.
 
@@ -694,6 +733,7 @@ def cmd_crawl(settings: Settings, args: argparse.Namespace, command: str = "") -
             fx_rate=fx_rate,
             deadline=None if deadline_s is None else Deadline.after(deadline_s),
             monitor=monitor,
+            costs=_crawl_costs(settings, adapters, args, monitor),
         )
     finally:
         fetcher.close()

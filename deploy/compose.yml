@@ -59,9 +59,11 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    # Batches of 50 products and the parse tree of one page at a time; the
-    # ceiling is generous. Most expendable thing on the box: a killed crawl is
-    # re-run tomorrow morning.
+    # One page body per shop thread and the parse tree of one page at a time.
+    # Measured on the heaviest detail fixtures, eight threads crawling a batch
+    # of fifty peak at 48 MB of bodies-and-parse; they peaked at 460 MB when a
+    # whole batch was held at once, which is what this ceiling nearly caught.
+    # Most expendable thing on the box: a killed crawl is re-run tomorrow.
     mem_limit: 512m
     mem_reservation: 128m
     oom_score_adj: 600
