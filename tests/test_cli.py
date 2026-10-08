@@ -606,6 +606,28 @@ def test_the_batch_size_reaches_the_pipeline(
     assert seen["batch_size"] == 7
 
 
+def test_the_crawl_hands_the_pool_a_cost_for_every_host(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without this the pool picks the shops up in alphabetical order."""
+    registry.register(_Stocked)
+    seen: dict[str, object] = {}
+
+    def fake_run_many(*args: object, **kwargs: object) -> list[object]:
+        seen.update(kwargs)
+        return []
+
+    monkeypatch.setattr(cli, "run_many", fake_run_many)
+    argv = ["crawl", "--site", "stocked", "--out", str(tmp_path / "o.jsonl")]
+    assert cli.main(argv) == cli.EXIT_INCOMPLETE  # no reports at all
+
+    costs = seen["costs"]
+    assert isinstance(costs, list)
+    # a jsonl run has no database, so there is no history and the estimate stands
+    assert [cost.site_ids for cost in costs] == [("stocked",)]
+    assert costs[0].measured_s is None
+
+
 def test_the_deprecated_pool_hosts_spelling_is_no_longer_used() -> None:
     source = Path(cli.__file__).read_text("utf-8")
     assert "pool_hosts" not in source

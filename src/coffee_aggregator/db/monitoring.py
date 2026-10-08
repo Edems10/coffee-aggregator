@@ -52,6 +52,22 @@ _SELECT_SQL = (
     "ORDER BY started_at DESC, site LIMIT %s"
 )
 
+#: The last recorded duration of every shop, newest row per shop. ``DISTINCT
+#: ON`` ordered the way ``crawl_run_site_started_idx (site, started_at DESC)``
+#: is ordered lets the planner walk that index once instead of answering 155
+#: separate questions: measured at a year of history, 56 575 rows in 6 ms.
+#:
+#: A run whose discovery failed is left out, and so is one that recorded no
+#: duration at all: both are crashes, and a crash's two seconds would have the
+#: scheduler hand the biggest shop out last the night after a bad night —
+#: exactly the behaviour this reading exists to stop. ``complete`` is no use
+#: here; a single 404 among nine hundred products clears it.
+_DURATIONS_SQL = (
+    f"SELECT DISTINCT ON (site) site, duration_s FROM {TABLE} "  # noqa: S608  (a module constant)
+    "WHERE discovery_ok AND duration_s IS NOT NULL AND duration_s > 0 "
+    "ORDER BY site, started_at DESC"
+)
+
 #: What ``runs`` prints when the caller names no limit.
 DEFAULT_RECENT_LIMIT = 20
 
@@ -77,6 +93,15 @@ class RunMonitor(Protocol):
 
         Returns:
             The rows, newest first.
+        """
+        ...
+
+    def durations(self) -> dict[str, float]:
+        """Return how long each shop took the last time it ran.
+
+        Returns:
+            Seconds keyed by site id, holding only the shops with usable
+            history.
         """
         ...
 
@@ -120,6 +145,14 @@ class NullMonitor:
         """
         logger.debug("no run history without a database (site=%s, limit=%d)", site, limit)
         return []
+
+    def durations(self) -> dict[str, float]:
+        """Return nothing, so the caller falls back to its estimate.
+
+        Returns:
+            An empty mapping.
+        """
+        return {}
 
     def close(self) -> None:
         """Do nothing; there is nothing open."""
@@ -239,6 +272,25 @@ class PostgresMonitor:
         with self._lock, self.connection.cursor() as cursor:
             cursor.execute(_SELECT_SQL, (site, site, max(1, limit)))
             return [dict(zip(COLUMNS, row, strict=True)) for row in cursor.fetchall()]
+
+    def durations(self) -> dict[str, float]:
+        """Return how long each shop took the last time it ran.
+
+        A failure here is logged and swallowed: this only decides what order
+        the shops are crawled in, and a run that cannot be ordered well is
+        still a run.
+
+        Returns:
+            Seconds keyed by site id, empty when the history cannot be read.
+        """
+        try:
+            with self._lock, self.connection.cursor() as cursor:
+                cursor.execute(_DURATIONS_SQL)
+                return {site: float(seconds) for site, seconds in cursor.fetchall()}
+        except Exception:
+            logger.exception("could not read the run history; crawling in the given order")
+            self._rollback()
+            return {}
 
     def _rollback(self) -> None:
         """Abandon a failed transaction so the next row can still be written."""

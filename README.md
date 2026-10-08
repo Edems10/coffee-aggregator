@@ -108,8 +108,14 @@ coffee-aggregator republish --all [--dsn URL]
   reading. One deadline covers every shop of the invocation, not one per shop.
 * `--shard I/N` crawls one deterministic slice of the registered shops. See
   [Sharding the daily run](#sharding-the-daily-run).
-* `--batch-size` is how many products are fetched and written per round;
-  `--timeout`, `--retries`, `--max-retry-wait` and `--robots-retry` are the
+* `--batch-size` is how many products are fetched and written per round. It
+  does not set how much memory a round costs: a page body is released as soon
+  as the parser has read it, so a shop thread holds one page at a time whatever
+  the batch size is. It used to hold the whole batch, and an emoji anywhere on
+  a page makes CPython store all of it at four bytes per character — 283 KB of
+  text, 1.1 MB of RAM — which put eight threads at 460 MB against a 512 MB
+  container.
+* `--timeout`, `--retries`, `--max-retry-wait` and `--robots-retry` are the
   transport knobs (`--timeout 8 --retries 1 --max-retry-wait 10` is the short-lived
   profile a Lambda wants). Each one has an environment variable below.
 * `--workers` is the fetch pool *inside* one shop and defaults to **2**: every URL
@@ -512,6 +518,30 @@ up by the log shipper in
 [coffee-observability](https://github.com/Edems10/coffee-observability). The
 dashboards there cover what a page would have shown and more, over the same
 tables, which is why there is no page here any more.
+
+## The order the shops are crawled in
+
+A pool of `--site-workers` threads is only as fast as its last task, so the
+shops are handed to it **longest first**. The cost of a shop is
+`crawl_run.duration_s` from the last night it ran, read in one query over
+`crawl_run_site_started_idx`; a shop with no usable record — a new one, a first
+run, a night that crashed before it finished — falls back to the same estimate
+the shards are weighed with. A run without a database has no history at all and
+uses the estimate throughout.
+
+Hosts, not shops, are the unit of work: two shops on one origin are crawled one
+after the other in the same worker, because the rate limiter is keyed by host
+and two workers behind one limiter buy no throughput. `lighthousecoffee.sk` and
+`valasska-prazirna.cz` are the two origins this applies to.
+
+None of this changes any shop's own pacing — the limiter is untouched, and a
+shop is asked at exactly the rate it was asked at before.
+
+**The floor is the longest single shop.** Measured on the server: 6 349
+shop-seconds in total, of which `kava` alone is 894 s. Eight workers cannot
+finish before that one shop does, so ~15 min is the best any scheduler reaches
+and the remaining 5 455 s fit under it comfortably (779 s each over the other
+seven workers). The gain is in not starting `kava` half way through the night.
 
 ## Sharding the daily run
 

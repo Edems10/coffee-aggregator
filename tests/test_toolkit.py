@@ -12,7 +12,7 @@ from coffee_aggregator.labels import F_BODY, F_COUNTRY, F_ROAST
 from coffee_aggregator.sites.base import ProductRef
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from coffee_aggregator.http import PoliteFetcher
 
@@ -35,6 +35,9 @@ class FakeFetcher:
 
     def fetch_many(self, urls: Sequence[str]) -> list[FetchResult]:
         return [self.get(url) for url in urls]
+
+    def fetch_each(self, urls: Sequence[str]) -> Iterator[FetchResult]:
+        return iter(self.fetch_many(urls))
 
 
 def as_fetcher(fake: FakeFetcher) -> PoliteFetcher:
