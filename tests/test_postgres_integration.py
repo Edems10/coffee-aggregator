@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+import psycopg
 import pytest
+from psycopg import sql
+from psycopg.errors import InsufficientPrivilege
 
 from coffee_aggregator import publish
 from coffee_aggregator.db import migrate, report
@@ -656,3 +660,117 @@ def test_a_second_publisher_steps_over_the_rows_the_first_holds(sink: PostgresSi
         sink.connection.rollback()
     finally:
         other.close()
+
+
+# --- the read-only role -------------------------------------------------------
+
+type ReaderConnection = psycopg.Connection[tuple[Any, ...]]
+
+#: A throwaway LOGIN role that is nothing but a member of `catalogue_reader`,
+#: which is the shape the operator creates for pgweb and for Grafana.
+READER_ROLE = "catalogue_reader_test"
+#: Generated per run rather than written down: the role lives for one test and
+#: a literal here is a string every secret scanner is right to shout about.
+READER_PASSWORD = secrets.token_hex(16)
+
+
+@pytest.fixture
+def reader(sink: PostgresSink) -> Iterator[ReaderConnection]:
+    # CREATE ROLE takes no bound parameters, so the password is composed in.
+    role = sql.Identifier(READER_ROLE)
+    with sink.connection.cursor() as cursor:
+        cursor.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(role))
+        cursor.execute(
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(role, sql.Literal(READER_PASSWORD))
+        )
+        cursor.execute(sql.SQL("GRANT catalogue_reader TO {}").format(role))
+    sink.connection.commit()
+    connection = psycopg.connect(
+        DSN,
+        user=READER_ROLE,
+        password=READER_PASSWORD,
+        autocommit=True,
+    )
+    try:
+        yield connection
+    finally:
+        connection.close()
+        with sink.connection.cursor() as cursor:
+            cursor.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(role))
+        sink.connection.commit()
+
+
+def _refused(connection: ReaderConnection, statement: str) -> bool:
+    """Run one statement and report whether PostgreSQL refused it for want of a privilege.
+
+    Args:
+        connection: An autocommitting connection as the read-only role.
+        statement: The SQL to attempt.
+
+    Returns:
+        True when the server answered with insufficient_privilege.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(statement)
+    except InsufficientPrivilege:
+        return True
+    return False
+
+
+def test_the_reader_can_read_every_table_the_migrations_made(
+    reader: ReaderConnection,
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="demo", external_id="1")])
+    for table in ("coffee", "price_history", "coffee_variant", "crawl_run", "fx_rates", "outbox"):
+        with reader.cursor() as cursor:
+            cursor.execute(f"SELECT count(*) FROM {table}")  # noqa: S608  (a literal above)
+            assert cursor.fetchone() is not None
+    with reader.cursor() as cursor:
+        cursor.execute("SELECT count(*) FROM coffee")
+        assert cursor.fetchone() == (1,)
+
+
+def test_the_reader_cannot_write(reader: ReaderConnection, sink: PostgresSink) -> None:
+    """A read-only role nobody checked for writes is the bug this role exists to fix."""
+    sink.upsert([make_coffee(site="demo", external_id="1")])
+
+    assert _refused(reader, "DELETE FROM coffee")
+    assert _refused(reader, "UPDATE coffee SET name = 'tampered'")
+    assert _refused(
+        reader,
+        "INSERT INTO coffee (site, external_id, url, name) "
+        "VALUES ('demo', '2', 'https://example.sk/2', 'x')",
+    )
+    assert _refused(reader, "TRUNCATE coffee")
+    assert _refused(reader, "DROP TABLE outbox")
+    assert _refused(reader, "CREATE TABLE smuggled (id int)")
+
+    # And the row is still there, to prove nothing slipped through.
+    assert _scalar(sink, "SELECT count(*) FROM coffee") == 1
+
+
+def test_a_table_a_later_migration_adds_is_readable_without_a_new_grant(
+    reader: ReaderConnection,
+    sink: PostgresSink,
+) -> None:
+    """ALTER DEFAULT PRIVILEGES is the half that rots; this is what proves it did not.
+
+    A migration numbered above 0006 -- or one numbered below it that lands on a
+    server which already ran 0006 -- creates its table long after the GRANT ON
+    ALL TABLES has been and gone.
+    """
+    with sink.connection.cursor() as cursor:
+        cursor.execute("CREATE TABLE later_migration (id int)")
+        cursor.execute("INSERT INTO later_migration VALUES (1)")
+    sink.connection.commit()
+    try:
+        with reader.cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM later_migration")
+            assert cursor.fetchone() == (1,)
+        assert _refused(reader, "INSERT INTO later_migration VALUES (2)")
+    finally:
+        with sink.connection.cursor() as cursor:
+            cursor.execute("DROP TABLE later_migration")
+        sink.connection.commit()

@@ -118,7 +118,11 @@ services:
     container_name: coffee-pgweb
     restart: unless-stopped
     environment:
-      PGWEB_DATABASE_URL: postgresql://coffee:${POSTGRES_PASSWORD:?}@db:5432/coffee?sslmode=disable
+      # Not the owning role. This is the one thing on the stack reachable from
+      # the open internet, so it connects as a login role whose only privilege
+      # is SELECT, through membership of `catalogue_reader` (migration 0006).
+      # The role is created once by hand — deploy/README.md, "The table browser".
+      PGWEB_DATABASE_URL: postgresql://pgweb:${PGWEB_DB_PASSWORD:?set PGWEB_DB_PASSWORD in the env file}@db:5432/coffee?sslmode=disable
       TZ: ${TZ:-Europe/Prague}
     command:
       - --bind=0.0.0.0
@@ -126,6 +130,9 @@ services:
       # One fixed database: the connection cannot be pointed elsewhere from the
       # browser, and the URL above is the only one it will ever use.
       - --lock-session
+      # Belt as well as braces: this only hides the editing affordances in the
+      # browser. The grant is the lock — see PGWEB_DATABASE_URL above.
+      - --readonly
       - --no-idle-timeout
       # Basic auth as well as the proxy's own. The proxy is the front door, but
       # a misconfigured proxy should not be the only lock on the data.
