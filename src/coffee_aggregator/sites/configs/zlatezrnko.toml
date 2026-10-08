@@ -36,5 +36,7 @@ ignore = [
   # A gift box holds up to three different coffees and states no single
   # origin; "tycinka" is a coconut bar.
   "darcekova krabicka",
-  "tycinka",
+  # The stem, not the singular: "kokosové tyčinky" slipped past "tycinka".
+  "tycink",
+  "papierovy pohar",
 ]

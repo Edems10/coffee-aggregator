@@ -330,3 +330,31 @@ def test_an_ignore_marker_must_be_a_whole_word() -> None:
     assert adapter.is_ignored("Latest Product: Kolumbie") is False
     assert adapter.is_ignored("Darčeková karta") is False
     assert adapter.is_ignored("Latest Product: Kolumbie") is False
+
+
+def test_default_ignore_list_skips_merchandise_and_services() -> None:
+    """Every marker here was measured over the 3678-row catalogue snapshot."""
+    adapter = _Fake()
+    assert adapter.is_ignored("VOUCHER") is True
+    assert adapter.is_ignored("Elephants tričko Family") is True
+    assert adapter.is_ignored("The Miners T-Shirt") is True
+    assert adapter.is_ignored("Baristický kurz – u Vás doma") is True
+    assert adapter.is_ignored("Individuální kurzy") is True
+    assert adapter.is_ignored("Kávové scrub mýdlo Penerini x Naturinka") is True
+    assert adapter.is_ignored("Naturinka solný tělový peeling káva a pomeranč 120 ml") is True
+
+
+def test_the_markers_rejected_by_the_audit_stay_rejected() -> None:
+    """Each of these is a real bag of coffee that an obvious marker would have
+    delisted: the shop stops being crawled for it and it leaves the catalogue."""
+    adapter = _Fake()
+    assert adapter.is_ignored("COLD BREW") is False
+    assert adapter.is_ignored("Colombia Finca Milán Nitro Fermented 250 g") is False
+    assert adapter.is_ignored("CACAO BLEND") is False
+    assert adapter.is_ignored("Káva Zlaté Zrnko – Peru – “Kakao a gaštan”") is False
+    assert adapter.is_ignored("Šálka nádeje pre Vilyho") is False
+    # A washed Ethiopian lot really is named after a cup of tea.
+    assert adapter.is_ignored("It\u00b4s time for tea") is False
+    assert adapter.is_ignored("Colombia Atunkaa Sugar Cane Decaf") is False
+    assert adapter.is_ignored("AUTOMAT – káva pro superautomatické kávovary") is False
+    assert adapter.is_ignored("Spring Filter Blend") is False

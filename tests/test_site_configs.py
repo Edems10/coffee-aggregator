@@ -142,3 +142,43 @@ def test_every_config_is_registered_and_unique() -> None:
     assert not sites.load_errors, sites.load_errors
     assert live <= registered
     assert registered.isdisjoint({path.stem for path in CONFIGS} - live)
+
+
+@pytest.mark.parametrize(
+    ("site_id", "listing"),
+    [
+        ("ciernaperla", "BIALETTI Mokka kávovar"),
+        ("penerini", "Plátěná taška PENERINI s kávovým motivem"),
+        ("penerini", "White labeling - káva pod vlastní značkou"),
+        ("theminers", "Aeropress Paper Filter (350pcs)"),
+        ("theminers", "Hario V60-02 Filters (100pcs)"),
+        ("theminers", "Moccamaster Paper Filters (100pcs)"),
+        ("theminers", "Solo Filter Daily (50pcs)"),
+        ("theminers", "The Miners Espresso Cup by Mindset"),
+        ("zlatezrnko", "Zlaté Zrnko – Papierový pohár 110ml na espresso 50ks"),
+        ("zlatezrnko", "Zlaté Zrnko – Linda pistáciová – kokosové tyčinky s pistáciami 40g – 5ks"),
+    ],
+)
+def test_a_shop_marker_catches_the_listing_it_was_measured_against(
+    site_id: str,
+    listing: str,
+) -> None:
+    """A per-shop marker is only ever added for a listing seen in the catalogue;
+    this pins the listing so a later edit cannot quietly stop matching it."""
+    assert platforms.build_from_config(CONFIG_DIR / f"{site_id}.toml").is_ignored(listing)
+
+
+@pytest.mark.parametrize(
+    ("site_id", "listing"),
+    [
+        ("ciernaperla", "DARČEKOVÉ BALENIE  CUBA Venchi cigara, 250g pražená káva 100% ARABIKA"),
+        ("theminers", "Ethiopia Kello Siko #3"),
+        ("theminers", "Office Blend"),
+        ("zlatezrnko", "Káva Zlaté Zrnko – Káva na filter Tanzánia 250g"),
+        ("zlatezrnko", "Káva Zlaté Zrnko – Peru – “Kakao a gaštan”"),
+    ],
+)
+def test_a_shop_marker_spares_that_shop_s_coffee(site_id: str, listing: str) -> None:
+    """A marker that also matches coffee does not hide it: the run stops seeing
+    the product, the delisting pass stamps it, and it leaves the catalogue."""
+    assert not platforms.build_from_config(CONFIG_DIR / f"{site_id}.toml").is_ignored(listing)

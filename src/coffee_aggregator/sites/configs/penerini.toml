@@ -11,8 +11,12 @@ max_pages = 20
 pagination = "path"
 
 # The category also lists things that are not whole beans.
+# "white labeling" is a roasting service the shop prices at 99 899 999 001
+# CZK so that nobody buys it by accident; the tote bag is merchandise.
 ignore = [
   "kapsle",
+  "platena taska",
+  "white labeling",
 ]
 
 # Parameter names this shop invents that the built-in CZ/SK/EN map
