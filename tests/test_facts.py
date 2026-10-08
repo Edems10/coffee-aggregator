@@ -358,6 +358,20 @@ def test_a_label_still_wins_when_the_name_states_no_more_than_it() -> None:
     assert weighed(label="1 kg", name="Brasil 250 g") == 1000
 
 
+def test_a_second_size_in_the_name_belongs_to_a_second_article() -> None:
+    """The 1 kg is the grinder; dividing the price of the set by it is a quarter
+    of the true per-kilogram price of the 250 g of coffee the label states."""
+    assert weighed(label="250 g", name="Mlýnek s násypkou 1 kg + káva 250 g") == 250
+
+
+def test_a_plus_between_coffees_is_not_a_second_article() -> None:
+    """kafista joins three coffees with "+" and states one size for all of them;
+    of 3678 products only 21 names contain a "+" and two of those are real
+    multipacks, which is why the second *size* is the signal, not the "+"."""
+    name = "Dead or Alive Coffee TRIPLE TROUBLE – Diavolo + No3 + Quattro (zrnkova kava), 3x1 kg"
+    assert weighed(label="1 kg", name=name) == 3000
+
+
 def test_a_carton_is_not_taken_from_a_parcel_weight() -> None:
     """The 24 kg carton read 1 kg because the name was dropped and the parcel weight won."""
     assert weighed(name="Bristot Classico 6 kg", fallback="1 kg") == 6000
