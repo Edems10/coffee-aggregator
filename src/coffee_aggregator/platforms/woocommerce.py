@@ -362,10 +362,7 @@ def _table_rows(blocks: Iterable[Tag]) -> Iterator[tuple[str | None, str | None]
         One ``(label, value)`` pair per two-cell row.
     """
     for block in blocks:
-        for row in block.select("tr"):
-            cells = row.select("th, td")
-            if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-                yield dom.text(cells[0]), dom.text(cells[1])
+        yield from kit.table_rows(block.select("tr"))
 
 
 def _terms(attribute: dict[str, Any]) -> list[str]:
@@ -1215,10 +1212,9 @@ def _attribute_rows(root: Tag) -> Iterator[tuple[str | None, str | None]]:
     Yields:
         One ``(label, value)`` pair per row.
     """
-    for row in root.select("table.woocommerce-product-attributes tr, table.shop_attributes tr"):
-        cells = row.select("th, td")
-        if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-            yield dom.text(cells[0]), dom.text(cells[1])
+    yield from kit.table_rows(
+        root.select("table.woocommerce-product-attributes tr, table.shop_attributes tr")
+    )
 
 
 def _description_blocks(soup: BeautifulSoup) -> list[Tag]:

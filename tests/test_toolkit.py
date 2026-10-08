@@ -195,6 +195,23 @@ def test_description_blocks_break_on_the_markup_not_on_the_text() -> None:
     assert prose == ["100 % Arabika"]
 
 
+def test_table_rows_reads_two_columns_and_obeys_the_keep_predicate() -> None:
+    soup = BeautifulSoup(
+        "<table><tr><th>Země</th><td>Peru</td></tr>"
+        "<tr><td>Odrůda</td><td>Caturra</td><td>note</td></tr>"
+        "<tr><td>alone</td></tr></table>",
+        "lxml",
+    )
+
+    assert list(kit.table_rows(soup.select("tr"))) == [
+        ("Země", "Peru"),
+        ("Odrůda", "Caturra"),
+    ]
+    assert list(kit.table_rows(soup.select("tr"), keep=lambda cells: len(cells) == 2)) == [
+        ("Země", "Peru")
+    ]
+
+
 # ----------------------------------------------------------------------- build
 
 

@@ -1,18 +1,51 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import TERMS, Labels, build_map, clean_label, label_pair, read_lines
 from coffee_aggregator.sites import html as dom
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
     from bs4 import Tag
 
-__all__ = ["Facts", "read_blocks", "read_pairs", "read_text", "vocabulary"]
+__all__ = ["Facts", "read_blocks", "read_pairs", "read_text", "table_rows", "vocabulary"]
+
+#: A row states a label and its value, so a row with fewer cells states neither.
+_PAIR_CELLS: Final = 2
+
+
+def table_rows(
+    rows: Iterable[Tag],
+    *,
+    keep: Callable[[Sequence[Tag]], bool] | None = None,
+) -> Iterator[tuple[str | None, str | None]]:
+    """Read the two-column rows of a markup table as ``(label, value)`` pairs.
+
+    Shops state their parameters in a table on every platform and in several of
+    the bespoke templates, and each adapter had written the same three lines
+    around it. What differs between them is which rows count, never how a row
+    is read, so that is the one thing the caller supplies.
+
+    Args:
+        rows: The ``<tr>`` elements to read, in document order. Selecting them
+            is the caller's, because the selector is what a template owns.
+        keep: Decides on a row's cells whether it is a parameter row at all —
+            Shoptet rejects the cell that is really the variant picker, and one
+            of its description tables accepts only an exactly two-column row.
+            Every row with at least a label and a value is kept when it is None.
+
+    Yields:
+        One pair per row, each side as the shop wrote it.
+    """
+    for row in rows:
+        cells = row.select("th, td")
+        if len(cells) < _PAIR_CELLS or (keep is not None and not keep(cells)):
+            continue
+        yield dom.text(cells[0]), dom.text(cells[1])
 
 
 def vocabulary(extra: dict[str, str] | None = None) -> dict[str, str]:

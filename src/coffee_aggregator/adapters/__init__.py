@@ -12,6 +12,7 @@ from coffee_aggregator.adapters.facts import (
     read_blocks,
     read_pairs,
     read_text,
+    table_rows,
     vocabulary,
 )
 from coffee_aggregator.adapters.microdata import ratings, reviews, value
@@ -57,6 +58,7 @@ __all__ = [
     "sitemap_refs",
     "stock_state",
     "strings",
+    "table_rows",
     "value",
     "vocabulary",
     "walk_listing",

@@ -443,11 +443,9 @@ def _read_description(
     if not markup:
         return ([], [])
     soup = BeautifulSoup(markup, "lxml")
-    pairs: list[tuple[str, str]] = []
-    for row in soup.select("tr"):
-        cells = row.select("th, td")
-        if len(cells) >= 2:  # noqa: PLR2004  (a label and its value)
-            pairs.append((_clean(dom.text(cells[0])), _clean(dom.text(cells[1]))))
+    pairs: list[tuple[str, str]] = [
+        (_clean(label), _clean(value)) for label, value in kit.table_rows(soup.select("tr"))
+    ]
     lines = [_clean(line) for line in dom.lines(soup)]
     found, prose = read_lines(lines, label_map, _pairs_of)
     pairs.extend(found)

@@ -45,7 +45,7 @@ from coffee_aggregator.sites import html as dom
 from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from coffee_aggregator.http import PoliteFetcher
@@ -309,13 +309,7 @@ def _parameter_rows(root: Tag) -> Iterator[tuple[str | None, str | None]]:
     for table in root.select(_PARAMETER_TABLE_SELECTOR):
         if not _own(root, table):
             continue
-        for row in table.select("tr"):
-            cells = row.select("th, td")
-            if len(cells) >= 2 and not _holds_variant_control(cells[1]):  # noqa: PLR2004
-                # A cell that *is* the variant picker renders as its whole
-                # widget ("Zvoľte variant Filter Espresso"); the placeholder-free
-                # option list from :func:`_variant_axes` says the same thing.
-                yield dom.text(cells[0]), dom.text(cells[1])
+        yield from kit.table_rows(table.select("tr"), keep=_states_a_parameter)
         terms = table.select("dt")
         definitions = table.select("dd")
         for term, definition in zip(terms, definitions, strict=False):
@@ -331,6 +325,20 @@ _VARIANT_CONTROL_SELECTOR: Final = (
     "select[data-parameter-id], select[name^='parameterValueId'], "
     f"{_PRICE_ID_SELECTOR}, div[data-parameter-id], div[class*='parameter-id-']"
 )
+
+
+def _states_a_parameter(cells: Sequence[Tag]) -> bool:
+    """Say whether a parameter row states a parameter rather than a picker.
+
+    Args:
+        cells: The row's cells.
+
+    Returns:
+        False when the value cell *is* the variant picker, which renders as its
+        whole widget ("Zvoľte variant Filter Espresso"); the placeholder-free
+        option list from :func:`_variant_axes` says the same thing.
+    """
+    return not _holds_variant_control(cells[1])
 
 
 def _holds_variant_control(cell: Tag) -> bool:
@@ -594,10 +602,23 @@ def _table_pairs(block: Tag) -> Iterator[tuple[str | None, str | None]]:
     Yields:
         One ``(label, value)`` pair per two-cell row.
     """
-    for row in block.select("tr"):
-        cells = row.select("th, td")
-        if len(cells) == _PAIR_CELLS:
-            yield dom.text(cells[0]), dom.text(cells[1])
+    yield from kit.table_rows(block.select("tr"), keep=_two_columns_only)
+
+
+def _two_columns_only(cells: Sequence[Tag]) -> bool:
+    """Say whether a description row has exactly a label and a value.
+
+    A description block is prose with a table in it, so a wider row is a layout
+    grid rather than a parameter sheet and reading its first two cells as a
+    pair invents a label.
+
+    Args:
+        cells: The row's cells.
+
+    Returns:
+        True for a two-column row.
+    """
+    return len(cells) == _PAIR_CELLS
 
 
 def _fact_pairs(block: Tag, label_map: dict[str, str]) -> Iterator[tuple[str | None, str | None]]:
