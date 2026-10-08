@@ -26,12 +26,21 @@ from coffee_aggregator.db.monitoring import (
     RunMonitor,
     build_monitor,
 )
-from coffee_aggregator.db.report import Finding, findings
+from coffee_aggregator.db.report import (
+    FINDING_COLUMNS,
+    FINDING_TABLE,
+    Finding,
+    Writable,
+    findings,
+    store,
+)
 
 __all__ = [
     "DEFAULT_CONNECT_TIMEOUT_S",
     "DEFAULT_RECENT_LIMIT",
     "DEFAULT_STATEMENT_TIMEOUT_MS",
+    "FINDING_COLUMNS",
+    "FINDING_TABLE",
     "LOCK_KEY",
     "VERSION_TABLE",
     "Connection",
@@ -43,12 +52,14 @@ __all__ = [
     "PostgresMonitor",
     "Run",
     "RunMonitor",
+    "Writable",
     "apply_migrations",
     "build_monitor",
     "connect",
     "findings",
     "load_migrations",
     "pending",
+    "store",
     "table_columns",
     "versions",
 ]

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import json
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, time, timedelta
 from statistics import median
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from datetime import date
     from decimal import Decimal
 
-    from coffee_aggregator.db.connect import Connection
+    from coffee_aggregator.db.connect import Connection, Cursor
+
+logger = logging.getLogger(__name__)
 
 #: A shop is broken, dark or mis-parsed; somebody should look tonight.
 HIGH: Final = "high"
@@ -100,6 +104,21 @@ WHERE h.seen_on >= %s AND h.seen_on <= %s
 ORDER BY h.site, h.external_id, h.seen_on
 """
 
+#: Where a night's findings are kept once they have been printed.
+FINDING_TABLE = "crawl_finding"
+#: Every column :func:`store` writes, in the order it binds them. ``id`` and
+#: ``recorded_at`` are the table's own.
+FINDING_COLUMNS: Final[tuple[str, ...]] = ("day", "kind", "site", "severity", "summary", "detail")
+
+_DELETE_SQL = f"DELETE FROM {FINDING_TABLE} WHERE day = %s"  # noqa: S608  (a module constant)
+_INSERT_SQL = (
+    f"INSERT INTO {FINDING_TABLE} ({', '.join(FINDING_COLUMNS)}) "  # noqa: S608  (same)
+    # The cast is explicit because the detail travels as a JSON string rather
+    # than through the driver's Jsonb wrapper, and there is no implicit
+    # text -> jsonb cast to lean on.
+    "VALUES (%s, %s, %s, %s, %s, %s::jsonb)"
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Finding:
@@ -152,6 +171,91 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     found = _crawl_findings(today, history)
     found.extend(_price_findings(_read_pairs(connection, earliest, day)))
     return sorted(found, key=_order)
+
+
+@runtime_checkable
+class Writable(Protocol):
+    """A database the day's findings can be written back into.
+
+    Wider than :class:`~coffee_aggregator.db.connect.Connection` by exactly the
+    two methods :func:`store` needs, and no wider: the delete and the inserts
+    are one transaction, so the caller has to be something that can end one.
+    """
+
+    def cursor(self) -> Cursor:
+        """Open a cursor on this connection.
+
+        Returns:
+            A cursor usable as a context manager.
+        """
+        ...
+
+    def commit(self) -> None:
+        """Make everything written since the last commit permanent."""
+        ...
+
+    def rollback(self) -> None:
+        """Abandon everything written since the last commit."""
+        ...
+
+
+def store(connection: Writable, *, day: date, found: Sequence[Finding]) -> bool:
+    """Replace ``day``'s stored findings with the ones just computed.
+
+    The delete and the inserts are one transaction, which is what makes a
+    second run of the same day replace its rows rather than double them. There
+    is no unique constraint to upsert against on purpose: the only key the rows
+    offer is ``(day, kind, site, summary)``, and ``summary`` is a sentence with
+    the night's numbers in it, so a constraint over it would make the wording
+    part of the schema.
+
+    A failure is logged and swallowed, the same bargain
+    :meth:`~coffee_aggregator.db.monitoring.PostgresMonitor.record` makes: the
+    report is a read, and a history that can fail the nightly unit is worse
+    than one with a night missing from it.
+
+    Args:
+        connection: Something to write to, with its own transaction.
+        day: The crawl day the findings are about, as a UTC date.
+        found: The findings, which may be empty -- an empty night still clears
+            whatever an earlier run of the same day left behind.
+
+    Returns:
+        True when the day's rows are committed, False when nothing was stored.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(_DELETE_SQL, (day,))
+            for finding in found:
+                cursor.execute(
+                    _INSERT_SQL,
+                    (
+                        day,
+                        finding.kind,
+                        finding.site,
+                        finding.severity,
+                        finding.summary,
+                        json.dumps(finding.detail),
+                    ),
+                )
+        connection.commit()
+    except Exception:
+        logger.exception("could not store the findings of %s", day)
+        _abandon(connection)
+        return False
+    return True
+
+
+def _abandon(connection: Writable) -> None:
+    """Roll a failed write back, so the caller is not left holding it.
+
+    Args:
+        connection: The connection whose transaction failed.
+    """
+    try:
+        connection.rollback()
+    except Exception:  # noqa: BLE001  (the caller closes it either way)
+        logger.warning("could not roll back after a failed finding write")
 
 
 @dataclass(slots=True)
