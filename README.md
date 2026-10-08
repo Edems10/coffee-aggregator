@@ -661,7 +661,9 @@ TEST_DATABASE_URL=postgresql://coffee:coffee@localhost:5432/coffee_test \
 
 Every package's `__init__.py` is a thin re-export — the logic lives in a named
 module next to it: `sites/loader.py` (discovery), `sites/registry.py` (the
-`@register` map), `platforms/loader.py` (platform resolution), `sinks/factory.py`
+`@register` map), `platforms/loader.py` (platform resolution),
+`platforms/common.py` (the config head, the label-map check and the
+`__init__`/`ignored_names` every platform adapter shares), `sinks/factory.py`
 (the sink name → factory map), `http/fetcher.py` (the only place that makes a
 request), `db/migrate.py` (the migration runner), `db/monitoring.py` (the `crawl_run`
 recorder), `fx/cnb.py` and `fx/ecb.py` (the

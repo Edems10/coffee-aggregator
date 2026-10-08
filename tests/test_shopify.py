@@ -10,9 +10,9 @@ from coffee_aggregator import platforms, sites
 from coffee_aggregator.http import FetchResult, parse_robots
 from coffee_aggregator.labels import KNOWN_FIELDS
 from coffee_aggregator.models import ProcessMethod, RoastLevel, RoastProfile
+from coffee_aggregator.platforms.common import PlatformConfigError
 from coffee_aggregator.platforms.shopify import (
     DEFAULT_LABEL_MAP,
-    ShopifyConfigError,
     ShopifySite,
     _amount,
 )
@@ -116,7 +116,7 @@ def test_the_shipped_shops_are_registered_from_toml_alone(
 
 def test_an_unknown_label_map_field_is_rejected(tmp_path: Path) -> None:
     body = MINIMAL_TOML + '\n[label_map]\n"CUPSCORE" = "cupping_score"\n'
-    with pytest.raises(ShopifyConfigError) as excinfo:
+    with pytest.raises(PlatformConfigError) as excinfo:
         platforms.build_from_config(_write(tmp_path, body))
     message = str(excinfo.value)
     assert "CUPSCORE" in message
@@ -138,7 +138,7 @@ def test_a_broken_toml_is_rejected_with_an_actionable_message(
     body: str,
     problem: str,
 ) -> None:
-    with pytest.raises(ShopifyConfigError) as excinfo:
+    with pytest.raises(PlatformConfigError) as excinfo:
         platforms.build_from_config(_write(tmp_path, body))
     assert problem in str(excinfo.value)
 

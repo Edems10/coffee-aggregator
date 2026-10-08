@@ -5,7 +5,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from itertools import product
-from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, cast
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
@@ -17,7 +17,6 @@ from coffee_aggregator.labels import (
     F_COUNTRY,
     F_PROCESS,
     F_SHIP_WEIGHT,
-    KNOWN_FIELDS,
     MAX_FUZZY_LABEL_WORDS,
     TERMS,
     Labels,
@@ -41,8 +40,13 @@ from coffee_aggregator.models import (
     Popularity,
     Variant,
 )
+from coffee_aggregator.platforms.common import (
+    ConfiguredSite,
+    PlatformConfigError,
+    common_fields,
+)
 from coffee_aggregator.sites import html as dom
-from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
+from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -97,20 +101,6 @@ PLATFORM_TERMS: Final[dict[str, str]] = {
 DEFAULT_LABEL_MAP: Final[dict[str, str]] = build_map(TERMS, extra=PLATFORM_TERMS)
 
 
-class ShoptetConfigError(ValueError):
-    """Raised when a shop TOML is missing a key ``ShoptetSite`` cannot invent."""
-
-    def __init__(self, path: Path, problem: str) -> None:
-        """Build the error.
-
-        Args:
-            path: The configuration file that is wrong.
-            problem: What is wrong with it.
-        """
-        super().__init__(f"{path}: {problem}")
-        self.path = path
-
-
 @dataclass(slots=True)
 class ShoptetConfig:
     """Everything that differs between two Shoptet shops.
@@ -155,59 +145,28 @@ class ShoptetConfig:
             The validated configuration.
 
         Raises:
-            ShoptetConfigError: When a required key is missing or malformed.
+            PlatformConfigError: When a required key is missing or malformed.
         """
-        missing = [key for key in ("site_id", "name", "country", "base_url") if not config.get(key)]
-        if missing:
-            raise ShoptetConfigError(path, f"missing required key(s): {', '.join(missing)}")
+        common = common_fields(config, path, default_max_pages=DEFAULT_MAX_PAGES)
         categories = [str(url) for url in config.get("category_urls", []) if str(url).strip()]
         if not categories:
-            raise ShoptetConfigError(path, "category_urls must list at least one listing URL")
-        country = str(config["country"]).upper()
-        if country not in {"CZ", "SK"}:
-            raise ShoptetConfigError(path, f"country must be CZ or SK, not {country!r}")
+            raise PlatformConfigError(path, "category_urls must list at least one listing URL")
         pagination = str(config.get("pagination", "path")).lower()
         if pagination not in {"path", "query"}:
-            raise ShoptetConfigError(path, f"pagination must be path or query, not {pagination!r}")
-        base_url = str(config["base_url"])
-        label_map = {
-            normalize.fold(key): str(value) for key, value in config.get("label_map", {}).items()
-        }
-        _check_label_map(label_map, config.get("label_map", {}), path)
+            raise PlatformConfigError(path, f"pagination must be path or query, not {pagination!r}")
         return cls(
-            site_id=str(config["site_id"]),
-            name=str(config["name"]),
-            country=cast("Literal['CZ', 'SK']", country),
-            base_url=base_url if base_url.endswith("/") else f"{base_url}/",
-            category_urls=[urljoin(base_url, url) for url in categories],
-            currency=str(config["currency"]) if config.get("currency") else None,
-            label_map=label_map,
-            ignore=[normalize.fold(marker) for marker in config.get("ignore", [])],
-            max_pages=int(config.get("max_pages", DEFAULT_MAX_PAGES)),
+            site_id=common.site_id,
+            name=common.name,
+            country=common.country,
+            base_url=common.base_url,
+            # Joined against the base URL *as written*: a trailing slash is what
+            # decides whether ``urljoin`` keeps a base URL's own path segment.
+            category_urls=[urljoin(str(config["base_url"]), url) for url in categories],
+            currency=common.currency,
+            label_map=common.label_map,
+            ignore=common.ignore,
+            max_pages=common.max_pages,
             pagination=cast("Literal['path', 'query']", pagination),
-        )
-
-
-def _check_label_map(folded: dict[str, str], written: dict[str, Any], path: Path) -> None:
-    """Refuse a ``label_map`` that points a label at a field nobody reads.
-
-    Args:
-        folded: The folded label -> field mapping the TOML asked for.
-        written: The same mapping with the labels as the file spells them.
-        path: The configuration file, for the error message.
-
-    Raises:
-        ShoptetConfigError: When a value is not one of :data:`KNOWN_FIELDS`.
-    """
-    spellings = {normalize.fold(label): str(label) for label in written}
-    for label, field_name in folded.items():
-        if field_name in KNOWN_FIELDS:
-            continue
-        valid = ", ".join(sorted(name for name in KNOWN_FIELDS if name))
-        raise ShoptetConfigError(
-            path,
-            f"label_map[{spellings.get(label, label)!r}] = {field_name!r} is not a field; "
-            f"valid fields are: {valid}",
         )
 
 
@@ -1146,32 +1105,11 @@ def _json_brand(soup: BeautifulSoup) -> str | None:
 _ROOT_SELECTOR: Final = ".p-detail, .p-detail-inner"
 
 
-class ShoptetSite(SiteAdapter):
+class ShoptetSite(ConfiguredSite[ShoptetConfig]):
     """One Shoptet shop, parameterised entirely by its :class:`ShoptetConfig`."""
 
     kind = PLATFORM
-
-    def __init__(self, config: ShoptetConfig) -> None:
-        """Build the adapter.
-
-        Args:
-            config: The shop's validated configuration.
-        """
-        self.config = config
-        self.site_id = config.site_id
-        self.name = config.name
-        self.country = config.country
-        self.base_url = config.base_url
-        self.max_pages = config.max_pages
-        self.label_map = {**DEFAULT_LABEL_MAP, **config.label_map}
-
-    def ignored_names(self) -> tuple[str, ...]:
-        """Return the folded markers of products that are not coffee beans.
-
-        Returns:
-            The shared defaults plus whatever the shop's TOML added.
-        """
-        return (*DEFAULT_IGNORED, *self.config.ignore)
+    default_label_map: ClassVar[dict[str, str]] = DEFAULT_LABEL_MAP
 
     def page_url(self, category_url: str, page: int) -> str:
         """Return the URL of one page of a category listing.
