@@ -378,7 +378,7 @@ both ways, so `processing.methods` holds both and `processing.method` becomes
 `META_DESCRIPTION`, `META_KEYWORDS`) and the listing card's own strings (prefixed
 `LIST_`) join `raw_attributes`, so nothing a shop showed us is lost.
 
-Five tables:
+Six tables:
 
 * `coffee` — one row per `(site, external_id)`, with `first_seen_at`,
   `last_seen_at` and `delisted_at` bookkeeping.
@@ -386,6 +386,8 @@ Five tables:
 * `price_history` — one row per product per crawl, for price tracking over time.
 * `fx_rates` — one EUR/CZK fixing per day (see below).
 * `crawl_run` — one row per shop per crawl (see [Run history](#run-history)).
+* `crawl_finding` — one row per finding per day (see
+  [The morning report](#the-morning-report)).
 
 The sink's `COLUMNS` tuple is the single source of truth for the INSERT, and a test
 replays every migration to assert the two agree — with a second check against
@@ -512,6 +514,27 @@ The command always exits `0`. A night where a shop stored nothing is already the
 crawl's exit `1`; the report explains that exit, and a summary able to fail the
 same night a second time would only make the nightly unit cry wolf. The only
 non-zero it can return is `2`, for a missing DSN.
+
+Every run of `report` also writes the day's findings to `crawl_finding`, one row
+each, with the `detail` as `jsonb` and `day` as a UTC date — the calendar
+`price_history.seen_on` already uses, so the two join without a cast. A
+catalogue-wide finding stores `site` as `''`, which is what `Finding.site`
+already is.
+
+The history is the half the journal cannot give: a printed report is read once
+and is then only grep-able, and it cannot be rebuilt out of `coffee` afterwards,
+because that table holds current state and the delisting pass rewrites
+`last_seen_at` across it every night.
+
+There is no unique constraint, on purpose. The only key the rows offer is
+`(day, kind, site, summary)`, and `summary` is a free-text sentence with the
+night's numbers in it; a constraint over it would make the wording part of the
+schema. `report.store` instead deletes the day's rows and re-inserts them in one
+transaction, so a retried night replaces its rows rather than doubling them, and
+a clean night clears what an earlier run of the same day left behind. A failure
+to store is logged and swallowed, the same bargain the run monitor makes: the
+report is a read, and a history that can fail the nightly unit is worse than one
+with a night missing from it.
 
 The nightly run prints the text report to the journal, where it is also picked
 up by the log shipper in
