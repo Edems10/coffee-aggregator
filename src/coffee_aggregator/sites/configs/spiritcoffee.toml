@@ -1,13 +1,19 @@
 # Spirit Coffee — simple products; every fact is a "Label: value" line in
 # the description, and the weight attribute is spelled with its colon.
 #
-# Switched off on 2026-10-02: the host serves a certificate for
-# *.r2.websupport.sk with no name for its own domain, on the apex and on
-# www alike, so robots.txt cannot be read and the fetcher refuses the host —
-# as it should, since a crawler that cannot read robots.txt has no business
-# guessing. Nothing here needs changing when they fix the certificate:
-# delete the line below and the shop crawls again.
-disabled = "TLS certificate does not match the domain, 2026-10-02"
+# Switched off on 2026-10-02 over a certificate that named only
+# *.r2.websupport.sk; that much is fixed, and the reason below replaces it.
+# Re-checked on 2026-10-08: the certificate is now Let's Encrypt for
+# spiritcoffee.sk, robots.txt reads, and the shop sells coffee as before —
+# but neither way in gives us products. The Store API returns 200 with
+# Content-Type: application/json and a PHP warning from the amaya-child
+# theme printed before the body, so it does not parse, and the HTML
+# fallback then discovers the category menu instead of the ten products
+# on /c/kava/ and files /c/kava/, /c/kavove-sety/ and /c/prislusenstvo/
+# as coffees, priced "from" and weightless. Deleting the line below alone
+# puts those category pages in the catalogue; the shop needs the theme
+# warning gone upstream, or a listing selector that ignores /c/ links.
+disabled = "Store API prints a PHP warning before its JSON, 2026-10-08"
 platform = "woocommerce"
 site_id = "spiritcoffee"
 name = "Spirit Coffee"
