@@ -204,6 +204,23 @@ def test_the_decaf_lot_is_flagged_and_fully_parsed(decaf: Coffee) -> None:
     assert len(decaf.raw_attributes) >= 5
 
 
+def test_a_spaced_bez_kofeinu_name_is_decaf(
+    site: FathersSite,
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    # The adapter used to carry its own two-term copy of the decaf vocabulary
+    # and matched "bezkofein" glued together only, so this wording — the one
+    # most Czech roasters write — was stored as caffeinated. The fixture has no
+    # decaf label, so the name is the only thing that can answer.
+    html = fixture_html("fathers", "detail_decaf.html")
+    renamed = html.replace("DECAF Atunkaa", "Atunkaa bez kofeinu")
+    ref = ProductRef(site_id="fathers", external_id="", url=f"{BASE}/kava/espresso/x")
+    coffee = site.parse_product(renamed, ref)
+    assert coffee is not None
+    assert coffee.name == "Atunkaa bez kofeinu – Kolumbie"
+    assert coffee.decaf is True
+
+
 # --------------------------------------------------------------------------- payload path
 
 
