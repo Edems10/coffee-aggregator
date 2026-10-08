@@ -353,7 +353,9 @@ def headline_weight(
 
     1. a pack the product name spells out that is larger than the weight
        label, because then the label is one bag and the name is what the price
-       buys — a carton, or a "6 x 100 g" tasting set;
+       buys — a carton, or a "6 x 100 g" tasting set. Only a name that states
+       one size at all: a second size belongs to a second article, and the
+       bundled grinder is not what is being weighed;
     2. a weight the shop *states* on a weight label, when it states exactly one
        — several mean the label is really the size axis, not this bag;
     3. a weight the product name states, for the shops whose "Brasil 1000 g" is
@@ -414,7 +416,11 @@ def _one_package(
     # the same coffee as 1 kg, 6 kg and 24 kg on three pages that all carry a
     # 1 kg label; believing the label made the 24 kg carton 24 times too dear.
     from_pack = stated_pack(name)
-    if from_pack is not None and (from_label is None or from_pack > from_label):
+    if (
+        from_pack is not None
+        and _one_article(name)
+        and (from_label is None or from_pack > from_label)
+    ):
         return from_pack
     if from_label is not None:
         return from_label
@@ -430,6 +436,26 @@ def _one_package(
     if weights:
         return min(weights)
     return stated_weight(fallback)
+
+
+def _one_article(name: str) -> bool:
+    """Say whether a name states a size for one article rather than for several.
+
+    "Mlýnek s násypkou 1 kg + káva 250 g" states two sizes belonging to two
+    different things, and the larger one is the grinder; believing it over the
+    250 g label priced the coffee at a quarter of its true per-kilogram price.
+    A multipack never needs a second size — of 3678 products, 193 have the name
+    overrule the weight label and every one of them states a single size, while
+    the 14 names that state two state them for two articles or for a size axis
+    ("250g – 500g"). Refusing the second size therefore costs nothing measured.
+
+    Args:
+        name: The product name.
+
+    Returns:
+        True when the name states at most one distinct weight.
+    """
+    return len(set(normalize.parse_weights_grams(name))) <= 1
 
 
 def _weight_of_priced_variant(variants: Sequence[Variant], price: float | None) -> int | None:

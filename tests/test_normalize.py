@@ -48,6 +48,20 @@ def test_parse_weight_grams(text: str | None, expected: int | None) -> None:
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
+        ("Mlynek s nasypkou 1 kg + kava 250 g", [1000, 250]),
+        ("Hausbrandt Gourmet Columbus 24 kg", [24000]),
+        ("Charisma 9 BAR Blend 75/25 250 g", [250]),
+        ("bez hmotnosti", []),
+        (None, []),
+    ],
+)
+def test_parse_weights_grams(text: str | None, expected: list[int]) -> None:
+    assert normalize.parse_weights_grams(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
         ("9,99 €", (9.99, "EUR")),
         ("249 Kč", (249.0, "CZK")),
         ("1 299 Kč", (1299.0, "CZK")),

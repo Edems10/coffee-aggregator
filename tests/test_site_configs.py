@@ -182,3 +182,42 @@ def test_a_shop_marker_spares_that_shop_s_coffee(site_id: str, listing: str) -> 
     """A marker that also matches coffee does not hide it: the run stops seeing
     the product, the delisting pass stamps it, and it leaves the catalogue."""
     assert not platforms.build_from_config(CONFIG_DIR / f"{site_id}.toml").is_ignored(listing)
+
+
+def shop_key(base_url: str) -> tuple[str, str]:
+    """Reduce a base URL to what identifies the shop behind it.
+
+    Scheme, a ``www.`` prefix and a trailing slash are spellings of one
+    address, so they are dropped. The path is kept: every shipped config today
+    owns a whole host, and the day one shop lives under another's path this
+    must not call the two the same shop.
+
+    Args:
+        base_url: A config's ``base_url``.
+
+    Returns:
+        The host without ``www.`` and the path without its trailing slash.
+    """
+    parts = urlsplit(base_url.lower())
+    return parts.netloc.removeprefix("www."), parts.path.rstrip("/")
+
+
+def test_no_two_live_configs_crawl_one_shop() -> None:
+    """Two ids on one base_url crawl the same catalogue into two sites.
+
+    This happened: `valasska`/`valasskaprazirna` and `coffeeport`/
+    `lighthousecoffee` were each one shop configured twice, and the 2026-09-30
+    snapshot counted 24 and 20 of their products a second time. A `disabled`
+    config is exempt because it is absent from the registry and crawls
+    nothing — that is how the loser of such a pair is retired while its saved
+    pages keep testing the adapter.
+    """
+    seen: dict[tuple[str, str], list[str]] = {}
+    for path in CONFIGS:
+        config = load(path)
+        if config.get("disabled"):
+            continue
+        seen.setdefault(shop_key(config["base_url"]), []).append(path.stem)
+    shared = {host: shops for host, shops in seen.items() if len(shops) > 1}
+
+    assert not shared, f"one shop, several live configs: {shared}"

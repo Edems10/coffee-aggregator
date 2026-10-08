@@ -487,6 +487,9 @@ def cmd_report(settings: Settings, args: argparse.Namespace) -> int:
     connection = connect(settings.require_database_url(args.dsn))
     try:
         found = report.findings(connection, day=day, history_days=args.history_days)
+        # Printing is what the night needs; storing is what next month needs.
+        # A failure to store is logged inside and never reaches here.
+        report.store(connection, day=day, found=found)
     finally:
         connection.close()
     sys.stdout.write(

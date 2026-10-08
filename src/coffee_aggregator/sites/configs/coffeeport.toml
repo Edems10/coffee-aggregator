@@ -1,5 +1,15 @@
 # Coffeeport — the shop rebranded: coffeeport.sk now redirects to
 # lighthousecoffee.sk, so the base URL and the category follow the new host.
+#
+# Switched off on 2026-10-08: following that redirect left this config
+# crawling the very catalogue `lighthousecoffee` already crawls, and the
+# 2026-09-30 snapshot held 20 of that shop's products twice, once under each
+# id. The shop now calls itself Lighthouse Coffee on lighthousecoffee.sk, so
+# `lighthousecoffee` is the id that survives and the old brand name is
+# retired. The file stays so the redirect and its date remain on record. Do
+# not re-enable it; coffeeport.sk is not a second shop.
+disabled = "same shop as lighthousecoffee after the rebrand, duplicate id, 2026-10-08"
+
 platform = "shoptet"
 site_id = "coffeeport"
 name = "Lighthouse Coffee"

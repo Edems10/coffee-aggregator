@@ -93,6 +93,23 @@ def test_every_network_a_service_joins_is_declared() -> None:
             )
 
 
+def test_the_table_browser_does_not_connect_as_the_owner() -> None:
+    """pgweb is the only thing here reachable from the open internet.
+
+    It connected as `coffee`, which owns every table it displays. A merge that
+    restores that line would be invisible in review and visible only to whoever
+    found the browser.
+    """
+    pgweb = (compose().get("services") or {})["pgweb"]
+    url = str(pgweb["environment"]["PGWEB_DATABASE_URL"])
+    user = url.removeprefix("postgresql://").split(":", 1)[0]
+    assert user != "coffee", (
+        "pgweb connects as the owning role again; it should use a member of "
+        "catalogue_reader (migration 0006)"
+    )
+    assert "--readonly" in pgweb["command"]
+
+
 def test_every_named_volume_a_service_mounts_is_declared() -> None:
     """The same failure shape, one key over: a mount whose volume nothing declares."""
     spec = compose()

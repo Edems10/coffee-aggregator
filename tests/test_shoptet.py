@@ -745,3 +745,49 @@ def test_the_page_availability_reads_the_shared_schema_vocabulary(
     </div></body></html>
     """
     assert parse(adapter, page, "1", "https://tiny.sk/e/").available is expected
+
+
+# --- item 41: the availability the page stated, beside the boolean ------------
+
+
+@pytest.mark.parametrize(
+    "availability",
+    ["InStock", "PreOrder", "LimitedAvailability", "OutOfStock"],
+)
+def test_the_stated_schema_token_reaches_its_own_field(tmp_path: Path, availability: str) -> None:
+    """A pre-order and a bag on the shelf are both ``available``; only the token parts them."""
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = f"""
+    <html><body><div class="p-detail"><h1>Etiópia Guji</h1>
+      <span itemprop="availability" content="https://schema.org/{availability}"></span>
+      <table class="detail-parameters"><tr><th>Hmotnosť</th><td>250 g</td></tr></table>
+    </div></body></html>
+    """
+
+    assert parse(adapter, page, "1", "https://tiny.sk/e/").availability_raw == availability
+
+
+_WORDED_SELECT = """
+<html><body><div class="p-detail"><h1>Etiópia Guji</h1>
+  <select name="priceId">
+    <option value="" data-choose="1">Zvoľte variant</option>
+    <option value="1">Hmotnosť: 500g - Skladom &gt;5 ks (34 €)</option>
+    <option value="2">Hmotnost: 3000g - IHNED K ODESLÁNÍ (4 290 Kč)</option>
+    <option value="3">Hmotnost: 1kg - Není skladem (42 €)</option>
+  </select>
+</div></body></html>
+"""
+
+
+def test_a_worded_option_keeps_the_phrase_the_shop_wrote(tmp_path: Path) -> None:
+    """A shop that never split its variants states stock in words, not in schema.org."""
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+
+    coffee = parse(adapter, _WORDED_SELECT, "1", "https://tiny.sk/etiopia/")
+
+    assert [variant.availability_raw for variant in coffee.variants] == [
+        "Skladom >5 ks",
+        "IHNED K ODESLÁNÍ",
+        "Není skladem",
+    ]
+    assert [variant.available for variant in coffee.variants] == [True, True, False]

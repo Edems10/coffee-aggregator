@@ -1061,6 +1061,7 @@ class WooSite(ConfiguredSite[WooConfig]):
             labels.add(label, value, self.label_map)
         kit.keep(labels.raw, dom.page_meta(soup))
         offer = _ld_offer(node)
+        availability = str(offer.get("availability") or "")
         price, currency = self._html_price(root, offer, ref)
         variants = _html_variants(soup, ref, currency)
         categories = _categories_of(soup, root)
@@ -1075,7 +1076,8 @@ class WooSite(ConfiguredSite[WooConfig]):
             price=price,
             currency=currency if price is not None else None,
             weight_g=headline_weight(labels, name, variants, price=price),
-            available=kit.schema_stock(str(offer.get("availability") or "")),
+            available=kit.schema_stock(availability),
+            availability_raw=kit.schema_token(availability),
             decaf=is_decaf(labels, name, categories),
             origin=parse_origin(labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(labels.get(F_PROCESS)),

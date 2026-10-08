@@ -7,10 +7,20 @@ country = "CZ"
 base_url = "https://www.valasska-prazirna.cz/"
 category_urls = ["https://www.valasska-prazirna.cz/kava/"]
 currency = "CZK"
-max_pages = 10
+max_pages = 20
 pagination = "path"
 
+# The last three are this shop's own wording; the rest come from the retired
+# `valasska` config, which listed the gear and gift boxes the category also
+# carries. Only these three caught the "All-star set káv" and "ČERNÝ SET KÁV
+# 3x 75g" that reached the 2026-09-30 snapshot under `valasska` as if they
+# were beans.
 ignore = [
+  "darkova",
+  "darkovy",
+  "degustacni sada",
+  "instantni",
+  "mlynek",
   "cascara",
   "set kav",
   "all-star set",

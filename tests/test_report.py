@@ -19,7 +19,9 @@ from coffee_aggregator.db.report import (
     WEIGHT_CHANGE,
     WRITE_DROP,
     Finding,
+    Writable,
     findings,
+    store,
 )
 
 if TYPE_CHECKING:
@@ -722,3 +724,111 @@ def test_a_crawl_is_placed_on_the_utc_day_it_started() -> None:
 
     assert kinds(report([run("alpha", YESTERDAY, written=12), late])) == [NO_PRODUCTS]
     assert report([run("alpha", YESTERDAY, written=12), late], day=YESTERDAY) == []
+
+
+# --- storing the day's findings ----------------------------------------------
+
+
+class RecordingCursor:
+    """Remembers every statement, so the transaction's shape can be asserted."""
+
+    def __init__(self, calls: list[tuple[str, tuple[Any, ...]]], fail: bool = False) -> None:
+        self.calls = calls
+        self.fail = fail
+
+    def execute(self, query: str, params: Sequence[Any] | None = None) -> None:
+        if self.fail and "INSERT" in query:
+            message = "relation does not exist"
+            raise RuntimeError(message)
+        self.calls.append((query, tuple(params or ())))
+
+    def fetchall(self) -> list[tuple[Any, ...]]:
+        return []
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+
+class RecordingConnection:
+    def __init__(self, fail: bool = False) -> None:
+        self.calls: list[tuple[str, tuple[Any, ...]]] = []
+        self.fail = fail
+        self.commits = 0
+        self.rollbacks = 0
+
+    def cursor(self) -> RecordingCursor:
+        return RecordingCursor(self.calls, self.fail)
+
+    def commit(self) -> None:
+        self.commits += 1
+
+    def rollback(self) -> None:
+        self.rollbacks += 1
+
+
+def stored(connection: RecordingConnection) -> list[tuple[Any, ...]]:
+    """The rows the inserts would have written, in order."""
+    return [params for query, params in connection.calls if "INSERT" in query]
+
+
+FOUND = (
+    Finding(NO_PRODUCTS, "kava-dnes", "kava-dnes stored 0 products", {"written": 0}, HIGH),
+    Finding(PRICE_JUMP, "", "3 shops moved", {"shops": 3}, LOW),
+)
+
+
+def test_the_recording_connection_satisfies_the_writable_protocol() -> None:
+    assert isinstance(RecordingConnection(), Writable)
+
+
+def test_storing_deletes_the_day_before_it_inserts_it() -> None:
+    connection = RecordingConnection()
+
+    assert store(connection, day=DAY, found=FOUND)
+
+    assert [query.split()[0] for query, _ in connection.calls] == ["DELETE", "INSERT", "INSERT"]
+    assert connection.calls[0][1] == (DAY,)
+    assert connection.commits == 1
+
+
+def test_every_finding_is_stored_with_its_day_and_its_detail_as_json() -> None:
+    connection = RecordingConnection()
+
+    store(connection, day=DAY, found=FOUND)
+
+    assert stored(connection) == [
+        (DAY, NO_PRODUCTS, "kava-dnes", HIGH, "kava-dnes stored 0 products", '{"written": 0}'),
+        (DAY, PRICE_JUMP, "", LOW, "3 shops moved", '{"shops": 3}'),
+    ]
+
+
+def test_a_second_run_of_the_same_day_replaces_rather_than_doubles() -> None:
+    first = RecordingConnection()
+    second = RecordingConnection()
+
+    store(first, day=DAY, found=FOUND)
+    store(second, day=DAY, found=FOUND)
+
+    assert stored(first) == stored(second)
+    assert second.calls[0][0].startswith("DELETE")
+
+
+def test_a_clean_night_still_clears_what_an_earlier_run_left_behind() -> None:
+    connection = RecordingConnection()
+
+    assert store(connection, day=DAY, found=[])
+
+    assert [query.split()[0] for query, _ in connection.calls] == ["DELETE"]
+    assert connection.commits == 1
+
+
+def test_a_failed_write_is_rolled_back_and_never_raised() -> None:
+    connection = RecordingConnection(fail=True)
+
+    assert store(connection, day=DAY, found=FOUND) is False
+
+    assert connection.commits == 0
+    assert connection.rollbacks == 1

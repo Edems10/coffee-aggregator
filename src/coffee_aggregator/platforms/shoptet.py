@@ -683,20 +683,22 @@ def _offers(root: Tag) -> list[Tag]:
     return _micro_all(root, "offers")
 
 
-def _offer_fields(offer: Tag) -> tuple[str | None, float | None, str | None, bool | None]:
+def _offer_fields(
+    offer: Tag,
+) -> tuple[str | None, float | None, str | None, bool | None, str | None]:
     """Read one offer block.
 
     Args:
         offer: The ``[itemprop=offers]`` element.
 
     Returns:
-        A ``(sku, price, currency, available)`` tuple.
+        A ``(sku, price, currency, available, availability_raw)`` tuple.
     """
     sku = _first_value(offer, "sku")
     price = normalize.parse_amount(_first_value(offer, "price"))
     currency = _first_value(offer, "priceCurrency")
     availability = _first_value(offer, "availability")
-    return sku, price, currency, kit.schema_stock(availability)
+    return sku, price, currency, kit.schema_stock(availability), kit.schema_token(availability)
 
 
 def _first_value(scope: Tag, prop: str) -> str | None:
@@ -809,6 +811,7 @@ def _combined_variant(
         price=price if price is not None else normalize.parse_amount(_option_amount(option)),
         currency=detected or currency,
         available=kit.stock_state(label),
+        availability_raw=kit.stock_wording(label),
         label=label or sku,
     )
 
@@ -948,7 +951,7 @@ def _variant(offer: Tag, label: str | None, ref: ProductRef, currency: str | Non
     Returns:
         The variant.
     """
-    sku, price, offer_currency, available = _offer_fields(offer)
+    sku, price, offer_currency, available, availability_raw = _offer_fields(offer)
     weight = _option_weight(label or "", sku)
     return Variant(
         external_id=sku,
@@ -957,6 +960,7 @@ def _variant(offer: Tag, label: str | None, ref: ProductRef, currency: str | Non
         price=price,
         currency=offer_currency or currency,
         available=available,
+        availability_raw=availability_raw,
         label=label or sku,
     )
 
@@ -1343,6 +1347,7 @@ class ShoptetSite(ConfiguredSite[ShoptetConfig]):
         species = parse_species(labels, name)
         variants = _parse_variants(root, ref, currency)
         summary = _short_description(root)
+        availability = _micro(root, "availability")
         return Coffee(
             site=self.site_id,
             external_id=_micro(root, "productID") or ref.external_id,
@@ -1361,7 +1366,8 @@ class ShoptetSite(ConfiguredSite[ShoptetConfig]):
                 # page states a size.
                 fallback=labels.get(F_SHIP_WEIGHT),
             ),
-            available=kit.schema_stock(_micro(root, "availability")),
+            available=kit.schema_stock(availability),
+            availability_raw=kit.schema_token(availability),
             decaf=is_decaf(labels, name, categories),
             origin=parse_origin(labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(labels.get(F_PROCESS)),

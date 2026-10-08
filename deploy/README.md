@@ -88,6 +88,10 @@ sudo docker compose --env-file /etc/coffee-aggregator/env --profile crawler buil
 sudo docker compose --env-file /etc/coffee-aggregator/env run --rm crawler init-db
 ```
 
+`init-db` is what creates the `catalogue_reader` role, so the table browser's
+own login role can only be made after it — see "Its database role" below.
+pgweb restarts in a loop until that is done.
+
 Then check one shop end to end before trusting the schedule:
 
 ```bash
@@ -141,9 +145,64 @@ websocket support.
 
 It is locked to one database — `--lock-session` means the connection cannot be
 pointed anywhere else from the browser — and it asks for the basic-auth
-credentials from the env file on top of whatever the proxy requires. It is
-read-write: rows can be edited from there, which is the point, but it is also
-why it should never be exposed without both locks.
+credentials from the env file on top of whatever the proxy requires.
+
+### Its database role
+
+It does **not** connect as `coffee`. The owning role can drop every table it is
+being used to look at, and this is the one part of the stack reachable from the
+open internet; the locks above protect the door, not the data behind it.
+Migration `0006` creates `catalogue_reader`, a NOLOGIN group role that may
+`CONNECT`, `USAGE` the schema and `SELECT` — and, through
+`ALTER DEFAULT PRIVILEGES`, may read every table a later migration adds without
+anyone re-granting.
+
+The group role holds the privileges; each consumer holds a password. Create
+pgweb's login role once, after the first `update.sh` has applied `0006`:
+
+```bash
+sudo sed -i "s|^PGWEB_DB_PASSWORD=.*|PGWEB_DB_PASSWORD=$(openssl rand -hex 24)|" \
+    /etc/coffee-aggregator/env
+
+sudo docker compose --env-file /etc/coffee-aggregator/env exec -T db \
+    psql -v ON_ERROR_STOP=1 -U coffee -d coffee \
+    -v pw="$(sudo sed -n 's|^PGWEB_DB_PASSWORD=||p' /etc/coffee-aggregator/env)" <<'SQL'
+CREATE ROLE pgweb LOGIN PASSWORD :'pw';
+GRANT catalogue_reader TO pgweb;
+SQL
+
+sudo docker compose --env-file /etc/coffee-aggregator/env up -d pgweb
+```
+
+hex, not base64, for the same reason as `POSTGRES_PASSWORD`: this value goes
+into a `postgresql://` URL and a `/` in it ends the authority early.
+
+Between the deploy and that `CREATE ROLE`, pgweb restarts in a loop — the role
+in its URL does not exist yet. It is not stuck: it comes back by itself on the
+next restart once the role is there. Nothing else in the stack is affected,
+because the crawler and the publisher still connect as `coffee`.
+
+To rotate it later, `ALTER ROLE pgweb PASSWORD '…'` and change the same
+variable; the privileges live on `catalogue_reader` and are untouched.
+
+Grafana needs exactly this role and should become a member of it rather than
+keep its own hand-written grants:
+
+```bash
+sudo docker compose --env-file /etc/coffee-aggregator/env exec -T db \
+    psql -v ON_ERROR_STOP=1 -U coffee -d coffee -c 'GRANT catalogue_reader TO grafana'
+```
+
+Check what a reader may actually do, from the same database container:
+
+```bash
+sudo docker compose --env-file /etc/coffee-aggregator/env exec -T db \
+    psql -U coffee -d coffee -c \
+    "SELECT has_table_privilege('pgweb','coffee','SELECT') AS reads,
+            has_table_privilege('pgweb','coffee','UPDATE') AS writes"
+```
+
+`reads` must be `t` and `writes` must be `f`.
 
 ## Off-site copy: Cloudflare R2
 

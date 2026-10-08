@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+import psycopg
 import pytest
+from psycopg import sql
+from psycopg.errors import InsufficientPrivilege
 
 from coffee_aggregator import publish
-from coffee_aggregator.db import migrate
+from coffee_aggregator.db import migrate, report
 from coffee_aggregator.db.connect import connect
 from coffee_aggregator.fx.rates import FxRate
 from coffee_aggregator.fx.stores import PostgresFxStore
@@ -24,14 +28,34 @@ from coffee_aggregator.sinks.postgres import (
 from conftest import make_coffee
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
 FRIDAY = date(2026, 9, 11)
+SATURDAY = date(2026, 9, 12)
 RATE = FxRate(date=FRIDAY, rate=Decimal("24.26"), source="cnb")
+#: One high finding about a shop and one low catalogue-wide finding, which is
+#: every shape ``crawl_finding`` has to hold: ``site`` is '' for the second.
+FINDINGS = (
+    report.Finding(
+        kind="no-products",
+        site="kava-dnes",
+        summary="kava-dnes stored 0 products, 214 in yesterday's run",
+        detail={"written": 0, "previous_written": 214},
+        severity="high",
+    ),
+    report.Finding(
+        kind="price-jump",
+        site="",
+        summary="3 shops moved more than 20%",
+        detail={"shops": 3},
+        severity="low",
+    ),
+)
 #: Every table the migrations own. The fixture drops exactly these, and only in
 #: the database TEST_DATABASE_URL names — never in the development database.
 #: Dropped in this order: the variants reference the products.
 TABLES = (
+    "crawl_finding",
     "outbox",
     "coffee_variant",
     "price_history",
@@ -289,6 +313,8 @@ def test_the_variants_are_rows_a_query_can_reach(sink: PostgresSink) -> None:
     assert float(_scalar(sink, "SELECT price_czk FROM coffee_variant")) == 278.99  # type: ignore[arg-type]
     assert float(_scalar(sink, "SELECT price_per_kg_eur FROM coffee_variant")) == 46.0  # type: ignore[arg-type]
     assert _scalar(sink, "SELECT available FROM coffee_variant") is True
+    assert _scalar(sink, "SELECT availability_raw FROM coffee_variant") == "Skladem"
+    assert _scalar(sink, "SELECT availability_raw FROM coffee") == "InStock"
 
 
 def test_the_cheapest_250_g_bag_is_one_plain_query(sink: PostgresSink) -> None:
@@ -527,6 +553,99 @@ def test_the_publisher_claims_marks_and_prunes(sink: PostgresSink) -> None:
     assert _outbox(sink) == []
 
 
+def _store(sink: PostgresSink, day: date, found: Sequence[report.Finding]) -> None:
+    assert report.store(sink.connection, day=day, found=found)
+
+
+def test_a_days_findings_round_trip_through_the_table(sink: PostgresSink) -> None:
+    _store(sink, FRIDAY, FINDINGS)
+
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT day, kind, site, severity, summary, detail FROM crawl_finding "
+            "ORDER BY severity, kind"
+        )
+        rows = cursor.fetchall()
+    sink.connection.commit()
+
+    assert rows == [
+        (FRIDAY, finding.kind, finding.site, finding.severity, finding.summary, finding.detail)
+        for finding in FINDINGS
+    ]
+
+
+def test_storing_the_same_day_twice_replaces_rather_than_doubles(sink: PostgresSink) -> None:
+    """The nightly run is retried; a second report must not be a second history."""
+    _store(sink, FRIDAY, FINDINGS)
+    _store(sink, FRIDAY, FINDINGS[:1])
+    _store(sink, SATURDAY, FINDINGS)
+
+    assert _scalar(sink, "SELECT count(*) FROM crawl_finding WHERE day = %s", (FRIDAY,)) == 1
+    assert _scalar(sink, "SELECT count(*) FROM crawl_finding WHERE day = %s", (SATURDAY,)) == 2
+
+
+def test_a_clean_night_clears_the_day_it_is_reporting_on(sink: PostgresSink) -> None:
+    _store(sink, FRIDAY, FINDINGS)
+    _store(sink, FRIDAY, [])
+
+    assert _scalar(sink, "SELECT count(*) FROM crawl_finding") == 0
+
+
+def test_the_dashboard_queries_run_against_this_schema(sink: PostgresSink) -> None:
+    """The panels of coffee-observability#9, as that README has them.
+
+    They are shipped there, against the table built here, so the text is run
+    once against a live database before it is written into a dashboard.
+    """
+    _store(sink, FRIDAY, FINDINGS)
+    _store(sink, SATURDAY, FINDINGS[:1])
+
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            "select severity, kind, nullif(site, '') as site, summary "
+            "from crawl_finding "
+            "where day = (select max(day) from crawl_finding) "
+            "order by severity, kind, site"
+        )
+        latest = cursor.fetchall()
+        # $__timeFilter() is Grafana's; the cast under it is what is being tested.
+        cursor.execute(
+            "select day::timestamptz as time, severity, count(*) as findings "
+            "from crawl_finding "
+            "where day::timestamptz >= %s and day::timestamptz <= %s "
+            "group by 1, 2 order by 1, 2",
+            (FRIDAY, SATURDAY),
+        )
+        series = cursor.fetchall()
+    sink.connection.commit()
+
+    assert latest == [("high", "no-products", "kava-dnes", FINDINGS[0].summary)]
+    assert [(row[1], row[2]) for row in series] == [("high", 1), ("low", 1), ("high", 1)]
+
+
+def test_the_days_findings_join_price_history_without_a_cast(sink: PostgresSink) -> None:
+    """`day` and `seen_on` are the same calendar; a cast between them would be a bug."""
+    _store(sink, FRIDAY, FINDINGS)
+    sink.upsert([make_coffee(site="demo", external_id="1")])
+
+    rows = _scalar(
+        sink,
+        "SELECT count(*) FROM crawl_finding f JOIN price_history h ON h.seen_on = f.day",
+    )
+
+    assert rows is not None
+
+
+def test_the_crawl_finding_indexes_exist(sink: PostgresSink) -> None:
+    for name in ("crawl_finding_day_idx", "crawl_finding_site_day_idx"):
+        definition = _scalar(
+            sink,
+            "SELECT indexdef FROM pg_indexes WHERE tablename = 'crawl_finding' AND indexname = %s",
+            (name,),
+        )
+        assert definition is not None, name
+
+
 def test_a_second_publisher_steps_over_the_rows_the_first_holds(sink: PostgresSink) -> None:
     """SKIP LOCKED is what lets two publishers run without sending the same event twice."""
     sink.upsert([make_coffee(site="demo", external_id="1")])
@@ -541,3 +660,117 @@ def test_a_second_publisher_steps_over_the_rows_the_first_holds(sink: PostgresSi
         sink.connection.rollback()
     finally:
         other.close()
+
+
+# --- the read-only role -------------------------------------------------------
+
+type ReaderConnection = psycopg.Connection[tuple[Any, ...]]
+
+#: A throwaway LOGIN role that is nothing but a member of `catalogue_reader`,
+#: which is the shape the operator creates for pgweb and for Grafana.
+READER_ROLE = "catalogue_reader_test"
+#: Generated per run rather than written down: the role lives for one test and
+#: a literal here is a string every secret scanner is right to shout about.
+READER_PASSWORD = secrets.token_hex(16)
+
+
+@pytest.fixture
+def reader(sink: PostgresSink) -> Iterator[ReaderConnection]:
+    # CREATE ROLE takes no bound parameters, so the password is composed in.
+    role = sql.Identifier(READER_ROLE)
+    with sink.connection.cursor() as cursor:
+        cursor.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(role))
+        cursor.execute(
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(role, sql.Literal(READER_PASSWORD))
+        )
+        cursor.execute(sql.SQL("GRANT catalogue_reader TO {}").format(role))
+    sink.connection.commit()
+    connection = psycopg.connect(
+        DSN,
+        user=READER_ROLE,
+        password=READER_PASSWORD,
+        autocommit=True,
+    )
+    try:
+        yield connection
+    finally:
+        connection.close()
+        with sink.connection.cursor() as cursor:
+            cursor.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(role))
+        sink.connection.commit()
+
+
+def _refused(connection: ReaderConnection, statement: str) -> bool:
+    """Run one statement and report whether PostgreSQL refused it for want of a privilege.
+
+    Args:
+        connection: An autocommitting connection as the read-only role.
+        statement: The SQL to attempt.
+
+    Returns:
+        True when the server answered with insufficient_privilege.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(statement)
+    except InsufficientPrivilege:
+        return True
+    return False
+
+
+def test_the_reader_can_read_every_table_the_migrations_made(
+    reader: ReaderConnection,
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="demo", external_id="1")])
+    for table in ("coffee", "price_history", "coffee_variant", "crawl_run", "fx_rates", "outbox"):
+        with reader.cursor() as cursor:
+            cursor.execute(f"SELECT count(*) FROM {table}")  # noqa: S608  (a literal above)
+            assert cursor.fetchone() is not None
+    with reader.cursor() as cursor:
+        cursor.execute("SELECT count(*) FROM coffee")
+        assert cursor.fetchone() == (1,)
+
+
+def test_the_reader_cannot_write(reader: ReaderConnection, sink: PostgresSink) -> None:
+    """A read-only role nobody checked for writes is the bug this role exists to fix."""
+    sink.upsert([make_coffee(site="demo", external_id="1")])
+
+    assert _refused(reader, "DELETE FROM coffee")
+    assert _refused(reader, "UPDATE coffee SET name = 'tampered'")
+    assert _refused(
+        reader,
+        "INSERT INTO coffee (site, external_id, url, name) "
+        "VALUES ('demo', '2', 'https://example.sk/2', 'x')",
+    )
+    assert _refused(reader, "TRUNCATE coffee")
+    assert _refused(reader, "DROP TABLE outbox")
+    assert _refused(reader, "CREATE TABLE smuggled (id int)")
+
+    # And the row is still there, to prove nothing slipped through.
+    assert _scalar(sink, "SELECT count(*) FROM coffee") == 1
+
+
+def test_a_table_a_later_migration_adds_is_readable_without_a_new_grant(
+    reader: ReaderConnection,
+    sink: PostgresSink,
+) -> None:
+    """ALTER DEFAULT PRIVILEGES is the half that rots; this is what proves it did not.
+
+    A migration numbered above 0006 -- or one numbered below it that lands on a
+    server which already ran 0006 -- creates its table long after the GRANT ON
+    ALL TABLES has been and gone.
+    """
+    with sink.connection.cursor() as cursor:
+        cursor.execute("CREATE TABLE later_migration (id int)")
+        cursor.execute("INSERT INTO later_migration VALUES (1)")
+    sink.connection.commit()
+    try:
+        with reader.cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM later_migration")
+            assert cursor.fetchone() == (1,)
+        assert _refused(reader, "INSERT INTO later_migration VALUES (2)")
+    finally:
+        with sink.connection.cursor() as cursor:
+            cursor.execute("DROP TABLE later_migration")
+        sink.connection.commit()

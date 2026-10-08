@@ -184,8 +184,34 @@ def parse_weight_grams(text: str | None) -> int | None:
     if not text:
         return None
     match = _WEIGHT_RE.search(text)
-    if match is None:
-        return None
+    return None if match is None else _match_grams(match)
+
+
+def parse_weights_grams(text: str | None) -> list[int]:
+    """Parse every weight a text states, in the order it states them.
+
+    Args:
+        text: Text such as ``"Mlýnek 1 kg + káva 250 g"``.
+
+    Returns:
+        The weights in grams, empty when the text states none.
+    """
+    if not text:
+        return []
+    return [
+        grams for match in _WEIGHT_RE.finditer(text) if (grams := _match_grams(match)) is not None
+    ]
+
+
+def _match_grams(match: re.Match[str]) -> int | None:
+    """Convert one ``_WEIGHT_RE`` match into grams.
+
+    Args:
+        match: A match of ``_WEIGHT_RE``, whose groups are the number and unit.
+
+    Returns:
+        The weight in grams, or None when the number is not a usable one.
+    """
     value = _to_float(match.group(1))
     if value is None or value <= 0:
         return None

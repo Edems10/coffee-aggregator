@@ -92,6 +92,10 @@ class Variant:
     price: float | None = None
     currency: str | None = None
     available: bool | None = None
+    #: What the shop stated, beside what we read it as: `available` folds
+    #: `PreOrder` and `LimitedAvailability` into true, so this is the only
+    #: thing left that can tell a pre-order apart from a bag on the shelf.
+    availability_raw: str | None = None
     label: str | None = None
     #: Filled by the pipeline's derive step from the day's fixing, never by an
     #: adapter: a shop states one price, in one currency.
@@ -226,6 +230,9 @@ class Coffee:
     currency: str | None = None
     weight_g: int | None = None
     available: bool | None = None
+    #: The schema.org token, or the stock wording when the page states one only
+    #: in words. See :class:`Variant.availability_raw`.
+    availability_raw: str | None = None
     decaf: bool = False
     origin: Origin = field(default_factory=Origin)
     processing: Processing = field(default_factory=Processing)

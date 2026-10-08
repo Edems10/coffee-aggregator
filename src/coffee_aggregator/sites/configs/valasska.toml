@@ -1,5 +1,16 @@
 # Valašská pražírna — a Czech roastery on Shoptet. Its coffee category mixes
 # single origins with blends, and both state their parameters in the same table.
+#
+# Switched off on 2026-10-08: this is `valasskaprazirna` under a second id.
+# Both configs pointed at https://www.valasska-prazirna.cz/kava/, and the
+# 2026-09-30 snapshot held 24 of this shop's products twice over, once under
+# each id. `valasskaprazirna` is the id that survives — it is the shop's own
+# name and its domain, where `valasska` is only the adjective in it — so this
+# one is retired rather than deleted: its saved pages under
+# tests/fixtures/shoptet_valasska still regress the Shoptet parser. Do not
+# re-enable it; re-enabling means counting this roastery twice again.
+disabled = "same shop as valasskaprazirna, duplicate id, 2026-10-08"
+
 platform = "shoptet"
 site_id = "valasska"
 name = "Valašská pražírna"

@@ -5,7 +5,9 @@ from coffee_aggregator.adapters.build import (
     keep,
     package,
     schema_stock,
+    schema_token,
     stock_state,
+    stock_wording,
 )
 from coffee_aggregator.adapters.facts import (
     Facts,
@@ -55,8 +57,10 @@ __all__ = [
     "records",
     "reviews",
     "schema_stock",
+    "schema_token",
     "sitemap_refs",
     "stock_state",
+    "stock_wording",
     "strings",
     "table_rows",
     "value",
