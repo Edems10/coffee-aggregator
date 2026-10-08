@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from bs4 import BeautifulSoup
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.labels import F_BODY, F_COUNTRY, F_ROAST
-from coffee_aggregator.sites import toolkit as kit
 from coffee_aggregator.sites.base import ProductRef
 
 if TYPE_CHECKING:

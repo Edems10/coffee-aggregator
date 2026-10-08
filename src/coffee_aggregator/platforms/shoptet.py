@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import (
     F_CERTIFICATIONS,
@@ -41,7 +42,6 @@ from coffee_aggregator.models import (
     Variant,
 )
 from coffee_aggregator.sites import html as dom
-from coffee_aggregator.sites import toolkit as kit
 from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
 
 if TYPE_CHECKING:

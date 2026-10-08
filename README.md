@@ -669,8 +669,11 @@ rate feeds), `fx/rates.py` (the once-a-day service), `fx/stores.py` and
 `fx/convert.py`, `money.py` (the one place a price is rounded or extrapolated to
 the kilogram), `sinks/records.py` (model → column dictionary, for both
 sinks), `sinks/outbox.py` (model → `CoffeeState` event, and the one place a
-subject is formed) and `publish.py` (the outbox drain). Nothing in the project
-starts with a module docstring or a licence header; `D100`, `D104` and
+subject is formed) and `publish.py` (the outbox drain). `adapters/` is the
+shared reader toolkit every adapter imports as `kit` — bespoke modules under
+`sites/` and platform adapters under `platforms/` alike; it sits outside both so
+neither has a reason to re-implement a reading the other already has. Nothing
+in the project starts with a module docstring or a licence header; `D100`, `D104` and
 `CPY001` are ignored for that reason.
 
 ## Development
