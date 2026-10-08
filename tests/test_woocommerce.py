@@ -1051,3 +1051,32 @@ def test_an_onboarded_shop_recovers_the_values_its_payload_states(site_id: str) 
     actual = _actual(coffee)
     assert {key: actual[key] for key in expected} == expected
     assert sum(1 for key in ORIGIN_KEYS if key in expected) >= 2
+
+
+# --- a lot the shop never names ----------------------------------------------
+
+
+def test_a_lot_the_shop_never_names_keeps_the_title_it_states() -> None:
+    """Keep "filtr" rather than invent a name kmen does not publish.
+
+    kmen titles three filter lots "filtr": the Store API ``name``, the page
+    ``<title>`` and its ``og:title`` all read "filtr", and the detail page
+    renders no product heading at all (checked 2026-10-08 on all three lots,
+    ids 30457, 30804 and 31451). The lot's own name survives only in the slug,
+    the SKU and the image file name, which are identifiers rather than a stated
+    name, so the parser records what the shop says and the lots stay apart by
+    id, URL and price.
+    """
+    site = cast("WooSite", adapter_for("kmen"))
+
+    coffee = parse_api(site, _by_id("kmen", 31451))
+
+    assert coffee.name == "filtr"
+    assert "Huancas" not in coffee.name
+    assert coffee.external_id == "31451"
+    assert coffee.url == "https://kmen.coffee/product/filtr-fidel-huancas/"
+    assert coffee.price == 380.0
+    # What the shop does state about the lot is recovered, so the row is
+    # identifiable even while its title is not.
+    assert coffee.origin.producer == "Fidel Huancas"
+    assert coffee.origin.region == "El Corazon, Chirinos, Peru"

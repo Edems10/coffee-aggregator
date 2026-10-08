@@ -1087,5 +1087,292 @@
    }
   ],
   "is_in_stock": false
+ },
+ {
+  "id": 31451,
+  "name": "filtr",
+  "permalink": "https://kmen.coffee/product/filtr-fidel-huancas/",
+  "sku": "filtr-filtr-Fidel-Huancas",
+  "short_description": "<p>Hledáte kávu na celodenní popíjení, u které nemusíte složitě přemýšlet, ale přesto vás nepřestane bavit? Hoďte si do košíku náš nejnovější kousek z edice „Když zrovna bádáte“. Tento filtr je krásně jemný, svěží a má v sobě přesně tu jiskru, kterou potřebujete pro jakoukoliv příležitost.</p>\n<p>Tentokrát jsme pro vás zabalili zrnka z Peru, ve kterých se potkává šťavnatost nektarinek, sladká svěžest mandarinek a čistý tón hroznového vína. Věříme, že tenhle hravý filtr se stane vaší novou každodenní závislostí!</p>",
+  "description": "<p>Finca La Esperanza je název farmy, kterou vlastní Fidel. Jméno v překladu znamená „Naděje“ a bylo vybráno jako odkaz na naději v pěstování výběrové kávy s cílem stát se nejlepším producentem v regionu. Fidel je velmi hrdý na své dědictví a neustále se snaží zlepšovat, aby tak motivoval ostatní farmáře ve svém okolí. Je kávovým farmářem již ve třetí generaci a pozemky zdědil po svém otci. Když rodina na farmě začínala, rostly zde staré kávovníky odrůd Catimor a Pache. Ty byly v průběhu posledních pěti let kompletně nahrazeny novou výsadbou. V současné chvíli je farma jednodruhová (mono-varietal) a veškerou produkci tvoří odrůda Yellow Caturra (žlutá caturra). Fidel si tuto odrůdu vybral proto, že se jí na tomto terroiru, který je typický pro severní Peru, velmi dobře daří. Káva díky tomu dosahuje skvělého chuťového hodnocení a farma má výborné výnosy. Fidel vede svou farmu s pečlivým důrazem na správné zemědělské postupy, které mu doporučuje regionální družstvo a terénní tým společnosti Falcon Coffee Perú. Sám však cítí, že tím nejdůležitějším faktorem, který přinesl skutečnou změnu, bylo absolutní odhodlání, vášeň a smysl pro detail v každém aspektu řízení farmy. Skvělé výsledky přineslo také to, jakým způsobem vyškolil své zaměstnance. Fidel je se současným stavem spokojen a dodává, že teď už má „jedinou cestu, a to směrem nahoru.“</p>",
+  "prices": {
+   "price": "380",
+   "regular_price": "380",
+   "sale_price": "380",
+   "price_range": {
+    "min_amount": "380",
+    "max_amount": "1350"
+   },
+   "currency_code": "CZK",
+   "currency_symbol": "Kč",
+   "currency_minor_unit": 0,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": "",
+   "currency_prefix": "",
+   "currency_suffix": " Kč"
+  },
+  "images": [
+   {
+    "id": 31525,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g.jpg 2409w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-1024x1024.jpg 1024w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-1536x1536.jpg 1536w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-2048x2048.jpg 2048w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/06/286_FILTRFILTR-Fidel-Huancas250g-50x50.jpg 50w",
+    "sizes": "(max-width: 2409px) 100vw, 2409px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "FILTRFILTR-Fidel-Huancas(250g)",
+    "alt": ""
+   },
+   {
+    "id": 32495,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/07/filtr.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/07/filtr-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/07/filtr.jpg 1080w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-1024x1024.jpg 1024w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/07/filtr-50x50.jpg 50w",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "filtr",
+    "alt": ""
+   },
+   {
+    "id": 31807,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3.jpg 960w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec3-50x50.jpg 50w",
+    "sizes": "(max-width: 960px) 100vw, 960px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Peru",
+    "alt": ""
+   },
+   {
+    "id": 22430,
+    "src": "https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-scaled.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-scaled.jpg 2560w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-1024x1024.jpg 1024w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-1536x1536.jpg 1536w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-2048x2048.jpg 2048w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2023/05/Fidel-Huancas-na-jeho-farme-v-Peru-50x50.jpg 50w",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Fidel Huancas na jeho farmě v Peru",
+    "alt": ""
+   },
+   {
+    "id": 31806,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4.jpg 960w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/07/fidel-ctverec4-50x50.jpg 50w",
+    "sizes": "(max-width: 960px) 100vw, 960px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Peru",
+    "alt": ""
+   },
+   {
+    "id": 22432,
+    "src": "https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-scaled.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-scaled.jpg 2560w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-1024x1024.jpg 1024w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-1536x1536.jpg 1536w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-2048x2048.jpg 2048w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2023/05/Peru-Yellow-Cattura-50x50.jpg 50w",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Peru Yellow Cattura",
+    "alt": ""
+   },
+   {
+    "id": 31808,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2.jpg 960w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec2-50x50.jpg 50w",
+    "sizes": "(max-width: 960px) 100vw, 960px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Peru",
+    "alt": ""
+   },
+   {
+    "id": 31809,
+    "src": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec.jpg",
+    "thumbnail": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-600x800.jpg",
+    "srcset": "https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec.jpg 960w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-300x300.jpg 300w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-150x150.jpg 150w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-768x768.jpg 768w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-39x39.jpg 39w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-18x18.jpg 18w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-25x25.jpg 25w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-100x100.jpg 100w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-800x800.jpg 800w, https://kmen.coffee/wp-content/uploads/2026/07/Fidel-ctverec-50x50.jpg 50w",
+    "sizes": "(max-width: 960px) 100vw, 960px",
+    "thumbnail_srcset": "",
+    "thumbnail_sizes": "(max-width: 600px) 100vw, 600px",
+    "name": "Peru",
+    "alt": ""
+   }
+  ],
+  "categories": [
+   {
+    "id": 321,
+    "name": "Filtr",
+    "slug": "filtr",
+    "link": "https://kmen.coffee/kava/filtr/"
+   },
+   {
+    "id": 306,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://kmen.coffee/kava/"
+   }
+  ],
+  "attributes": [
+   {
+    "id": 7,
+    "name": "Země původu",
+    "taxonomy": "pa_zeme-puvodu",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 845,
+      "name": "filtr",
+      "slug": "filtr"
+     }
+    ]
+   },
+   {
+    "id": 8,
+    "name": "Oblast",
+    "taxonomy": "pa_oblast",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 1416,
+      "name": "El Corazon, Chirinos",
+      "slug": "el-corazon-chirinos"
+     },
+     {
+      "id": 1388,
+      "name": "Peru",
+      "slug": "peru"
+     }
+    ]
+   },
+   {
+    "id": 6,
+    "name": "Producent",
+    "taxonomy": "pa_producent",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 555,
+      "name": "Fidel Huancas",
+      "slug": "fidel-huancas"
+     }
+    ]
+   },
+   {
+    "id": 12,
+    "name": "Odrůda",
+    "taxonomy": "pa_odruda",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 380,
+      "name": "Caturra",
+      "slug": "caturra"
+     },
+     {
+      "id": 1417,
+      "name": "Marshel",
+      "slug": "marshel"
+     },
+     {
+      "id": 1402,
+      "name": "pache",
+      "slug": "pache"
+     }
+    ]
+   },
+   {
+    "id": 11,
+    "name": "Zpracování",
+    "taxonomy": "pa_zpracovani",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 316,
+      "name": "washed",
+      "slug": "promyte"
+     }
+    ]
+   },
+   {
+    "id": 13,
+    "name": "Chuťový profil",
+    "taxonomy": "pa_chutovy-profil",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 688,
+      "name": "hrozno",
+      "slug": "hrozno"
+     },
+     {
+      "id": 567,
+      "name": "mandarinky",
+      "slug": "mandarinky"
+     },
+     {
+      "id": 475,
+      "name": "nektarinky",
+      "slug": "nektarinky"
+     }
+    ]
+   },
+   {
+    "id": 15,
+    "name": "Typ balení",
+    "taxonomy": "pa_typ-baleni",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 304,
+      "name": "1000g",
+      "slug": "1000g",
+      "default": false
+     },
+     {
+      "id": 303,
+      "name": "250g",
+      "slug": "250g",
+      "default": true
+     }
+    ]
+   },
+   {
+    "id": 14,
+    "name": "Použití",
+    "taxonomy": "pa_pouziti",
+    "has_variations": false,
+    "terms": [
+     {
+      "id": 302,
+      "name": "vhodná na filtr",
+      "slug": "vhodna-na-filtr"
+     }
+    ]
+   }
+  ],
+  "variations": [
+   {
+    "id": 31452,
+    "attributes": [
+     {
+      "name": "Typ balení",
+      "value": "250g"
+     }
+    ]
+   },
+   {
+    "id": 31453,
+    "attributes": [
+     {
+      "name": "Typ balení",
+      "value": "1000g"
+     }
+    ]
+   }
+  ],
+  "is_in_stock": true
  }
 ]
