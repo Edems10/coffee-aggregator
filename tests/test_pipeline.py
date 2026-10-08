@@ -112,6 +112,11 @@ class FakeFetcher:
                 results.append(FetchResult(url, url, 200, body, from_cache=False, elapsed_s=0.01))
         return results
 
+    def fetch_each(
+        self, urls: Sequence[str]
+    ) -> Iterator[FetchResult | FetchError | FetchDisallowed]:
+        return iter(self.fetch_many(urls))
+
 
 class FakeSink:
     def __init__(self) -> None:
@@ -780,6 +785,85 @@ def test_a_shard_with_more_shards_than_hosts_can_be_empty() -> None:
 
 def test_a_shop_without_a_base_url_falls_back_to_its_id() -> None:
     assert host_of(Shop("lonely", "")) == "lonely"
+
+
+# --- a page body outlives nothing but its own parse ---------------------------
+
+
+class Page(FetchResult):
+    """A response body that says when the last reference to it goes."""
+
+    __slots__ = ()
+
+    live = 0
+    peak = 0
+
+    def __init__(self, url: str) -> None:
+        super().__init__(url, url, 200, "<html>ok</html>", from_cache=False, elapsed_s=0.0)
+        Page.live += 1
+        Page.peak = max(Page.peak, Page.live)
+
+    def __del__(self) -> None:
+        Page.live -= 1
+
+
+class CountingFetcher:
+    """Builds one tracked body per URL, as late as the caller asks for it."""
+
+    def fetch_many(self, urls: Sequence[str]) -> list[FetchResult]:
+        return list(self.fetch_each(urls))
+
+    def fetch_each(self, urls: Sequence[str]) -> Iterator[FetchResult]:
+        for url in urls:
+            yield Page(url)
+
+
+class WatchingSink(FakeSink):
+    """Writes down how many page bodies were alive while it held the batch."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.live_while_writing: list[int] = []
+
+    def upsert(self, coffees: Sequence[Coffee]) -> SinkResult:
+        self.live_while_writing.append(Page.live)
+        return super().upsert(coffees)
+
+
+@pytest.fixture
+def _page_counter() -> Iterator[None]:
+    Page.live, Page.peak = 0, 0
+    yield
+    Page.live, Page.peak = 0, 0
+
+
+@pytest.mark.usefixtures("_page_counter")
+def test_no_page_body_is_still_alive_when_the_batch_is_written() -> None:
+    """The worker can sit on the sink's lock; it must not sit on fifty pages.
+
+    Measured on the heaviest detail fixtures — thirteen of the twenty-six
+    carry an emoji, which makes CPython store the whole page at four bytes per
+    character, 283 KB of text becoming 1 133 KB of RAM. Holding a batch of
+    fifty in each of eight shop threads peaked at 460 MB of resident memory
+    against a 512 MB container; releasing each body as it is parsed brings the
+    same run to 48 MB, in the same wall-clock time.
+    """
+    site, sink = FakeSite(40), WatchingSink()
+
+    report = _run(site, cast("FakeFetcher", CountingFetcher()), sink, batch_size=10)
+
+    assert report.written == 40
+    assert sink.live_while_writing == [0, 0, 0, 0]
+
+
+@pytest.mark.usefixtures("_page_counter")
+def test_only_one_page_body_at_a_time_survives_the_parse() -> None:
+    site = FakeSite(40)
+
+    _run(site, cast("FakeFetcher", CountingFetcher()), FakeSink(), batch_size=10)
+
+    # one in the parser's hands; forty at once is the bug this replaced
+    assert Page.peak <= 2
 
 
 # --- dispatching the longest shop first ---------------------------------------

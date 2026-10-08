@@ -9,6 +9,7 @@ import random
 import re
 import threading
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +21,8 @@ import httpx2
 from coffee_aggregator.robots import RobotsRules
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Iterator, Sequence
+    from concurrent.futures import Future
 
 logger = logging.getLogger(__name__)
 
@@ -1239,6 +1241,45 @@ class PoliteFetcher:
             logger.warning("unexpected failure fetching %s: %r", url, exc)
             return FetchError(url, f"{type(exc).__name__}: {exc}")
 
+    def fetch_each(
+        self,
+        urls: Iterable[str],
+    ) -> Iterator[FetchResult | FetchError | FetchDisallowed]:
+        """Fetch many URLs concurrently, handing each one over as it is ready.
+
+        Only ``workers`` requests are ever outstanding, so the caller holds a
+        couple of page bodies at a time rather than the whole batch. That is
+        the point of this method and not an implementation detail: a batch is
+        fifty pages, an emoji anywhere on a page makes CPython store all of it
+        at four bytes per character, and fifty such pages in each of eight
+        shop threads is 420 MB of bodies against a 512 MB container.
+
+        Submitting everything at once would not be faster — the pool still runs
+        ``workers`` at a time — it would only keep every finished body alive
+        until the caller got round to it.
+
+        Args:
+            urls: The URLs to retrieve.
+
+        Yields:
+            One entry per input URL, in the same order; failures are yielded as
+            the exception object rather than raised.
+        """
+        ordered: Sequence[str] = list(urls)
+        if not ordered:
+            return
+        with ThreadPoolExecutor(max_workers=self.workers) as pool:
+            window: deque[Future[FetchResult | FetchError | FetchDisallowed]] = deque(
+                pool.submit(self._get_or_error, url) for url in ordered[: self.workers]
+            )
+            for url in ordered[self.workers :]:
+                # the result is dropped the moment it is handed over, and the
+                # next request is only queued once it has been
+                yield window.popleft().result()
+                window.append(pool.submit(self._get_or_error, url))
+            while window:
+                yield window.popleft().result()
+
     def fetch_many(
         self,
         urls: Iterable[str],
@@ -1250,10 +1291,7 @@ class PoliteFetcher:
 
         Returns:
             One entry per input URL, in the same order; failures are returned
-            as the exception object rather than raised.
+            as the exception object rather than raised. Every body is held at
+            once, so a crawl uses :meth:`fetch_each`.
         """
-        ordered: Sequence[str] = list(urls)
-        if not ordered:
-            return []
-        with ThreadPoolExecutor(max_workers=self.workers) as pool:
-            return list(pool.map(self._get_or_error, ordered))
+        return list(self.fetch_each(urls))

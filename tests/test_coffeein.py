@@ -14,7 +14,7 @@ from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 from coffee_aggregator.sites.coffeein import CoffeeinSite
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from coffee_aggregator.http import PoliteFetcher
     from coffee_aggregator.models import Coffee
@@ -39,6 +39,9 @@ class FakeFetcher:
 
     def fetch_many(self, urls: Sequence[str]) -> list[FetchResult]:
         return [self.get(url) for url in urls]
+
+    def fetch_each(self, urls: Sequence[str]) -> Iterator[FetchResult]:
+        return iter(self.fetch_many(urls))
 
 
 class CollectingSink:

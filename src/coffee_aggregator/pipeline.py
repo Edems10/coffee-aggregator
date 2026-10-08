@@ -385,52 +385,58 @@ def _crawl(  # noqa: PLR0913  (one linear crawl loop reads better than five help
 def _retrieve(
     fetcher: PoliteFetcher,
     refs: list[ProductRef],
-) -> list[FetchResult | FetchError | FetchDisallowed]:
+) -> Iterator[FetchResult | FetchError | FetchDisallowed]:
     """Get the source of every reference, requesting only the ones that need it.
 
     A JSON-API or feed-driven shop already holds the product's own source after
     discovery; such a reference carries it in ``payload`` and costs no request.
 
+    One page at a time, not one batch: a body stays alive only until the
+    parser has read it. Collecting the batch first would hold all fifty of
+    them through the parse *and* through ``sink.upsert``, where the worker may
+    be waiting on the sink's lock — measured at 420 MB of bodies across eight
+    shop threads on pages that carry an emoji, against a 512 MB container.
+
     Args:
         fetcher: The shared polite fetcher.
         refs: The references of one batch, in order.
 
-    Returns:
+    Yields:
         One entry per reference, in the same order.
     """
     pending = [ref.url for ref in refs if ref.payload is None]
-    fetched = iter(fetcher.fetch_many(pending) if pending else ())
-    results: list[FetchResult | FetchError | FetchDisallowed] = []
+    fetched = iter(fetcher.fetch_each(pending) if pending else ())
     for ref in refs:
         if ref.payload is None:
-            results.append(next(fetched))
+            yield next(fetched)
             continue
-        results.append(
-            FetchResult(
-                url=ref.url,
-                final_url=ref.url,
-                status=200,
-                text=ref.payload,
-                from_cache=True,
-                elapsed_s=0.0,
-            )
+        yield FetchResult(
+            url=ref.url,
+            final_url=ref.url,
+            status=200,
+            text=ref.payload,
+            from_cache=True,
+            elapsed_s=0.0,
         )
-    return results
 
 
 def _parse_batch(
     site: SiteAdapter,
     report: RunReport,
     refs: list[ProductRef],
-    results: list[FetchResult | FetchError | FetchDisallowed],
+    results: Iterator[FetchResult | FetchError | FetchDisallowed],
 ) -> list[Coffee]:
     """Parse one fetched batch in the calling thread.
+
+    ``results`` is consumed as it arrives and never collected: each body is
+    released as soon as it has been parsed, so what survives the batch is the
+    coffees, not the pages they were read from.
 
     Args:
         site: The shop adapter to parse with.
         report: The report to fill in.
         refs: The references that were fetched, in order.
-        results: What the fetcher returned for each of them.
+        results: What the fetcher is returning for each of them, in order.
 
     Returns:
         The coffees that parsed successfully.

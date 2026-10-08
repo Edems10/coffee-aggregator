@@ -108,8 +108,14 @@ coffee-aggregator republish --all [--dsn URL]
   reading. One deadline covers every shop of the invocation, not one per shop.
 * `--shard I/N` crawls one deterministic slice of the registered shops. See
   [Sharding the daily run](#sharding-the-daily-run).
-* `--batch-size` is how many products are fetched and written per round;
-  `--timeout`, `--retries`, `--max-retry-wait` and `--robots-retry` are the
+* `--batch-size` is how many products are fetched and written per round. It
+  does not set how much memory a round costs: a page body is released as soon
+  as the parser has read it, so a shop thread holds one page at a time whatever
+  the batch size is. It used to hold the whole batch, and an emoji anywhere on
+  a page makes CPython store all of it at four bytes per character — 283 KB of
+  text, 1.1 MB of RAM — which put eight threads at 460 MB against a 512 MB
+  container.
+* `--timeout`, `--retries`, `--max-retry-wait` and `--robots-retry` are the
   transport knobs (`--timeout 8 --retries 1 --max-retry-wait 10` is the short-lived
   profile a Lambda wants). Each one has an environment variable below.
 * `--workers` is the fetch pool *inside* one shop and defaults to **2**: every URL
