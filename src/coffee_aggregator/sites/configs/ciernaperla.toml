@@ -34,4 +34,6 @@ ignore = [
   "coffee set",
   "mini black pearl",
   "trendy black pearl",
+  # A moka pot. The brand is not a global marker: Bialetti sells coffee too.
+  "bialetti",
 ]

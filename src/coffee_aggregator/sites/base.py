@@ -23,6 +23,15 @@ if TYPE_CHECKING:
 #: A subscription is excluded for a different reason than a cleaning tablet —
 #: its price buys several deliveries, so no weight on the page describes what
 #: the money bought, and every per-kilogram figure from it is a fiction.
+#: The markers below the voucher were measured over a 3678-row, 157-shop
+#: snapshot: each catches one or two real listings and nothing else. The
+#: obvious neighbours were measured too and rejected, because every one of
+#: them also catches coffee: "cold brew" (coffee77 sells a 250 g bean blend
+#: called COLD BREW), "nitro" (two coffees are named for the process),
+#: "cokolad" and "kakao" (a dozen coffees named for their tasting notes),
+#: "salka" (its only hit, "Šálka nádeje pre Vilyho", is a 250 g bag),
+#: "kavovar" (thirteen of sixteen hits read "pro automatické kávovary") and
+#: "filtr" (sixty-odd filter roasts).
 DEFAULT_IGNORED = (
     "tasting pack",
     "cascara",
@@ -31,6 +40,12 @@ DEFAULT_IGNORED = (
     "urnex",  # a brand of machine cleaner, never coffee
     "poukaz",  # a gift voucher, priced in money and weighing nothing
     "test product",
+    "voucher",  # the English half of "poukaz"
+    "tricko",
+    "t shirt",  # fold() flattens the hyphen, so "T-Shirt" folds to this
+    "kurz",  # a barista course is a service, and weighs nothing
+    "mydlo",
+    "peeling",
 )
 
 

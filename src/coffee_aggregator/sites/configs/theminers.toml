@@ -23,6 +23,12 @@ ignore = [
   "tumbler",
   "cold brew",
   "kinto",
+  # Brewing gear, half of what /e-shop/ lists. A bare "filter" is not safe
+  # even here: the shop's own roasts could be named for a brew method.
+  "paper filter",
+  "v60",
+  "solo filter",
+  "espresso cup",
 ]
 
 # Parameter names this shop invents that the built-in CZ/SK/EN map
