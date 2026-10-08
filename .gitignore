@@ -175,3 +175,8 @@ cython_debug/
 
 # Agent scratch: Claude Code worktrees and session state, never project source.
 .claude/
+
+# macOS: Finder writes one of these into every directory it opens, so they turn
+# up anywhere in the tree — including inside the shipped package — and none of
+# them has ever belonged to a commit.
+.DS_Store

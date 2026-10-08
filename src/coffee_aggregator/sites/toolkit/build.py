@@ -11,19 +11,39 @@ if TYPE_CHECKING:
 
 __all__ = ["gallery", "keep", "package", "schema_stock", "stock_state"]
 
-#: What a shop writes when the bag is there, folded. Czech and Slovak both, so
-#: no shop has to restate the two words its own language happens to use.
-_IN_STOCK: Final = ("skladom", "skladem", "in stock")
+#: What a shop writes when the bag is there, folded. Czech, Slovak and English
+#: in one list, so no shop has to restate the words its own language happens to
+#: use. Every entry is a whole word a shop states: a bare "sklad" stem used to
+#: live in the Shoptet copy of this table and read "Není skladem" as in stock.
+_IN_STOCK: Final = (
+    "skladom",
+    "skladem",
+    "na sklade",
+    "dostupne",
+    "ihned",
+    "in stock",
+)
 #: What a shop writes when it is not. Tested first, which is what makes the
-#: negations work: "není skladem" holds "skladem" and means the opposite.
+#: negations work: "není skladem" holds "skladem" and means the opposite, and
+#: "nedostupné" holds "dostupné". Every positive above that a shop can negate
+#: therefore needs its negation spelled out here, in both languages.
 _OUT_OF_STOCK: Final = (
     "neni skladem",
+    "neni na sklade",
     "nie je skladom",
+    "nie je na sklade",
+    "nedostupne",
     "vypredane",
     "vyprodano",
-    "nedostupne",
+    "vyprodane",
     "sold out",
+    "out of stock",
 )
+#: The schema.org availability values that mean a bag can be ordered today.
+#: ``PreOrder`` and ``LimitedAvailability`` count because the catalogue lists
+#: both for sale; the web front end gets a banner that tells a pre-order apart,
+#: which is where that distinction belongs rather than in a missing listing.
+_SCHEMA_IN_STOCK: Final = ("instock", "preorder", "limitedavailability")
 
 
 def stock_state(*texts: str | None) -> bool | None:
@@ -53,14 +73,15 @@ def schema_stock(value: str | None) -> bool | None:
         value: The ``content`` of the availability meta, when the page has one.
 
     Returns:
-        True for ``InStock``, False for any other stated value, None when the
-        page states none — the vocabulary is closed, so anything else is one of
-        the sold-out spellings.
+        True for ``InStock``, ``PreOrder`` and ``LimitedAvailability``, False
+        for any other stated value, None when the page states none — the
+        vocabulary is closed, so anything else is one of the sold-out
+        spellings.
     """
     folded = normalize.fold(value).replace(" ", "")
     if not folded:
         return None
-    return "instock" in folded
+    return any(marker in folded for marker in _SCHEMA_IN_STOCK)
 
 
 def package(  # noqa: PLR0913  (one variant field per argument; grouping them hides the shape)

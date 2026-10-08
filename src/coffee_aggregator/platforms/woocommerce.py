@@ -32,8 +32,8 @@ from coffee_aggregator.labels import (
     specialty_grade,
 )
 from coffee_aggregator.models import Coffee, Popularity, Variant
-from coffee_aggregator.platforms.shoptet import schema_available
 from coffee_aggregator.sites import html as dom
+from coffee_aggregator.sites import toolkit as kit
 from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
@@ -1163,7 +1163,7 @@ class WooSite(SiteAdapter):
             price=price,
             currency=currency if price is not None else None,
             weight_g=headline_weight(labels, name, variants, price=price),
-            available=schema_available(str(offer.get("availability") or "")),
+            available=kit.schema_stock(str(offer.get("availability") or "")),
             decaf=is_decaf(labels, name, categories),
             origin=parse_origin(labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(labels.get(F_PROCESS)),

@@ -41,6 +41,7 @@ from coffee_aggregator.models import (
     Variant,
 )
 from coffee_aggregator.sites import html as dom
+from coffee_aggregator.sites import toolkit as kit
 from coffee_aggregator.sites.base import DEFAULT_IGNORED, ProductRef, SiteAdapter
 
 if TYPE_CHECKING:
@@ -452,16 +453,6 @@ _PACK_SIZES_G: Final = frozenset(
         5000,
     }
 )
-#: Availability words a combined option states next to the weight.
-_IN_STOCK_WORDS: Final[tuple[str, ...]] = ("sklad", "in stock", "ihned", "dostupne", "dostupné")
-_SOLD_OUT_WORDS: Final[tuple[str, ...]] = (
-    "vypredane",
-    "vyprodano",
-    "vyprodane",
-    "nedostupne",
-    "sold out",
-    "out of stock",
-)
 
 
 def _real_options(select: Tag) -> list[Tag]:
@@ -725,7 +716,7 @@ def _offer_fields(offer: Tag) -> tuple[str | None, float | None, str | None, boo
     price = normalize.parse_amount(_first_value(offer, "price"))
     currency = _first_value(offer, "priceCurrency")
     availability = _first_value(offer, "availability")
-    return sku, price, currency, schema_available(availability)
+    return sku, price, currency, kit.schema_stock(availability)
 
 
 def _first_value(scope: Tag, prop: str) -> str | None:
@@ -740,21 +731,6 @@ def _first_value(scope: Tag, prop: str) -> str | None:
     """
     tag = scope.select_one(f"[itemprop={prop}]")
     return _value(tag) if tag is not None else None
-
-
-def schema_available(availability: str | None) -> bool | None:
-    """Turn a schema.org availability URL into a boolean.
-
-    Args:
-        availability: The URL or its last segment.
-
-    Returns:
-        True, False, or None when the page says nothing.
-    """
-    folded = normalize.fold(availability).replace(" ", "")
-    if not folded:
-        return None
-    return "instock" in folded or "limitedavailability" in folded or "preorder" in folded
 
 
 def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
@@ -852,7 +828,7 @@ def _combined_variant(
         weight_g=_option_weight(label, sku),
         price=price if price is not None else normalize.parse_amount(_option_amount(option)),
         currency=detected or currency,
-        available=_option_available(label),
+        available=kit.stock_state(label),
         label=label or sku,
     )
 
@@ -952,21 +928,6 @@ def _drop_guessed_weights(variants: list[Variant]) -> list[Variant]:
     for variant in guessed:
         variant.weight_g = None
     return variants
-
-
-def _option_available(label: str) -> bool | None:
-    """Read the availability a combined option states in words.
-
-    Args:
-        label: The option text.
-
-    Returns:
-        True, False, or None when the option says nothing either way.
-    """
-    folded = normalize.fold(label)
-    if any(word in folded for word in _SOLD_OUT_WORDS):
-        return False
-    return True if any(word in folded for word in _IN_STOCK_WORDS) else None
 
 
 def _offer_labels(root: Tag, count: int, weight_options: list[str]) -> list[str | None]:
@@ -1444,7 +1405,7 @@ class ShoptetSite(SiteAdapter):
                 # page states a size.
                 fallback=labels.get(F_SHIP_WEIGHT),
             ),
-            available=schema_available(_micro(root, "availability")),
+            available=kit.schema_stock(_micro(root, "availability")),
             decaf=is_decaf(labels, name, categories),
             origin=parse_origin(labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(labels.get(F_PROCESS)),

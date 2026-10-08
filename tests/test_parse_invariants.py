@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from coffee_aggregator import normalize
-from coffee_aggregator.labels import plausible_weight, stated_weight
+from coffee_aggregator.labels import Labels, is_decaf, plausible_weight, stated_weight
 from coffee_aggregator.models import RoastLevel
 from coffee_aggregator.sites import load_all
 from coffee_aggregator.sites.base import ProductRef
@@ -199,8 +199,12 @@ def test_a_species_split_adds_up(shop: list[tuple[str, Coffee]]) -> None:
             assert arabica + robusta == FULL_PERCENT, f"{label}: {arabica}/{robusta}"
 
 
-def test_a_name_that_says_decaf_is_stored_as_decaf(shop: list[tuple[str, Coffee]]) -> None:
+def test_a_page_that_says_decaf_is_stored_as_decaf(shop: list[tuple[str, Coffee]]) -> None:
+    # The reader is called, never restated: this invariant once held its own
+    # copy of the vocabulary, which drifted from the shared one exactly as the
+    # adapter under test had, so it could not fail on the shop that was wrong.
+    # A Coffee carries no Labels, so only the name and the breadcrumbs are fed
+    # in; an adapter that also reads a label can only say decaf more often.
     for label, coffee in shop:
-        folded = normalize.fold(coffee.name)
-        if "bezkofein" in folded or "decaf" in folded:
+        if is_decaf(Labels(), coffee.name, coffee.categories):
             assert coffee.decaf is True, f"{label}: {coffee.name!r}"

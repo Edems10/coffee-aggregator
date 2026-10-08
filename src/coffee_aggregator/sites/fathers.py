@@ -13,6 +13,7 @@ from coffee_aggregator.labels import (
     F_FLAVOR,
     F_PROCESS,
     F_SPECIES,
+    is_decaf,
     label_pair,
     parse_origin,
 )
@@ -558,6 +559,7 @@ class FathersSite(SiteAdapter):
         tags = ["Father's Choice"] if product.get("partOfFathersChoice") is True else []
         if kit.as_str(product.get("markedAsNewAt")):
             tags.append("Novinka")
+        categories = dom.unique(["Káva", slug])
         return Coffee(
             site=self.site_id,
             external_id=kit.as_str(product.get("id")) or ref.external_id,
@@ -568,7 +570,7 @@ class FathersSite(SiteAdapter):
             currency=currency,
             weight_g=first.weight_g,
             available=any(variant.available for variant in variants) if variants else None,
-            decaf="bezkofein" in normalize.fold(name) or "decaf" in normalize.fold(name),
+            decaf=is_decaf(facts.labels, name, categories),
             origin=parse_origin(facts.labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(facts.get(F_PROCESS)),
             roast=Roast(
@@ -583,7 +585,7 @@ class FathersSite(SiteAdapter):
                 for item in kit.as_list(product.get("gallery"))
             ),
             tags=tags,
-            categories=dom.unique(["Káva", slug]),
+            categories=categories,
             specialty_grade=product.get("partOfFathersChoice") is True or None,
             description="\n".join(prose) or None,
             origin_text=facts.get(F_COUNTRY),
