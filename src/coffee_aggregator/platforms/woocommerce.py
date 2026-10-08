@@ -313,7 +313,7 @@ def _items(payload: str, url: str) -> list[dict[str, Any]]:
         raise StoreApiUnavailableError(url, f"not JSON: {exc}") from exc
     if not isinstance(parsed, list):
         raise StoreApiUnavailableError(url, f"expected a JSON array, got {type(parsed).__name__}")
-    return [item for item in parsed if isinstance(item, dict)]
+    return kit.records(parsed)
 
 
 def _text_of(markup: str | None) -> str | None:
@@ -377,13 +377,10 @@ def _terms(attribute: dict[str, Any]) -> list[str]:
     Returns:
         The names in API order.
     """
-    terms = attribute.get("terms")
-    if not isinstance(terms, list):
-        return []
     return dom.unique(
-        unescape(str(term.get("name")))
-        for term in terms
-        if isinstance(term, dict) and term.get("name")
+        unescape(str(name))
+        for term in kit.records(attribute.get("terms"))
+        if (name := term.get("name"))
     )
 
 
@@ -400,12 +397,10 @@ def _term_names(item: dict[str, Any]) -> dict[tuple[str, str], str]:
         The lookup table.
     """
     table: dict[tuple[str, str], str] = {}
-    for attribute in item.get("attributes", []):
-        if not isinstance(attribute, dict):
-            continue
+    for attribute in kit.records(item.get("attributes")):
         name = unescape(str(attribute.get("name") or ""))
-        for term in attribute.get("terms") or []:
-            if isinstance(term, dict) and term.get("slug"):
+        for term in kit.records(attribute.get("terms")):
+            if term.get("slug"):
                 table[name, str(term["slug"])] = unescape(str(term.get("name") or term["slug"]))
     return table
 
@@ -443,7 +438,7 @@ def _api_variants(item: dict[str, Any], ref: ProductRef, currency: str | None) -
     Returns:
         The variants, or an empty list for a simple product.
     """
-    variations = [entry for entry in item.get("variations") or [] if isinstance(entry, dict)]
+    variations = kit.records(item.get("variations"))
     if not variations:
         return []
     names = _term_names(item)
@@ -457,8 +452,8 @@ def _api_variants(item: dict[str, Any], ref: ProductRef, currency: str | None) -
                 (unescape(str(axis.get("name") or "")), str(axis.get("value"))),
                 str(axis.get("value")),
             )
-            for axis in entry.get("attributes") or []
-            if isinstance(axis, dict) and axis.get("value")
+            for axis in kit.records(entry.get("attributes"))
+            if axis.get("value")
         ]
         variants.append(
             Variant(
@@ -498,12 +493,8 @@ def _names(entries: object) -> list[str]:
     Returns:
         The names, unescaped and de-duplicated.
     """
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        unescape(str(entry.get("name")))
-        for entry in entries
-        if isinstance(entry, dict) and entry.get("name")
+        unescape(str(name)) for entry in kit.records(entries) if (name := entry.get("name"))
     )
 
 
@@ -516,11 +507,8 @@ def _images(item: dict[str, Any]) -> list[str]:
     Returns:
         Full-size image URLs, de-duplicated, in API order.
     """
-    entries = item.get("images")
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        str(entry.get("src")) for entry in entries if isinstance(entry, dict) and entry.get("src")
+        str(src) for entry in kit.records(item.get("images")) if (src := entry.get("src"))
     )
 
 
@@ -579,13 +567,12 @@ def _json_ld(soup: BeautifulSoup) -> list[dict[str, Any]]:
             parsed = json.loads(script.string or "{}")
         except ValueError:
             continue
-        for entry in parsed if isinstance(parsed, list) else [parsed]:
-            if not isinstance(entry, dict):
-                continue
+        for entry in kit.records(parsed if isinstance(parsed, list) else [parsed]):
             graph = entry.get("@graph")
-            found.extend(node for node in graph if isinstance(node, dict)) if isinstance(
-                graph, list
-            ) else found.append(entry)
+            if isinstance(graph, list):
+                found.extend(kit.records(graph))
+            else:
+                found.append(entry)
     return found
 
 
@@ -620,9 +607,7 @@ def _ld_offer(node: dict[str, Any] | None) -> dict[str, Any]:
     offers = (node or {}).get("offers")
     if isinstance(offers, dict):
         return offers
-    if isinstance(offers, list):
-        return next((offer for offer in offers if isinstance(offer, dict)), {})
-    return {}
+    return next(iter(kit.records(offers)), {})
 
 
 def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
@@ -649,13 +634,9 @@ def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Var
     except ValueError:
         logger.debug("unreadable data-product_variations on %s", ref.url)
         return []
-    if not isinstance(parsed, list):
-        return []
     variants: list[Variant] = []
-    for entry in parsed:
-        if not isinstance(entry, dict):
-            continue
-        labels = [str(value) for value in (entry.get("attributes") or {}).values() if value]
+    for entry in kit.records(parsed):
+        labels = [str(value) for value in kit.as_dict(entry.get("attributes")).values() if value]
         variants.append(
             Variant(
                 external_id=str(entry.get("variation_id")) if entry.get("variation_id") else None,
@@ -1013,13 +994,12 @@ class WooSite(SiteAdapter):
             The labels, the description prose, and the short description.
         """
         labels = Labels()
-        for attribute in item.get("attributes", []):
-            if isinstance(attribute, dict):
-                labels.add(
-                    unescape(str(attribute.get("name") or "")),
-                    ", ".join(_terms(attribute)),
-                    self.label_map,
-                )
+        for attribute in kit.records(item.get("attributes")):
+            labels.add(
+                unescape(str(attribute.get("name") or "")),
+                ", ".join(_terms(attribute)),
+                self.label_map,
+            )
         blocks = _blocks(item)
         for label, value in _table_rows(blocks):
             labels.add(label, value, self.label_map)
@@ -1146,8 +1126,7 @@ class WooSite(SiteAdapter):
         )
         for label, value in pairs:
             labels.add(label, value, self.label_map)
-        for key, value in dom.page_meta(soup).items():
-            labels.raw.setdefault(key, value)
+        kit.keep(labels.raw, dom.page_meta(soup))
         offer = _ld_offer(node)
         price, currency = self._html_price(root, offer, ref)
         variants = _html_variants(soup, ref, currency)
@@ -1271,14 +1250,10 @@ def _html_images(soup: BeautifulSoup, node: dict[str, Any] | None, base_url: str
     Returns:
         Absolute image URLs, de-duplicated, in page order.
     """
-    image = (node or {}).get("image")
-    candidates = [str(image)] if isinstance(image, str) else []
-    candidates.extend(
-        src
-        for tag in soup.select(".woocommerce-product-gallery img")
-        if (src := _image_src(tag)) is not None
-    )
-    return dom.unique(dom.absolute(base_url, url) for url in candidates)
+    headline = kit.as_str((node or {}).get("image"))
+    candidates: list[str | None] = [headline]
+    candidates.extend(_image_src(tag) for tag in soup.select(".woocommerce-product-gallery img"))
+    return kit.gallery(base_url, candidates)
 
 
 def _categories_of(soup: BeautifulSoup, root: Tag) -> list[str]:

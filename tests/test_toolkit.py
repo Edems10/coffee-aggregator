@@ -54,6 +54,12 @@ def test_a_broken_payload_costs_one_record_not_the_run() -> None:
     assert kit.json_object('{"a": 1}') == {"a": 1}
 
 
+def test_records_keeps_only_the_mappings_of_a_list() -> None:
+    assert kit.records([{"a": 1}, "no", 3, {}]) == [{"a": 1}, {}]
+    assert kit.records({"a": 1}) == []
+    assert kit.records(None) == []
+
+
 def test_numbers_narrow_without_believing_a_boolean() -> None:
     assert kit.as_number(True) is None
     assert kit.as_number(7) == 7.0

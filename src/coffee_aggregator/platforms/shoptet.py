@@ -1002,9 +1002,7 @@ def _parse_images(root: Tag, base_url: str) -> list[str]:
     # A gallery's lightbox trigger is an anchor with "#" or nothing in its href,
     # which is not a photo; which of the two a shop writes even depends on the
     # HTML parser's version, so neither belongs in the record.
-    return dom.unique(
-        dom.absolute(base_url, url) for url in candidates if _is_image_href(url or "")
-    )
+    return kit.gallery(base_url, candidates, keep_when=_is_image_href)
 
 
 def _is_image_href(href: str) -> bool:
@@ -1377,8 +1375,7 @@ class ShoptetSite(SiteAdapter):
         labels, prose = _collect_labels(root, self.label_map)
         # Open Graph and <meta> routinely name the origin or the cup notes the
         # visible markup omits; a real parameter row always wins.
-        for key, value in dom.page_meta(soup).items():
-            labels.raw.setdefault(key, value)
+        kit.keep(labels.raw, dom.page_meta(soup))
         brand = _brand(labels, soup)
         if brand is not None:
             labels.raw.setdefault(BRAND_KEY, brand)

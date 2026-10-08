@@ -8,6 +8,7 @@ from urllib.parse import urlencode, urljoin
 
 from bs4 import BeautifulSoup
 
+from coffee_aggregator import adapters as kit
 from coffee_aggregator import normalize
 from coffee_aggregator.labels import (
     F_CERTIFICATIONS,
@@ -251,12 +252,7 @@ def _products(payload: str, url: str) -> list[dict[str, Any]]:
     except ValueError:
         logger.warning("%s: not JSON", url)
         return []
-    if not isinstance(parsed, dict):
-        return []
-    entries = parsed.get("products")
-    if not isinstance(entries, list):
-        return []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    return kit.records(kit.as_dict(parsed).get("products"))
 
 
 def _amount(raw: object) -> float | None:
@@ -294,10 +290,7 @@ def _variants(item: dict[str, Any]) -> list[dict[str, Any]]:
     Returns:
         The variants in Shopify's own order.
     """
-    entries = item.get("variants")
-    if not isinstance(entries, list):
-        return []
-    return [entry for entry in entries if isinstance(entry, dict)]
+    return kit.records(item.get("variants"))
 
 
 def _variant_weight(variant: dict[str, Any]) -> int | None:
@@ -344,11 +337,8 @@ def _images(item: dict[str, Any]) -> list[str]:
     Returns:
         Full-size image URLs, de-duplicated, in Shopify's own order.
     """
-    entries = item.get("images")
-    if not isinstance(entries, list):
-        return []
     return dom.unique(
-        str(entry.get("src")) for entry in entries if isinstance(entry, dict) and entry.get("src")
+        str(src) for entry in kit.records(item.get("images")) if (src := entry.get("src"))
     )
 
 

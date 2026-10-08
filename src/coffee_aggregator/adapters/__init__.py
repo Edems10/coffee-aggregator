@@ -25,6 +25,7 @@ from coffee_aggregator.adapters.payload import (
     json_object,
     localised,
     looks_like_json,
+    records,
     strings,
 )
 from coffee_aggregator.adapters.refs import id_from, product_ref, sitemap_refs
@@ -50,6 +51,7 @@ __all__ = [
     "read_blocks",
     "read_pairs",
     "read_text",
+    "records",
     "reviews",
     "schema_stock",
     "sitemap_refs",
