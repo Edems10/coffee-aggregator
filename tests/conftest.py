@@ -50,6 +50,7 @@ def make_coffee(site: str = "demo", external_id: str = "1", **overrides: object)
         currency="EUR",
         weight_g=200,
         available=True,
+        availability_raw="InStock",
         decaf=False,
         origin=Origin(
             country="CU",
@@ -90,7 +91,18 @@ def make_coffee(site: str = "demo", external_id: str = "1", **overrides: object)
             reviews=[Review(author="Jana", date=date(2026, 1, 2), rating=5.0, text="super")],
             sold_count=2431,
         ),
-        variants=[Variant("1-250", "https://example.sk/detail/1", 250, 11.5, "EUR", True, "250 g")],
+        variants=[
+            Variant(
+                external_id="1-250",
+                url="https://example.sk/detail/1",
+                weight_g=250,
+                price=11.5,
+                currency="EUR",
+                available=True,
+                availability_raw="Skladem",
+                label="250 g",
+            )
+        ],
         images=["https://example.sk/img/1.jpg"],
         tags=["novinka"],
         categories=["Káva", "Jednodruhová"],

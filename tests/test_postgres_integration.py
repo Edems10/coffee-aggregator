@@ -309,6 +309,8 @@ def test_the_variants_are_rows_a_query_can_reach(sink: PostgresSink) -> None:
     assert float(_scalar(sink, "SELECT price_czk FROM coffee_variant")) == 278.99  # type: ignore[arg-type]
     assert float(_scalar(sink, "SELECT price_per_kg_eur FROM coffee_variant")) == 46.0  # type: ignore[arg-type]
     assert _scalar(sink, "SELECT available FROM coffee_variant") is True
+    assert _scalar(sink, "SELECT availability_raw FROM coffee_variant") == "Skladem"
+    assert _scalar(sink, "SELECT availability_raw FROM coffee") == "InStock"
 
 
 def test_the_cheapest_250_g_bag_is_one_plain_query(sink: PostgresSink) -> None:

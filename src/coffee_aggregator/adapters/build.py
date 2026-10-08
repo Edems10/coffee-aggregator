@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Final
 
 from coffee_aggregator import normalize
@@ -9,7 +10,15 @@ from coffee_aggregator.sites import html as dom
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
 
-__all__ = ["gallery", "keep", "package", "schema_stock", "stock_state"]
+__all__ = [
+    "gallery",
+    "keep",
+    "package",
+    "schema_stock",
+    "schema_token",
+    "stock_state",
+    "stock_wording",
+]
 
 #: What a shop writes when the bag is there, folded. Czech, Slovak and English
 #: in one list, so no shop has to restate the words its own language happens to
@@ -44,6 +53,13 @@ _OUT_OF_STOCK: Final = (
 #: both for sale; the web front end gets a banner that tells a pre-order apart,
 #: which is where that distinction belongs rather than in a missing listing.
 _SCHEMA_IN_STOCK: Final = ("instock", "preorder", "limitedavailability")
+#: What separates one thing an option label states from the next. A shop
+#: writes "Hmotnost: 250 g - IHNED K ODESLÁNÍ (408 Kč)" as one string, and
+#: only the middle piece of it is about stock.
+_FRAGMENT_RE: Final = re.compile(r"\s+[-–—]\s+|[,;/\n]")
+#: The price Shoptet appends to an option label, which rides along on the
+#: same fragment as the stock wording.
+_TRAILING_BRACKET_RE: Final = re.compile(r"\s*\([^()]*\)\s*$")
 
 
 def stock_state(*texts: str | None) -> bool | None:
@@ -82,6 +98,78 @@ def schema_stock(value: str | None) -> bool | None:
     if not folded:
         return None
     return any(marker in folded for marker in _SCHEMA_IN_STOCK)
+
+
+def schema_token(value: str | None) -> str | None:
+    """Return the schema.org ``availability`` token exactly as the page named it.
+
+    This is the provenance half of :func:`schema_stock`: the boolean says what
+    we read, this says what the shop wrote. ``PreOrder`` and
+    ``LimitedAvailability`` both read as available, so the token is the only
+    thing left that can tell a pre-order banner apart from a bag on the shelf.
+
+    Args:
+        value: The ``content`` of the availability meta, when the page has one.
+
+    Returns:
+        The bare token, e.g. ``"PreOrder"`` for
+        ``"https://schema.org/PreOrder"``. The URL prefix is boilerplate the
+        vocabulary mandates, not something the shop chose to state. An
+        unrecognised value is returned as written rather than dropped, and an
+        empty one is None.
+    """
+    if value is None:
+        return None
+    stated = value.strip()
+    if not stated:
+        return None
+    return stated.rsplit("/", 1)[-1].strip() or stated
+
+
+def stock_wording(*texts: str | None) -> str | None:
+    """Return the stock phrase a shop states, in the shop's own words.
+
+    The provenance half of :func:`stock_state`. The wording usually arrives
+    glued to everything else a Shoptet option says
+    (``"Hmotnost: 250 g - IHNED K ODESLÁNÍ (408 Kč)"``), so the text is cut at
+    its separators and only a fragment the shared vocabulary recognises is
+    kept. Storing the whole label instead would file ``"vratný obal"`` and
+    ``"bez mletí / 500g"`` — 164 of the 658 dashed variant labels in the
+    catalogue (30 September snapshot) — as statements about stock, which the
+    page never made.
+
+    Args:
+        texts: Every stock wording the page states, in any order — the same
+            arguments :func:`stock_state` is given.
+
+    Returns:
+        The fragment as written, trailing price in brackets removed, or None
+        when no fragment states anything about stock. Out-of-stock wording is
+        looked for first, exactly as :func:`stock_state` tests it first, so a
+        label holding both reports the negation it is read as.
+    """
+    fragments = [piece for text in texts for piece in _fragments(text)]
+    for markers in (_OUT_OF_STOCK, _IN_STOCK):
+        for fragment in fragments:
+            folded = normalize.fold(fragment)
+            if any(marker in folded for marker in markers):
+                return fragment
+    return None
+
+
+def _fragments(text: str | None) -> list[str]:
+    """Cut one stated text into the pieces that can each stand alone.
+
+    Args:
+        text: The text as the page wrote it.
+
+    Returns:
+        The non-empty pieces, each stripped of a trailing bracketed price.
+    """
+    if not text:
+        return []
+    pieces = (_TRAILING_BRACKET_RE.sub("", piece) for piece in _FRAGMENT_RE.split(text))
+    return [stripped for piece in pieces if (stripped := piece.strip())]
 
 
 def package(  # noqa: PLR0913  (one variant field per argument; grouping them hides the shape)

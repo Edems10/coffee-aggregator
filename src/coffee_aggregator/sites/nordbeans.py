@@ -214,24 +214,27 @@ def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
     return variants
 
 
-def _availability(soup: BeautifulSoup, record: dict[str, object]) -> bool | None:
-    """Decide whether the product is in stock.
+def _availability(soup: BeautifulSoup, record: dict[str, object]) -> tuple[bool | None, str | None]:
+    """Decide whether the product is in stock, and keep what said so.
 
     Args:
         soup: The parsed detail page.
         record: The ``page_data`` product record.
 
     Returns:
-        True, False, or None when neither source says.
+        The reading — True, False, or None when neither source says — and the
+        wording it was read from. The ``soldOut`` counter is a number, not a
+        statement, so a reading that falls back to it keeps no wording.
     """
-    stated = kit.stock_state(
+    texts = (
         kit.as_str(record.get("availability")),
         dom.text(soup.select_one("[data-deliverytime]")),
     )
+    stated = kit.stock_state(*texts)
     if stated is not None:
-        return stated
+        return stated, kit.stock_wording(*texts)
     sold_out = kit.as_number(record.get("soldOut"))
-    return False if sold_out is not None and sold_out > 0 else None
+    return (False if sold_out is not None and sold_out > 0 else None), None
 
 
 def _parse_images(soup: BeautifulSoup) -> list[str]:
@@ -412,6 +415,7 @@ class NordbeansSite(SiteAdapter):
         price = self._price(soup, record, ref)
         species = self._species(name, facts)
         categories = self._categories(record)
+        availability, availability_raw = _availability(soup, record)
         coffee = Coffee(
             site=self.site_id,
             external_id=ref.external_id or external_id_of(ref.url) or "",
@@ -421,7 +425,8 @@ class NordbeansSite(SiteAdapter):
             price=price,
             currency=DEFAULT_CURRENCY if price is not None else None,
             weight_g=headline_weight(facts.labels, name, variants, price=price),
-            available=_availability(soup, record),
+            available=availability,
+            availability_raw=availability_raw,
             decaf=is_decaf(facts.labels, name, categories),
             origin=parse_origin(facts.labels, name, blend=species.is_blend),
             processing=normalize.parse_processing(facts.get(F_PROCESS)),
