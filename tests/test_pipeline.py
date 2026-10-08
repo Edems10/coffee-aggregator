@@ -21,6 +21,7 @@ from coffee_aggregator.pipeline import (
     estimated_requests,
     host_costs,
     host_of,
+    host_order,
     run,
     run_many,
     shard_hosts,
@@ -779,6 +780,265 @@ def test_a_shard_with_more_shards_than_hosts_can_be_empty() -> None:
 
 def test_a_shop_without_a_base_url_falls_back_to_its_id() -> None:
     assert host_of(Shop("lonely", "")) == "lonely"
+
+
+# --- dispatching the longest shop first ---------------------------------------
+
+
+class TimedShop(Shop):
+    """A shop that takes a known time and writes down when it ran."""
+
+    def __init__(
+        self,
+        site_id: str,
+        base_url: str,
+        seconds: float,
+        log: list[tuple[str, float]],
+        lock: threading.Lock,
+    ) -> None:
+        super().__init__(site_id, base_url)
+        self.count = 1
+        self.seconds = seconds
+        self._log = log
+        self._lock = lock
+
+    def discover(
+        self,
+        fetcher: PoliteFetcher,
+        *,
+        max_pages: int | None = None,
+    ) -> Iterator[ProductRef]:
+        with self._lock:
+            started = time.monotonic()
+            self._log.append((f"{self.site_id}+", started))
+        time.sleep(self.seconds)
+        with self._lock:
+            self._log.append((f"{self.site_id}-", time.monotonic()))
+        yield from super().discover(fetcher, max_pages=max_pages)
+
+
+def _timed(
+    durations: dict[str, float],
+    hosts: dict[str, str] | None = None,
+) -> tuple[list[TimedShop], list[tuple[str, float]]]:
+    log: list[tuple[str, float]] = []
+    lock = threading.Lock()
+    where = hosts or {}
+    shops = [
+        TimedShop(site_id, where.get(site_id, f"https://{site_id}.sk/"), seconds, log, lock)
+        for site_id, seconds in durations.items()
+    ]
+    return shops, log
+
+
+def test_the_most_expensive_shop_is_dispatched_first() -> None:
+    """Alphabetically last and by far the longest: the shape the bug had."""
+    shops, log = _timed({"aaa": 0.01, "bbb": 0.01, "zzz": 0.08})
+    costs = host_costs(
+        cast("Sequence[SiteAdapter]", shops),
+        delay_for=_flat,
+        durations={"aaa": 1.0, "bbb": 1.0, "zzz": 100.0},
+    )
+
+    run_many(
+        cast("Sequence[SiteAdapter]", shops),
+        cast("PoliteFetcher", FakeFetcher()),
+        cast("Sink", FakeSink()),
+        site_workers=2,
+        costs=costs,
+    )
+
+    # two workers, three shops: the first wave is deterministic even though the
+    # race between its two threads is not. Alphabetically zzz would be third.
+    assert "zzz+" in [entry for entry, _ in log][:2]
+
+
+def test_the_reports_still_come_back_in_the_order_the_shops_were_given() -> None:
+    """``report`` and ``wrote_nothing`` read this list positionally."""
+    shops, _ = _timed({"aaa": 0.0, "mmm": 0.0, "zzz": 0.0})
+    costs = host_costs(
+        cast("Sequence[SiteAdapter]", shops),
+        delay_for=_flat,
+        durations={"aaa": 1.0, "mmm": 50.0, "zzz": 100.0},
+    )
+
+    reports = run_many(
+        cast("Sequence[SiteAdapter]", shops),
+        cast("PoliteFetcher", FakeFetcher()),
+        cast("Sink", FakeSink()),
+        site_workers=3,
+        costs=costs,
+    )
+
+    assert [report.site_id for report in reports] == ["aaa", "mmm", "zzz"]
+    assert all(report.written == 1 for report in reports)
+
+
+def test_two_shops_on_one_host_never_run_at_the_same_time() -> None:
+    """Two workers behind one limiter is throughput spent on nothing."""
+    shops, log = _timed(
+        {"first": 0.05, "second": 0.05, "other": 0.05},
+        hosts={
+            "first": "https://shared.sk/a",
+            "second": "https://www.shared.sk/b",
+            "other": "https://other.sk/",
+        },
+    )
+    costs = host_costs(cast("Sequence[SiteAdapter]", shops), delay_for=_flat)
+
+    run_many(
+        cast("Sequence[SiteAdapter]", shops),
+        cast("PoliteFetcher", FakeFetcher()),
+        cast("Sink", FakeSink()),
+        site_workers=3,
+        costs=costs,
+    )
+
+    order = [entry for entry, _ in log]
+    siblings = [entry for entry in order if entry[:-1] in {"first", "second"}]
+    assert siblings in (
+        ["first+", "first-", "second+", "second-"],
+        ["second+", "second-", "first+", "first-"],
+    )
+
+
+def test_a_failing_shop_still_reports_in_its_own_place() -> None:
+    class Broken(Shop):
+        def discover(
+            self,
+            fetcher: PoliteFetcher,
+            *,
+            max_pages: int | None = None,
+        ) -> Iterator[ProductRef]:
+            msg = "the shop moved its catalogue"
+            raise RuntimeError(msg)
+
+    shops = [Shop("ok", "https://ok.sk/"), Broken("broken", "https://broken.sk/")]
+    shops[0].count = 2
+    costs = host_costs(
+        cast("Sequence[SiteAdapter]", shops),
+        delay_for=_flat,
+        durations={"broken": 99.0},
+    )
+
+    reports = run_many(
+        cast("Sequence[SiteAdapter]", shops),
+        cast("PoliteFetcher", FakeFetcher()),
+        cast("Sink", FakeSink()),
+        site_workers=2,
+        costs=costs,
+    )
+
+    assert [report.site_id for report in reports] == ["ok", "broken"]
+    assert reports[1].discovery_ok is False
+    assert reports[0].written == 2
+
+
+def test_without_costs_the_shops_keep_the_order_they_were_given() -> None:
+    shops = [Shop("zzz", "https://zzz.sk/"), Shop("aaa", "https://aaa.sk/")]
+    for shop in shops:
+        shop.count = 1
+
+    reports = run_many(
+        cast("Sequence[SiteAdapter]", shops),
+        cast("PoliteFetcher", FakeFetcher()),
+        cast("Sink", FakeSink()),
+        site_workers=2,
+        costs=None,
+    )
+
+    assert [report.site_id for report in reports] == ["zzz", "aaa"]
+
+
+def test_last_nights_duration_beats_the_estimate() -> None:
+    """``max_pages`` is a ceiling, so the estimate orders by crawl-delay."""
+    small_but_slow = Shop("slow", "https://slow.sk/", max_pages=20)
+    big = Shop("big", "https://big.sk/", max_pages=10)
+
+    estimated = host_costs([small_but_slow, big], delay_for=_flat)
+    measured = host_costs(
+        [small_but_slow, big],
+        delay_for=_flat,
+        durations={"slow": 40.0, "big": 900.0},
+    )
+
+    assert [cost.host for cost in estimated] == ["slow.sk", "big.sk"]
+    assert [cost.host for cost in measured] == ["big.sk", "slow.sk"]
+    assert measured[0].seconds == 900.0
+
+
+def test_a_shop_with_no_history_falls_back_to_the_estimate() -> None:
+    """A shop added today has never been recorded and still has to be placed."""
+    known = Shop("known", "https://known.sk/", max_pages=1)
+    fresh = Shop("fresh", "https://fresh.sk/", max_pages=1)
+
+    costs = host_costs([known, fresh], delay_for=lambda _host: 2.0, durations={"known": 5.0})
+
+    by_host = {cost.host: cost for cost in costs}
+    assert by_host["known.sk"].seconds == 5.0
+    assert by_host["fresh.sk"].measured_s is None
+    assert by_host["fresh.sk"].seconds == (1 + PRODUCTS_PER_LISTING_PAGE) * 2.0
+
+
+def test_a_hosts_cost_adds_up_the_shops_it_serves() -> None:
+    first = Shop("first", "https://shared.sk/a", max_pages=1)
+    second = Shop("second", "https://shared.sk/b", max_pages=1)
+
+    costs = host_costs(
+        [first, second],
+        delay_for=lambda _host: 2.0,
+        durations={"first": 30.0, "second": 70.0},
+    )
+
+    assert costs[0].site_ids == ("first", "second")
+    assert costs[0].seconds == 100.0
+
+
+def test_a_half_known_host_mixes_the_record_with_the_estimate() -> None:
+    first = Shop("first", "https://shared.sk/a", max_pages=1)
+    second = Shop("second", "https://shared.sk/b", max_pages=1)
+
+    costs = host_costs([first, second], delay_for=lambda _host: 2.0, durations={"first": 30.0})
+
+    assert costs[0].seconds == 30.0 + (1 + PRODUCTS_PER_LISTING_PAGE) * 2.0
+
+
+def test_an_empty_history_leaves_the_estimate_exactly_as_it_was() -> None:
+    """``--shard`` passes no durations and must keep its arithmetic."""
+    shops = [Shop(f"s{index}", f"https://s{index}.sk/", max_pages=index + 1) for index in range(5)]
+
+    assert host_costs(shops, delay_for=_flat) == host_costs(shops, delay_for=_flat, durations={})
+
+
+def test_host_order_groups_by_host_and_sorts_by_cost() -> None:
+    shops = [
+        Shop("cheap", "https://cheap.sk/"),
+        Shop("sib_a", "https://shared.sk/a"),
+        Shop("dear", "https://dear.sk/"),
+        Shop("sib_b", "https://shared.sk/b"),
+    ]
+    costs = host_costs(
+        shops,
+        delay_for=_flat,
+        durations={"cheap": 1.0, "sib_a": 10.0, "sib_b": 10.0, "dear": 100.0},
+    )
+
+    groups = host_order(shops, costs)
+
+    assert [[site.site_id for site in group] for group in groups] == [
+        ["dear"],
+        ["sib_a", "sib_b"],
+        ["cheap"],
+    ]
+
+
+def test_host_order_still_crawls_a_shop_no_cost_names() -> None:
+    shops = [Shop("costed", "https://costed.sk/"), Shop("stray", "https://stray.sk/")]
+    costs = [cost for cost in host_costs(shops, delay_for=_flat) if cost.host == "costed.sk"]
+
+    groups = host_order(shops, costs)
+
+    assert [[site.site_id for site in group] for group in groups] == [["costed"], ["stray"]]
 
 
 # --- the run summary ----------------------------------------------------------

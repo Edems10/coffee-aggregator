@@ -15,7 +15,7 @@ from coffee_aggregator.http import FetchDisallowed, FetchError, FetchResult
 from coffee_aggregator.money import per_kg
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterator, Mapping, Sequence
 
     from coffee_aggregator.db.monitoring import RunMonitor
     from coffee_aggregator.fx import FxRate
@@ -529,13 +529,14 @@ def run_many(  # noqa: PLR0913  (the same knobs as run, plus the shop pool)
     fx_rate: FxRate | None = None,
     deadline: Deadline | None = None,
     monitor: RunMonitor | None = None,
+    costs: Sequence[HostCost] | None = None,
 ) -> list[RunReport]:
     """Crawl several shops, a few of them at the same time.
 
     A crawl spends nearly all of its time waiting for shops to answer, so the
     shops run in threads. Nothing about politeness changes: the rate limiter is
-    keyed by host, and two shops are two hosts, so each one is still asked at
-    its own pace. Running one shop twice as fast is what would be rude; running
+    keyed by host, and the order shops are dispatched in changes no host's own
+    pacing. Running one shop twice as fast is what would be rude; running
     twenty shops at once is not.
 
     Args:
@@ -551,10 +552,14 @@ def run_many(  # noqa: PLR0913  (the same knobs as run, plus the shop pool)
             that are still running when it passes stop at their next boundary
             and the ones never started report nothing at all.
         monitor: Where each finished report is recorded, when anywhere.
+        costs: What each host is expected to cost, as :func:`host_costs`
+            returns it. Given, the pool is handed the most expensive host
+            first; left out, the shops are dispatched in the order they came.
 
     Returns:
-        One report per shop, in the order the shops were given. A shop that
-        raises is reported as a failed run rather than taking the others down.
+        One report per shop, in the order the shops were given — whatever order
+        they were crawled in. A shop that raises is reported as a failed run
+        rather than taking the others down.
     """
     workers = max(1, min(site_workers, len(site_list)))
     if workers == 1:
@@ -599,8 +604,31 @@ def run_many(  # noqa: PLR0913  (the same knobs as run, plus the shop pool)
                 monitor.record(report)
             return report
 
+    if costs is None:
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="site") as pool:
+            return list(pool.map(crawl, site_list))
+
+    # Two different shops may carry the same site id in a hand-built list, so
+    # the report of each one is tracked by its position rather than by its name.
+    slot = {id(site): index for index, site in enumerate(site_list)}
+
+    def crawl_host(group: Sequence[SiteAdapter]) -> list[tuple[int, RunReport]]:
+        return [(slot[id(site)], crawl(site)) for site in group]
+
+    groups = host_order(site_list, costs)
+    for cost in costs[:3]:
+        logger.info(
+            "dispatching %s first (~%.0fs%s)",
+            ", ".join(cost.site_ids),
+            cost.seconds,
+            "" if cost.measured_s is None else ", measured",
+        )
+    done: list[RunReport | None] = [None] * len(site_list)
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="site") as pool:
-        return list(pool.map(crawl, site_list))
+        for group_reports in pool.map(crawl_host, groups):
+            for index, report in group_reports:
+                done[index] = report
+    return [report for report in done if report is not None]
 
 
 def host_of(site: SiteAdapter) -> str:
@@ -637,20 +665,36 @@ def estimated_requests(site: SiteAdapter, *, max_pages: int | None = None) -> in
 
 @dataclass(slots=True, frozen=True)
 class HostCost:
-    """What one host is expected to cost a run, and which shops it holds."""
+    """What one host is expected to cost a run, and which shops it holds.
+
+    Attributes:
+        host: The origin, folded as :func:`host_of` folds it.
+        site_ids: Every shop served from it, sorted.
+        requests: How many requests the estimate says they cost together.
+        delay_s: The pacing the host is asked at.
+        measured_s: What the shops actually took the last time they ran, when
+            the run history knows. It beats the estimate by a wide margin:
+            ``requests`` is built from ``max_pages``, which is a configured
+            *ceiling* — 98 of the 155 shops sit at 10 — so the estimate ends up
+            ordering by crawl-delay rather than by catalogue size.
+    """
 
     host: str
     site_ids: tuple[str, ...]
     requests: int
     delay_s: float
+    measured_s: float | None = None
 
     @property
     def seconds(self) -> float:
-        """The estimated wall-clock cost of walking this host.
+        """The wall-clock cost of walking this host.
 
         Returns:
-            Requests times the delay each one has to wait out.
+            Last night's measured duration when there is one, the estimate
+            otherwise.
         """
+        if self.measured_s is not None:
+            return self.measured_s
         return self.requests * self.delay_s
 
 
@@ -663,17 +707,24 @@ def host_costs(
     *,
     delay_for: Callable[[str], float],
     max_pages: int | None = None,
+    durations: Mapping[str, float] | None = None,
 ) -> list[HostCost]:
-    """Group shops by host and estimate what each host costs.
+    """Group shops by host and work out what each host costs.
 
     Two shops on one origin are one unit of work, not two: the rate limiter is
     keyed by host, so splitting them across shards would have each shard pace
-    that origin on its own and double the request rate the shop sees.
+    that origin on its own and double the request rate the shop sees — and
+    running them side by side in one pool would put two workers behind the same
+    limiter for no extra throughput.
 
     Args:
         site_list: The shops to weigh.
         delay_for: The delay one host has to be asked at, crawl-delay included.
         max_pages: The run's own listing-page cap, when it has one.
+        durations: How long each shop took last time, keyed by site id. A shop
+            missing from it — a new one, or a first run — falls back to the
+            estimate; a host where no shop is known keeps a purely estimated
+            cost.
 
     Returns:
         One entry per host, most expensive first, ties broken by host name.
@@ -687,11 +738,74 @@ def host_costs(
             site_ids=tuple(sorted(shop.site_id for shop in shops)),
             requests=sum(estimated_requests(shop, max_pages=max_pages) for shop in shops),
             delay_s=delay_for(host),
+            measured_s=_measured_seconds(
+                shops,
+                durations,
+                delay_s=delay_for(host),
+                max_pages=max_pages,
+            ),
         )
         for host, shops in grouped.items()
     ]
     costs.sort(key=lambda cost: (-cost.seconds, cost.host))
     return costs
+
+
+def _measured_seconds(
+    shops: Sequence[SiteAdapter],
+    durations: Mapping[str, float] | None,
+    *,
+    delay_s: float,
+    max_pages: int | None,
+) -> float | None:
+    """Add up what one host's shops took last time, estimating the unknown ones.
+
+    Args:
+        shops: The shops served from that host.
+        durations: Recorded seconds per site id, or None when there is no
+            history to read at all.
+        delay_s: The host's pacing, for the shops that have no record.
+        max_pages: The run's own listing-page cap, when it has one.
+
+    Returns:
+        The host's measured cost in seconds, or None when not one of its shops
+        has ever been recorded — the caller then falls back to the estimate.
+    """
+    if not durations or not any(shop.site_id in durations for shop in shops):
+        return None
+    return sum(
+        durations.get(shop.site_id, estimated_requests(shop, max_pages=max_pages) * delay_s)
+        for shop in shops
+    )
+
+
+def host_order(
+    site_list: Sequence[SiteAdapter],
+    costs: Sequence[HostCost],
+) -> list[list[SiteAdapter]]:
+    """Split the shops into one unit of work per host, most expensive host first.
+
+    This is the whole of the scheduling. A thread pool handed its work in
+    descending order of cost *is* longest-processing-time-first scheduling: the
+    biggest shop starts at second zero and the small ones fill in around it,
+    instead of the biggest being picked up last and running alone while seven
+    workers idle.
+
+    Args:
+        site_list: The shops to crawl.
+        costs: Their hosts' costs, as :func:`host_costs` returns them.
+
+    Returns:
+        One group per host, each group in the order the shops were given, the
+        groups ordered by cost. A host no cost names is still crawled, after
+        the ones that are costed.
+    """
+    groups: dict[str, list[SiteAdapter]] = {}
+    for site in site_list:
+        groups.setdefault(host_of(site), []).append(site)
+    ordered = [groups.pop(cost.host) for cost in costs if cost.host in groups]
+    ordered.extend(groups.values())
+    return ordered
 
 
 def shard_hosts(

@@ -513,6 +513,30 @@ up by the log shipper in
 dashboards there cover what a page would have shown and more, over the same
 tables, which is why there is no page here any more.
 
+## The order the shops are crawled in
+
+A pool of `--site-workers` threads is only as fast as its last task, so the
+shops are handed to it **longest first**. The cost of a shop is
+`crawl_run.duration_s` from the last night it ran, read in one query over
+`crawl_run_site_started_idx`; a shop with no usable record — a new one, a first
+run, a night that crashed before it finished — falls back to the same estimate
+the shards are weighed with. A run without a database has no history at all and
+uses the estimate throughout.
+
+Hosts, not shops, are the unit of work: two shops on one origin are crawled one
+after the other in the same worker, because the rate limiter is keyed by host
+and two workers behind one limiter buy no throughput. `lighthousecoffee.sk` and
+`valasska-prazirna.cz` are the two origins this applies to.
+
+None of this changes any shop's own pacing — the limiter is untouched, and a
+shop is asked at exactly the rate it was asked at before.
+
+**The floor is the longest single shop.** Measured on the server: 6 349
+shop-seconds in total, of which `kava` alone is 894 s. Eight workers cannot
+finish before that one shop does, so ~15 min is the best any scheduler reaches
+and the remaining 5 455 s fit under it comfortably (779 s each over the other
+seven workers). The gain is in not starting `kava` half way through the night.
+
 ## Sharding the daily run
 
 `--shard I/N` crawls one deterministic slice of the registered shops, so a nightly

@@ -70,6 +70,7 @@ def test_the_null_monitor_records_nothing_and_answers_nothing() -> None:
     monitor.record(_report())
     assert monitor.recent() == []
     assert monitor.recent(site="fake", limit=5) == []
+    assert monitor.durations() == {}
     monitor.close()
 
 
@@ -95,6 +96,27 @@ def test_a_monitor_never_takes_a_crawl_down_with_it(caplog: pytest.LogCaptureFix
 
 def test_the_insert_binds_one_placeholder_per_column() -> None:
     assert monitoring._INSERT_SQL.count("%s") == len(COLUMNS)
+
+
+def test_the_durations_query_matches_the_index_it_relies_on() -> None:
+    """``DISTINCT ON`` is only one scan if it is ordered like the index."""
+    assert "DISTINCT ON (site)" in monitoring._DURATIONS_SQL
+    assert "ORDER BY site, started_at DESC" in monitoring._DURATIONS_SQL
+    schema = (Path(monitoring.__file__).parent / "migrations" / "0001_initial.sql").read_text(
+        "utf-8"
+    )
+    assert "crawl_run USING btree (site, started_at DESC)" in schema
+
+
+def test_unreadable_history_never_takes_a_crawl_down_with_it(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Without history the crawl just runs in the order it was given."""
+    monitor = PostgresMonitor("postgresql://nobody@localhost:1/none", connect_timeout=1)
+    with caplog.at_level("ERROR", logger="coffee_aggregator.db.monitoring"):
+        assert monitor.durations() == {}
+    assert "could not read the run history" in caplog.text
+    monitor.close()
 
 
 # --- against a live PostgreSQL ------------------------------------------------
@@ -187,6 +209,21 @@ def test_recent_filters_by_site_and_honours_the_limit(monitor: PostgresMonitor) 
     assert len(monitor.recent(site="shop0")) == 2
     assert len(monitor.recent(limit=1)) == 1
     assert {row["site"] for row in monitor.recent(site="shop1")} == {"shop1"}
+
+
+@pytest.mark.integration
+@live
+def test_durations_returns_the_newest_usable_row_per_shop(monitor: PostgresMonitor) -> None:
+    """What the scheduler reads: last night per shop, crashes left out."""
+    older = datetime(2026, 9, 28, 2, 0, tzinfo=UTC)
+    newer = datetime(2026, 9, 29, 2, 0, tzinfo=UTC)
+    monitor.record(_report(site_id="kava", started_at=older, duration_s=10.0))
+    monitor.record(_report(site_id="kava", started_at=newer, duration_s=894.0))
+    monitor.record(_report(site_id="tiny", started_at=newer, duration_s=3.0))
+    monitor.record(_report(site_id="crashed", started_at=newer, discovery_ok=False))
+    monitor.record(_report(site_id="never-ran", started_at=newer, duration_s=0.0))
+
+    assert monitor.durations() == {"kava": 894.0, "tiny": 3.0}
 
 
 @pytest.mark.integration
