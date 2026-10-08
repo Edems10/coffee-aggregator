@@ -419,7 +419,16 @@ def _eur_coffee() -> Coffee:
     coffee.price = 9.99
     coffee.currency = "EUR"
     coffee.weight_g = 200
-    coffee.variants = [Variant("1-250", None, 250, 11.5, "EUR", True, "250 g")]
+    coffee.variants = [
+        Variant(
+            external_id="1-250",
+            weight_g=250,
+            price=11.5,
+            currency="EUR",
+            available=True,
+            label="250 g",
+        )
+    ]
     return coffee
 
 
@@ -428,7 +437,9 @@ def _czk_coffee() -> Coffee:
     coffee.price = 287.0
     coffee.currency = "CZK"
     coffee.weight_g = 250
-    coffee.variants = [Variant("2-1000", None, 1000, 999.0, None, True, "1 kg")]
+    coffee.variants = [
+        Variant(external_id="2-1000", weight_g=1000, price=999.0, available=True, label="1 kg")
+    ]
     return coffee
 
 

@@ -302,6 +302,63 @@ def test_a_schema_availability_reads_one_closed_vocabulary(
     assert kit.schema_stock(value) is expected
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("https://schema.org/InStock", "InStock"),
+        ("https://schema.org/PreOrder", "PreOrder"),
+        ("https://schema.org/LimitedAvailability", "LimitedAvailability"),
+        ("http://schema.org/OutOfStock", "OutOfStock"),
+        ("  https://schema.org/SoldOut  ", "SoldOut"),
+        ("InStock", "InStock"),
+        # The vocabulary is closed, so an unknown word reads as sold out; it is
+        # still what the shop wrote, and dropping it would leave the row saying
+        # the page stated nothing.
+        ("Dostupné", "Dostupné"),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_the_schema_token_is_kept_as_the_page_named_it(
+    value: str | None,
+    expected: str | None,
+) -> None:
+    """``PreOrder`` and ``LimitedAvailability`` both read True; only the token tells them apart."""
+    assert kit.schema_token(value) == expected
+
+
+@pytest.mark.parametrize(
+    ("label", "expected"),
+    [
+        ("Hmotnosť: 500g - Skladom >5 ks (34 €)", "Skladom >5 ks"),
+        ("Hmotnost: 3000g - IHNED K ODESLÁNÍ (4 290 Kč)", "IHNED K ODESLÁNÍ"),
+        ("Hmotnost: 250 g - Skladem (262 Kč)", "Skladem"),
+        ("Hmotnost: 1kg - Není skladem (42 €)", "Není skladem"),
+        (
+            "Druh kávy: Zrnková, Hmotnost: 250g - Momentálně nedostupné (240 Kč)",
+            "Momentálně nedostupné",
+        ),
+        # A label that states a grind and a weight states nothing about stock,
+        # and 164 of the catalogue's 658 dashed variant labels are of this kind.
+        ("Varianta: bez mletí / 500g", None),
+        ("Obal: vratný obal", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_the_stated_stock_wording_is_cut_out_of_the_label_it_arrives_in(
+    label: str | None,
+    expected: str | None,
+) -> None:
+    assert kit.stock_wording(label) == expected
+
+
+def test_the_wording_kept_is_the_one_the_reading_came_from() -> None:
+    """``stock_state`` tests the negations first, so the provenance has to as well."""
+    assert kit.stock_state("Skladem", "Není skladem") is False
+    assert kit.stock_wording("Skladem", "Není skladem") == "Není skladem"
+
+
 def test_a_package_reads_its_weight_off_its_own_label() -> None:
     variant = kit.package(
         external_id="1",

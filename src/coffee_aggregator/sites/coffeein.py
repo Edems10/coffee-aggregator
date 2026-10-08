@@ -372,19 +372,22 @@ def _parse_popularity(soup: BeautifulSoup) -> Popularity:
     )
 
 
-def _parse_availability(soup: BeautifulSoup) -> bool | None:
-    """Decide whether the product is in stock.
+def _parse_availability(soup: BeautifulSoup) -> tuple[bool | None, str | None]:
+    """Decide whether the product is in stock, and keep what said so.
 
     Args:
         soup: The parsed detail page.
 
     Returns:
-        True, False, or None when the page says nothing.
+        The reading — True, False, or None when the page says nothing — and the
+        schema.org token or the stock wording it was read from.
     """
-    schema = kit.schema_stock(dom.attr(soup.select_one("meta[itemprop=availability]"), "content"))
+    stated = dom.attr(soup.select_one("meta[itemprop=availability]"), "content")
+    schema = kit.schema_stock(stated)
     if schema is not None:
-        return schema
-    return kit.stock_state(dom.text(soup.select_one("div.popis_date_data div.dost")))
+        return schema, kit.schema_token(stated)
+    wording = dom.text(soup.select_one("div.popis_date_data div.dost"))
+    return kit.stock_state(wording), kit.stock_wording(wording)
 
 
 def _parse_images(soup: BeautifulSoup) -> list[str]:
@@ -626,6 +629,7 @@ class CoffeeinSite(SiteAdapter):
             species = _species_from_tags(soup, name)
         origin_text = dom.text(soup.select_one("div#coffee_origin"))
         variants = _parse_variants(soup, ref, price)
+        availability, availability_raw = _parse_availability(soup)
         coffee = Coffee(
             site=self.site_id,
             external_id=ref.external_id or _gtag_item_id(soup) or "",
@@ -635,7 +639,8 @@ class CoffeeinSite(SiteAdapter):
             price=price,
             currency=currency,
             weight_g=headline_weight(facts.labels, name, variants, price=price),
-            available=_parse_availability(soup),
+            available=availability,
+            availability_raw=availability_raw,
             origin=self._parse_origin(soup, facts, name, origin_text, blend=species.is_blend),
             processing=normalize.parse_processing(facts.get(F_PROCESS)),
             roast=_parse_roast(soup, facts.get(F_ROAST)),

@@ -240,6 +240,9 @@ def test_variant_rows_carry_everything_a_cross_shop_query_needs() -> None:
     assert rows[0]["price"] == 11.5
     assert rows[0]["currency"] == "EUR"
     assert rows[0]["available"] is True
+    # The boolean folds PreOrder and LimitedAvailability into True; the website
+    # draws its pre-order banner off the wording beside it.
+    assert rows[0]["availability_raw"] == "Skladem"
 
 
 def test_a_variant_inherits_the_products_currency_when_it_states_none() -> None:

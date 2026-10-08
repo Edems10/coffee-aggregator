@@ -488,6 +488,7 @@ def test_html_detail_page_yields_canonical_fields(ebenica: WooSite) -> None:
     assert coffee.name == "Colombia La Secreta"
     assert (coffee.price, coffee.currency, coffee.weight_g) == (4.49, "EUR", 70)
     assert coffee.available is True
+    assert coffee.availability_raw == "InStock"
     assert coffee.origin.country == "CO"
     assert coffee.origin.producer == "Juan Carlos Meija, La Secreta, Cafelumbus"
     assert (coffee.origin.altitude_min_m, coffee.origin.altitude_max_m) == (1700, 2050)
