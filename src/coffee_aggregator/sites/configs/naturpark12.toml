@@ -24,3 +24,11 @@ ignore = [
   "kapsle",
   "degustacni",
 ]
+
+[label_map]
+# Every coffee here lists its sizes in one "Balení" attribute ("150g, 1kg,
+# 250g, 500g"), which states no single bag and is ignored anyway; the one page
+# where it states a single size is the 50 g chocolate-bean duplicate, which
+# kept the 130 g original's pa_baleni term (verified live 2026-10-09). The
+# description's "Hmotnost: Netto 50 g" is the net weight on both pages.
+"Balení" = ""

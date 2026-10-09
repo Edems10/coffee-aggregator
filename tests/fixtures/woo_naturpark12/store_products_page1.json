@@ -1,0 +1,212 @@
+[
+ {
+  "id": 21379,
+  "name": "Kávová zrna v hořké čokoládě a kakau",
+  "slug": "kavova-zrna-v-horke-cokolade-a-kakau-50g",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://www.naturpark12.cz/obchod/kavova-zrna-v-horke-cokolade-a-kakau-50g/",
+  "sku": "",
+  "short_description": "<p>Výrobce: Pražská čokoláda s.r.o.<br />\nDistributor: Revenium, z. s.<br />\nUchovejte v chladu a suchu.<br />\nVyrobeno ručně v České republice.<br />\nHmotnost: Netto 50 g</p>",
+  "description": "<p>Lahodná křupavá kávová zrna obalená kvalitní hořkou čokoládou.<br />\nIntenzivní chuť kávy se krásně doplňuje s jemnou hořkostí čokolády, takže jsou perfektní jako malá sladká vzpruha během dne.<br />\nSkvělé k odpolední kávě, jako drobný dárek nebo jen tak na mlsání.</p>\n<p>Složení: hořká čokoláda (min 80%): obsah kakaových součástí  min. 55% (cukr, kakaové boby, kakaové máslo, emulgátor: slunečnicový lecitin, přírodní vanilka, pražená káva (min. 16%), kakaový prášek ((min. 0,7%). Může obsahovat mléko, sóju, arašídy a suché skořápkové plody.</p>\n<p>Výrobce: Pražská čokoláda s.r.o.<br />\nDistributor: Revenium, z. s.<br />\nUchovejte v chladu a suchu.<br />\nVyrobeno ručně v České republice.<br />\nHmotnost: Netto 50 g</p>",
+  "on_sale": false,
+  "prices": {
+   "price": "85",
+   "regular_price": "85",
+   "sale_price": "85",
+   "price_range": null,
+   "currency_code": "CZK",
+   "currency_symbol": "Kč",
+   "currency_minor_unit": 0,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": " ",
+   "currency_prefix": "",
+   "currency_suffix": " Kč"
+  },
+  "average_rating": "0",
+  "review_count": 0,
+  "images": [
+   {
+    "id": 21392,
+    "src": "https://www.naturpark12.cz/wp-content/uploads/2026/09/Doypack_Kavova-zrna-v-coko-50g_684x1024_nahled.webp",
+    "name": "Doypack_Kavova zrna v&nbsp;coko 50g_684x1024_nahled",
+    "alt": ""
+   }
+  ],
+  "categories": [
+   {
+    "id": 72,
+    "name": "Espresso",
+    "slug": "kava-na-espresso",
+    "link": "https://www.naturpark12.cz/kava-na-espresso/"
+   }
+  ],
+  "tags": [
+   {
+    "id": 218,
+    "name": "Čokoláda",
+    "slug": "cokolada",
+    "link": "https://www.naturpark12.cz/stitek/cokolada/"
+   },
+   {
+    "id": 158,
+    "name": "cross-sale-filtr",
+    "slug": "cross-sale-filtr",
+    "link": "https://www.naturpark12.cz/stitek/cross-sale-filtr/"
+   },
+   {
+    "id": 157,
+    "name": "cross-sale-presso",
+    "slug": "cross-sale-presso",
+    "link": "https://www.naturpark12.cz/stitek/cross-sale-presso/"
+   },
+   {
+    "id": 150,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://www.naturpark12.cz/stitek/kava/"
+   }
+  ],
+  "attributes": [
+   {
+    "id": 5,
+    "name": "Balení",
+    "taxonomy": "pa_baleni",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 217,
+      "name": "130g",
+      "slug": "130g"
+     }
+    ]
+   }
+  ],
+  "variations": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": true,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "",
+   "class": "in-stock"
+  },
+  "sold_individually": false,
+  "weight": "0.200",
+  "dimensions": {
+   "length": "",
+   "width": "",
+   "height": ""
+  },
+  "formatted_weight": "0,2 kg",
+  "formatted_dimensions": "-",
+  "is_password_protected": false
+ },
+ {
+  "id": 19342,
+  "name": "Kávová zrna v hořké čokoládě a kakau",
+  "slug": "kavova-zrna-v-horke-cokolade-a-kakau",
+  "parent": 0,
+  "type": "simple",
+  "variation": "",
+  "permalink": "https://www.naturpark12.cz/obchod/kavova-zrna-v-horke-cokolade-a-kakau/",
+  "sku": "",
+  "short_description": "<p>Výrobce: Pražská čokoláda s.r.o.<br />\nDistributor: Revenium, z. s.<br />\nUchovejte v chladu a suchu.<br />\nVyrobeno ručně v České republice.<br />\nHmotnost: Netto 130 g</p>",
+  "description": "<p>Lahodná křupavá kávová zrna obalená kvalitní hořkou čokoládou.<br />\nIntenzivní chuť kávy se krásně doplňuje s jemnou hořkostí čokolády, takže jsou perfektní jako malá sladká vzpruha během dne.<br />\nSkvělé k odpolední kávě, jako drobný dárek nebo jen tak na mlsání.</p>\n<p>Složení: hořká čokoláda (min 80%): obsah kakaových součástí  min. 55% (cukr, kakaové boby, kakaové máslo, emulgátor: slunečnicový lecitin, přírodní vanilka, pražená káva (min. 16%), kakaový prášek ((min. 0,7%). Může obsahovat mléko, sóju, arašídy a suché skořápkové plody.</p>\n<p>Výrobce: Pražská čokoláda s.r.o.<br />\nDistributor: Revenium, z. s.<br />\nUchovejte v chladu a suchu.<br />\nVyrobeno ručně v České republice.<br />\nHmotnost: Netto 130 g</p>",
+  "on_sale": false,
+  "prices": {
+   "price": "248",
+   "regular_price": "248",
+   "sale_price": "248",
+   "price_range": null,
+   "currency_code": "CZK",
+   "currency_symbol": "Kč",
+   "currency_minor_unit": 0,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": " ",
+   "currency_prefix": "",
+   "currency_suffix": " Kč"
+  },
+  "average_rating": "0",
+  "review_count": 0,
+  "images": [
+   {
+    "id": 19388,
+    "src": "https://www.naturpark12.cz/wp-content/uploads/2025/11/nahled_450×684_blend-v-horke-s-bonbony.webp",
+    "name": "nahled_450×684_blend v&nbsp;horke s&nbsp;bonbony",
+    "alt": ""
+   }
+  ],
+  "categories": [
+   {
+    "id": 72,
+    "name": "Espresso",
+    "slug": "kava-na-espresso",
+    "link": "https://www.naturpark12.cz/kava-na-espresso/"
+   }
+  ],
+  "tags": [
+   {
+    "id": 218,
+    "name": "Čokoláda",
+    "slug": "cokolada",
+    "link": "https://www.naturpark12.cz/stitek/cokolada/"
+   },
+   {
+    "id": 158,
+    "name": "cross-sale-filtr",
+    "slug": "cross-sale-filtr",
+    "link": "https://www.naturpark12.cz/stitek/cross-sale-filtr/"
+   },
+   {
+    "id": 157,
+    "name": "cross-sale-presso",
+    "slug": "cross-sale-presso",
+    "link": "https://www.naturpark12.cz/stitek/cross-sale-presso/"
+   },
+   {
+    "id": 150,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://www.naturpark12.cz/stitek/kava/"
+   }
+  ],
+  "attributes": [
+   {
+    "id": 5,
+    "name": "Balení",
+    "taxonomy": "pa_baleni",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 217,
+      "name": "130g",
+      "slug": "130g"
+     }
+    ]
+   }
+  ],
+  "variations": [],
+  "has_options": false,
+  "is_purchasable": true,
+  "is_in_stock": true,
+  "is_on_backorder": false,
+  "low_stock_remaining": null,
+  "stock_availability": {
+   "text": "",
+   "class": "in-stock"
+  },
+  "sold_individually": false,
+  "weight": "0.200",
+  "dimensions": {
+   "length": "",
+   "width": "",
+   "height": ""
+  },
+  "formatted_weight": "0,2 kg",
+  "formatted_dimensions": "-",
+  "is_password_protected": false
+ }
+]

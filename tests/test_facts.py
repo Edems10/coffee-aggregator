@@ -226,15 +226,48 @@ def test_a_size_axis_is_not_a_stated_weight() -> None:
     assert weighed(label="1000 g, 500 g, 250 g", variants=[variant(250, 9.0)]) == 250
 
 
-def test_the_name_beats_an_inferred_weight() -> None:
-    """A Shoptet "Brasil 1000 g" offering 250 g and 1000 g sells the 1000 g bag."""
+@pytest.mark.parametrize(
+    "label",
+    ["Množství kávy", "Množstvo kávy", "Dávka kávy", "Výsledná váha"],
+)
+def test_a_brewing_recipe_row_never_feeds_the_weight(label: str) -> None:
+    """ohmybean prints "Množství kávy: 50 g" and means one espresso dose.
+
+    "množství" and "váha" are both weight terms, so the recipe claimed the bag
+    on every one of that shop's products. A page that states its dose and
+    nothing else about its bag must leave the weight empty.
+    """
+    assert mapped(label, "50 g") == {}
+    assert mapped("Gramáž", "250 g") == {F_WEIGHT: "250 g"}
+
+
+def test_the_name_beats_a_variant_no_price_points_at() -> None:
+    """A Shoptet "Brasil 1000 g" whose price matches neither option sells the kilo."""
+    weight = weighed(
+        name="Brasil 1000 g",
+        variants=[variant(250, 9.0), variant(1000, 30.0)],
+        price=None,
+    )
+
+    assert weight == 1000
+
+
+def test_the_option_priced_at_the_headline_beats_the_name() -> None:
+    """vrescaffe's "Terra 100g" prices only 1000 g options, and the name is stale.
+
+    The name used to win outright, which put a weight in the row that the
+    row's own ``price_per_kg`` contradicted: that figure is taken from the
+    option carrying the price, so this must be too. Measured on the 30
+    September 2026 snapshot, 35 of 3678 rows disagreed with themselves this
+    way, and the option was right in every one of them.
+    """
     weight = weighed(
         name="Brasil 1000 g",
         variants=[variant(250, 9.0), variant(1000, 30.0)],
         price=9.0,
     )
 
-    assert weight == 1000
+    assert weight == 250
 
 
 def test_a_name_that_states_two_sizes_states_none() -> None:
@@ -351,6 +384,44 @@ def test_a_name_that_states_a_carton_beats_the_bag_on_the_label() -> None:
 
 def test_a_name_that_states_a_multipack_beats_the_bag_on_the_label() -> None:
     assert weighed(label="100 g", name="Six pack AMERIKA (6 x 100 g)") == 600
+
+
+@pytest.mark.parametrize("label", [None, "75 g"])
+def test_a_multiplied_pack_in_the_name_beats_the_option_that_carries_the_price(
+    label: str | None,
+) -> None:
+    """lighthousecoffee sells its tasting pack as a single "4x75 gramov" option.
+
+    The option is one bag of the four 14.90 EUR buys, and an option that is
+    priced is otherwise the most trustworthy source there is. Reading it here
+    publishes 198.67 EUR/kg as four times that, which is the failure #30 and #52
+    measured; the multiplier the name spells out is the only place the pack is
+    written, so it wins.
+    """
+    weight = weighed(
+        label=label,
+        name="Lighthouse Coffee 4 taste: degustačný balíček 4x75 g",
+        variants=[variant(75, 14.9)],
+        price=14.9,
+    )
+
+    assert weight == 300
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Degustační balení na espresso 3x100 g.",
+        "Tasting set 2x 250g",
+        "Six pack AMERIKA (6 x 100 g)",
+    ],
+)
+def test_a_tasting_pack_is_never_read_as_one_of_its_bags(name: str) -> None:
+    """#58 brings these back, and every one prices the whole pack as one option."""
+    one = stated_weight(name)
+    assert one is not None
+
+    assert weighed(name=name, variants=[variant(one, 9.0)], price=9.0) == stated_pack(name)
 
 
 def test_a_label_still_wins_when_the_name_states_no_more_than_it() -> None:

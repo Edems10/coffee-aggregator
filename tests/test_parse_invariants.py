@@ -116,7 +116,11 @@ def test_a_weight_stated_in_the_name_is_the_weight_stored(
     # price_per_kg — the number every product is ranked on — that goes wrong.
     for label, coffee in shop:
         stated = stated_weight(coffee.name)
-        if stated is None:
+        basis = coffee.price_basis
+        # Unless an option carries the headline price and states its own size.
+        # vrescaffe's "Terra 100g" prices nothing but 1000 g options, and the
+        # size the price is for is the size the row has to store.
+        if stated is None or (basis is not None and basis.source == "variant"):
             continue
         assert coffee.weight_g == stated, f"{label}: {coffee.name!r} states {stated} g"
 
