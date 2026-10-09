@@ -1,15 +1,24 @@
-# Pepe Coffee — no whole-bean parent category; the survey recorded the decaf
-# corner, so the three blend categories that hold the catalogue are walked.
+# Pepe Coffee — the three blend categories the survey walked all 404ed on
+# 2026-10-09, replaced by one /vsechny-kavy/ parent. Walking the parent rather
+# than its children means the next sub-category the shop invents is crawled
+# instead of silently missed, which is how this breakage went unnoticed.
 platform = "shoptet"
 site_id = "pepecoffee"
 name = "Pepe Coffee"
 country = "CZ"
 base_url = "https://www.pepecoffee.cz/"
 category_urls = [
-  "https://www.pepecoffee.cz/smes-arabica/",
-  "https://www.pepecoffee.cz/smes-arabica-s-robustou/",
-  "https://www.pepecoffee.cz/robusta/",
+  "https://www.pepecoffee.cz/vsechny-kavy/",
 ]
 currency = "CZK"
 max_pages = 5
 pagination = "path"
+
+# The parent also holds "Balíčky káv": three multi-bag sets whose name states no
+# bag count and whose Shoptet weight is 0, so the only weight on the page is the
+# 200 g of one bag inside. Crawled without this marker they were written at
+# 2650, 3150 and 5500 Kč/kg, against 760–1960 for the nine real coffees beside
+# them. Unlike the packs #68 brought back, no weight here parses from the name.
+ignore = [
+  "balicek",
+]
