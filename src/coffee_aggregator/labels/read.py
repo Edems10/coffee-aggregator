@@ -351,25 +351,29 @@ def headline_weight(
     one reading three platforms may not each invent for themselves. The
     precedence, most trustworthy first:
 
-    1. the weight of the packaging option whose price *is* the headline price,
+    1. a *multiplied* pack the product name spells out — "4x75 g", "3x100 g",
+       a carton, a tasting set — because a multiplier is the one thing an
+       option cannot state: a shop that sells the whole pack as one option
+       still labels that option with the size of one bag inside it;
+    2. the weight of the packaging option whose price *is* the headline price,
        when exactly one weight carries that price. The option select is the
        shop saying what this very price buys, which is the same offer
        :attr:`~coffee_aggregator.models.Coffee.price_basis` divides by; reading
        the two from different places is what let 35 of 3678 rows store a weight
        that contradicts their own published ``price_per_kg``;
-    2. a pack the product name spells out that is larger than the weight
-       label, because then the label is one bag and the name is what the price
-       buys — a carton, or a "6 x 100 g" tasting set. Only a name that states
-       one size at all: a second size belongs to a second article, and the
-       bundled grinder is not what is being weighed;
-    3. a weight the shop *states* on a weight label, when it states exactly one
+    3. any other pack the product name spells out that is larger than the
+       weight label, because then the label is one bag and the name is what
+       the price buys. Only a name that states one size at all: a second size
+       belongs to a second article, and the bundled grinder is not what is
+       being weighed;
+    4. a weight the shop *states* on a weight label, when it states exactly one
        — several mean the label is really the size axis, not this bag;
-    4. a weight the product name states, for the shops whose "Brasil 1000 g" is
+    5. a weight the product name states, for the shops whose "Brasil 1000 g" is
        the only place the size is written at all;
-    5. the weight of the cheapest priced variant, since every platform quotes
+    6. the weight of the cheapest priced variant, since every platform quotes
        the cheapest variant as the headline price of a variable product;
-    6. the smallest weight any variant states, when no variant is priced;
-    7. a caller-supplied last resort, such as Shoptet's parcel weight.
+    7. the smallest weight any variant states, when no variant is priced;
+    8. a caller-supplied last resort, such as Shoptet's parcel weight.
 
     Args:
         labels: Every labelled value the page states.
@@ -415,30 +419,64 @@ def _one_package(
     Returns:
         The weight in grams, or None.
     """
-    named_by_price = _weight_priced_exactly(variants, price)
-    if named_by_price is not None:
-        return named_by_price
     from_label = stated_weight(labels.get(F_WEIGHT))
     # A name that states more than the weight label is naming the pack while the
     # label names one bag inside it, and the price buys the pack. kava.cz sells
     # the same coffee as 1 kg, 6 kg and 24 kg on three pages that all carry a
     # 1 kg label; believing the label made the 24 kg carton 24 times too dear.
-    from_pack = stated_pack(name)
-    if (
-        from_pack is not None
-        and _one_article(name)
-        and (from_label is None or from_pack > from_label)
-    ):
+    from_pack = _pack_the_name_states(name, from_label)
+    # A multiplier the name spells out is the one thing an option cannot say.
+    # lighthousecoffee sells "degustačný balíček 4x75 g" as a single
+    # "4x75 gramov" option, and that option's weight is one of the four bags
+    # the price buys; reading it would publish a per-kilogram price four times
+    # too high, which is what #30 and #52 measured and fixed.
+    if from_pack is not None and from_pack != stated_weight(name):
+        return from_pack
+    named_by_price = _weight_priced_exactly(variants, price)
+    if named_by_price is not None:
+        return named_by_price
+    if from_pack is not None:
         return from_pack
     if from_label is not None:
         return from_label
     from_name = stated_weight(name)
     if from_name is not None:
         return from_name
+    return _weight_no_statement_settles(variants, fallback)
+
+
+def _pack_the_name_states(name: str, from_label: int | None) -> int | None:
+    """Return the package weight the product name spells out, when it names one.
+
+    Args:
+        name: The product name.
+        from_label: The weight a label states, which a name only overrules by
+            stating something larger.
+
+    Returns:
+        The weight in grams, or None when the name does not name the package.
+    """
+    from_pack = stated_pack(name)
+    if from_pack is None or not _one_article(name):
+        return None
+    return from_pack if from_label is None or from_pack > from_label else None
+
+
+def _weight_no_statement_settles(
+    variants: Sequence[Variant],
+    fallback: str | None,
+) -> int | None:
+    """Return the weight to use when neither the name nor a label states one.
+
+    Args:
+        variants: The parsed variants.
+        fallback: A last-resort weight text, such as Shoptet's parcel weight.
+
+    Returns:
+        The weight in grams, or None.
+    """
     from_variants = _weight_of_cheapest_variant(variants) or _smallest_variant_weight(variants)
-    if from_variants is not None:
-        return from_variants
-    return stated_weight(fallback)
+    return from_variants if from_variants is not None else stated_weight(fallback)
 
 
 def _one_article(name: str) -> bool:

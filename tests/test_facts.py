@@ -386,6 +386,44 @@ def test_a_name_that_states_a_multipack_beats_the_bag_on_the_label() -> None:
     assert weighed(label="100 g", name="Six pack AMERIKA (6 x 100 g)") == 600
 
 
+@pytest.mark.parametrize("label", [None, "75 g"])
+def test_a_multiplied_pack_in_the_name_beats_the_option_that_carries_the_price(
+    label: str | None,
+) -> None:
+    """lighthousecoffee sells its tasting pack as a single "4x75 gramov" option.
+
+    The option is one bag of the four 14.90 EUR buys, and an option that is
+    priced is otherwise the most trustworthy source there is. Reading it here
+    publishes 198.67 EUR/kg as four times that, which is the failure #30 and #52
+    measured; the multiplier the name spells out is the only place the pack is
+    written, so it wins.
+    """
+    weight = weighed(
+        label=label,
+        name="Lighthouse Coffee 4 taste: degustačný balíček 4x75 g",
+        variants=[variant(75, 14.9)],
+        price=14.9,
+    )
+
+    assert weight == 300
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Degustační balení na espresso 3x100 g.",
+        "Tasting set 2x 250g",
+        "Six pack AMERIKA (6 x 100 g)",
+    ],
+)
+def test_a_tasting_pack_is_never_read_as_one_of_its_bags(name: str) -> None:
+    """#58 brings these back, and every one prices the whole pack as one option."""
+    one = stated_weight(name)
+    assert one is not None
+
+    assert weighed(name=name, variants=[variant(one, 9.0)], price=9.0) == stated_pack(name)
+
+
 def test_a_label_still_wins_when_the_name_states_no_more_than_it() -> None:
     """The label stays the most trustworthy source for an ordinary single bag."""
     assert weighed(label="1 kg", name="Brasil 250 g") == 1000
