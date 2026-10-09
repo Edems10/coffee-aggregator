@@ -358,3 +358,28 @@ def test_the_markers_rejected_by_the_audit_stay_rejected() -> None:
     assert adapter.is_ignored("Colombia Atunkaa Sugar Cane Decaf") is False
     assert adapter.is_ignored("AUTOMAT – káva pro superautomatické kávovary") is False
     assert adapter.is_ignored("Spring Filter Blend") is False
+
+
+def test_default_ignore_list_skips_capsules() -> None:
+    """#54 put capsules out of scope; each listing here is one the two markers
+    were measured against, ten rows over the 3678-row snapshot."""
+    adapter = _Fake()
+    assert adapter.is_ignored("Výběrové espresso kapsle Colombia") is True
+    assert adapter.is_ignored("Výběrové espresso kapsle Dark Star") is True
+    assert adapter.is_ignored("Gentleman - intenzita 10 - Nespresso kompatibilní - 10ks") is True
+    assert (
+        adapter.is_ignored(
+            "Kávové kapsle DEAD OR ALIVE 50ks - kompatibilní s Nespresso® "
+            "- silná káva v kapslích pro espresso",
+        )
+        is True
+    )
+
+
+def test_the_capsule_markers_spare_the_coffee_a_naive_sweep_would_destroy() -> None:
+    """A bare "pod" matches both of these, which is why it is not a marker: the
+    first is a real coffee and the second a service priced to deter buyers."""
+    adapter = _Fake()
+    assert adapter.is_ignored("Káva zpod Ostaše") is False
+    assert adapter.is_ignored("White labeling - káva pod vlastní značkou") is False
+    assert adapter.is_ignored("Podzimní 100% arabika zrnková káva") is False
