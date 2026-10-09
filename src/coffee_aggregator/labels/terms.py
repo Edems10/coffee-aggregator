@@ -471,6 +471,15 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "veľkosť drippera",
         "ocenenia",
         "zdroj",
+        # A brewing recipe states grams too, and "množství" alone matched them:
+        # ohmybean's "Množství kávy: 50 g" is the dose for one espresso and it
+        # became the bag weight on all 13 of that shop's products.
+        "množství kávy",
+        "množstvo kávy",
+        "dávka kávy",
+        "dávka kávy na espresso",
+        "výsledná váha",
+        "výsledná hmotnosť",
     ),
 }
 

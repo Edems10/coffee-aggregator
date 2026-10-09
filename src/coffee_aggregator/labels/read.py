@@ -351,16 +351,21 @@ def headline_weight(
     one reading three platforms may not each invent for themselves. The
     precedence, most trustworthy first:
 
-    1. a pack the product name spells out that is larger than the weight
+    1. the weight of the packaging option whose price *is* the headline price,
+       when exactly one weight carries that price. The option select is the
+       shop saying what this very price buys, which is the same offer
+       :attr:`~coffee_aggregator.models.Coffee.price_basis` divides by; reading
+       the two from different places is what let 35 of 3678 rows store a weight
+       that contradicts their own published ``price_per_kg``;
+    2. a pack the product name spells out that is larger than the weight
        label, because then the label is one bag and the name is what the price
        buys — a carton, or a "6 x 100 g" tasting set. Only a name that states
        one size at all: a second size belongs to a second article, and the
        bundled grinder is not what is being weighed;
-    2. a weight the shop *states* on a weight label, when it states exactly one
+    3. a weight the shop *states* on a weight label, when it states exactly one
        — several mean the label is really the size axis, not this bag;
-    3. a weight the product name states, for the shops whose "Brasil 1000 g" is
+    4. a weight the product name states, for the shops whose "Brasil 1000 g" is
        the only place the size is written at all;
-    4. the weight of the variant whose price *is* the headline price;
     5. the weight of the cheapest priced variant, since every platform quotes
        the cheapest variant as the headline price of a variable product;
     6. the smallest weight any variant states, when no variant is priced;
@@ -410,6 +415,9 @@ def _one_package(
     Returns:
         The weight in grams, or None.
     """
+    named_by_price = _weight_priced_exactly(variants, price)
+    if named_by_price is not None:
+        return named_by_price
     from_label = stated_weight(labels.get(F_WEIGHT))
     # A name that states more than the weight label is naming the pack while the
     # label names one bag inside it, and the price buys the pack. kava.cz sells
@@ -427,14 +435,9 @@ def _one_package(
     from_name = stated_weight(name)
     if from_name is not None:
         return from_name
-    inferred = _weight_of_priced_variant(variants, price)
-    if inferred is not None:
-        return inferred
-    weights = [
-        grams for variant in variants if plausible_weight(grams := variant.weight_g) and grams
-    ]
-    if weights:
-        return min(weights)
+    from_variants = _weight_of_cheapest_variant(variants) or _smallest_variant_weight(variants)
+    if from_variants is not None:
+        return from_variants
     return stated_weight(fallback)
 
 
@@ -458,12 +461,37 @@ def _one_article(name: str) -> bool:
     return len(set(normalize.parse_weights_grams(name))) <= 1
 
 
-def _weight_of_priced_variant(variants: Sequence[Variant], price: float | None) -> int | None:
-    """Return the weight of the variant the headline price belongs to.
+def _weight_priced_exactly(variants: Sequence[Variant], price: float | None) -> int | None:
+    """Return the weight of the option that costs exactly the headline price.
+
+    vrescaffe's ``/terra-100g-2/`` is named "Terra 100g" and every one of its
+    six options states 1000 g at the one price the page shows; believing the
+    name stored a bag ten times too light beside a per-kilogram price taken
+    from the options. The name is the shop's error and the options are not.
 
     Args:
         variants: The parsed variants.
         price: The headline price, or None when the platform states none.
+
+    Returns:
+        The weight in grams, or None when the options do not settle it — no
+        price to match, none matching, or two sizes sharing it.
+    """
+    if price is None:
+        return None
+    exact = {
+        variant.weight_g
+        for variant in variants
+        if variant.price == price and plausible_weight(variant.weight_g)
+    }
+    return exact.pop() if len(exact) == 1 else None
+
+
+def _weight_of_cheapest_variant(variants: Sequence[Variant]) -> int | None:
+    """Return the weight of the cheapest option a shop prices.
+
+    Args:
+        variants: The parsed variants.
 
     Returns:
         The weight in grams, or None when no priced variant settles it.
@@ -475,8 +503,19 @@ def _weight_of_priced_variant(variants: Sequence[Variant], price: float | None) 
     ]
     if not priced:
         return None
-    exact = {variant.weight_g for variant in priced if price is not None and variant.price == price}
-    if len(exact) == 1:
-        return exact.pop()
-    cheapest = min(priced, key=lambda variant: variant.price or 0.0)
-    return cheapest.weight_g
+    return min(priced, key=lambda variant: variant.price or 0.0).weight_g
+
+
+def _smallest_variant_weight(variants: Sequence[Variant]) -> int | None:
+    """Return the smallest size a shop lists, for a ladder it prices nowhere.
+
+    Args:
+        variants: The parsed variants.
+
+    Returns:
+        The weight in grams, or None when no variant states a usable one.
+    """
+    weights = [
+        grams for variant in variants if plausible_weight(grams := variant.weight_g) and grams
+    ]
+    return min(weights) if weights else None

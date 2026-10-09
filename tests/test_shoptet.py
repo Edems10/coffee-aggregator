@@ -649,6 +649,59 @@ def test_page_metadata_reaches_raw_attributes(
     assert coffee.raw_attributes["OG_DESCRIPTION"]
 
 
+# --- issue 56: the two weights a duplicate pair disagreed on -----------------
+
+
+def test_a_brewing_recipe_dose_is_not_the_bag_weight(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """ohmybean prints its V60 recipe in the parameter table.
+
+    "Množství kávy: 50 g" is the dose for one shot and "Hmotnost" is the size
+    axis; the fuzzy match on "množství" handed the dose to the weight field, so
+    all 13 of this shop's products stored a bag the price was never for — 50 g
+    against a 380 CZK price on this page.
+    """
+    ohmybean = cast("ShoptetSite", adapter_for("ohmybean"))
+    html = fixture_html("shoptet_ohmybean", "detail_kena_kiri_ab_espresso.html")
+    assert "Množství kávy" in html
+    assert "50 g" in html
+
+    coffee = parse(
+        ohmybean,
+        html,
+        "4102",
+        "https://www.ohmybean.coffee/espresso/kena-kiri-ab-2/",
+    )
+
+    assert (coffee.price, coffee.weight_g) == (380.0, 250)
+    assert coffee.price_per_kg == 1520.0
+
+
+def test_the_option_priced_at_the_headline_beats_a_stale_name(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """vrescaffe's /terra-100g-2/ is a kilogram listing still called "Terra 100g".
+
+    Every one of its six options states 1000 g at the one price the page shows,
+    and the image is ``168_terra-1000g.jpg``; the name is the shop's own error.
+    Believing it stored 100 g beside a per-kilogram price taken from the
+    options, so the row contradicted itself by a factor of ten.
+    """
+    vrescaffe = cast("ShoptetSite", adapter_for("vrescaffe"))
+    coffee = parse(
+        vrescaffe,
+        fixture_html("shoptet_vrescaffe", "detail_terra_100g_2.html"),
+        "168",
+        "https://www.vrescaffe.cz/terra-100g-2/",
+    )
+
+    assert coffee.name == "Terra 100g"
+    assert {variant.weight_g for variant in coffee.variants} == {1000}
+    assert (coffee.price, coffee.weight_g) == (1075.0, 1000)
+    assert coffee.price_per_kg == 1075.0
+
+
 # --- item 22: every shipped config parses its own saved pages ----------------
 
 SHIPPED = ["conceptcoffee", "kavypitel", "redfawn", "valasska"]

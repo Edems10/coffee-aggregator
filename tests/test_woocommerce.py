@@ -450,6 +450,32 @@ def test_a_product_without_a_price_range_still_parses(ripit: WooSite) -> None:
     assert coffee.price == 18.0
 
 
+# --- issue 56: a stale attribute against the description ----------------------
+
+
+@pytest.mark.parametrize(
+    ("product_id", "weight_g", "price"),
+    [(21379, 50, 85.0), (19342, 130, 248.0)],
+)
+def test_a_stale_packaging_term_never_outweighs_the_description(
+    product_id: int,
+    weight_g: int,
+    price: float,
+) -> None:
+    """naturpark12 sells one sweet twice and the 50 g page kept the 130 g term.
+
+    ``pa_baleni`` still reads "130g" on the smaller bag, while the description
+    of each page states its own "Hmotnost: Netto … g" correctly. The shop's
+    attribute is wrong and only this shop's own config can say so, because
+    every coffee here uses the same attribute for its size axis.
+    """
+    site = cast("WooSite", get_site("naturpark12"))
+    coffee = parse_api(site, _by_id("naturpark12", product_id))
+
+    assert coffee.raw_attributes["BALENÍ"] == "130g"
+    assert (coffee.price, coffee.weight_g) == (price, weight_g)
+
+
 # --- HTML mode ----------------------------------------------------------------
 
 
