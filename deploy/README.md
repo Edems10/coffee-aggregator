@@ -332,19 +332,32 @@ sudo /opt/coffee-aggregator/deploy/update.sh            # pull, rebuild, migrate
 sudo /opt/coffee-aggregator/deploy/update.sh --crawl    # …and crawl now
 ```
 
-**A server installed before the table browser existed has no
-`PGWEB_DB_PASSWORD` or `PGWEB_PASSWORD` in its env file, and `update.sh` will
-abort on its first command until they are there** — not with a pgweb that
-restarts, but with nothing deployed at all: compose interpolates the whole file
-before it builds anything, so the build step itself fails. Add them once, in
-this order:
+**A server that predates the table browser's read-only role has no
+`PGWEB_DB_PASSWORD` in its env file, and `update.sh` will abort on its first
+command until it is there** — not with a pgweb that restarts, but with nothing
+deployed at all: compose interpolates the whole file before it builds anything,
+so the build step itself fails.
+
+`PGWEB_DB_PASSWORD` is the only genuinely new variable. `PGWEB_PASSWORD` and
+`POSTGRES_PASSWORD` have been required for longer, so a server with a running
+stack already holds working values for both — **leave them exactly as they
+are.** Rotating `PGWEB_PASSWORD` here would change the browser's basic auth and
+lock you out with your saved credential, for a reason that has nothing to do
+with this deploy.
+
+Fill in what is missing, in this order:
 
 ```bash
-# 1. the two new secrets, before update.sh runs at all
-for var in PGWEB_PASSWORD PGWEB_DB_PASSWORD; do
-    grep -q "^${var}=" /etc/coffee-aggregator/env \
-        || echo "${var}=" | sudo tee -a /etc/coffee-aggregator/env >/dev/null
-    sudo sed -i "s|^${var}=.*|${var}=$(openssl rand -hex 24)|" /etc/coffee-aggregator/env
+# 1. the new secret, before update.sh runs at all. Only an absent or empty
+#    value is generated: a value that is already there is one something is
+#    authenticating with right now.
+for var in POSTGRES_PASSWORD PGWEB_PASSWORD PGWEB_DB_PASSWORD; do
+    if [ -z "$(sudo sed -n "s|^${var}=||p" /etc/coffee-aggregator/env)" ]; then
+        sudo sed -i "/^${var}=/d" /etc/coffee-aggregator/env
+        echo "${var}=$(openssl rand -hex 24)" \
+            | sudo tee -a /etc/coffee-aggregator/env >/dev/null
+        echo "generated ${var}"
+    fi
 done
 
 # 2. now the update runs: pull, build, up, migrate — 0006 creates catalogue_reader

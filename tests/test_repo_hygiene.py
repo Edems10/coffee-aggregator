@@ -168,3 +168,44 @@ def test_a_required_variable_ships_in_the_example_env_file(variable: str) -> Non
     assert re.search(rf"^{variable}=", ENV_EXAMPLE.read_text("utf-8"), re.MULTILINE), (
         f"compose.yml requires {variable}, which deploy/env.example does not carry"
     )
+
+
+#: An in-place rewrite of an env line that supplies a freshly generated secret.
+#: Fine in Install, where the file was copied from env.example a moment ago and
+#: holds nothing worth keeping; a lockout in Updating, where every value in that
+#: file is one a running stack is already authenticating with.
+ROTATES_IN_PLACE = re.compile(r"sed -i.*openssl rand")
+
+
+def _readme_section(heading: str) -> str:
+    readme = README.read_text("utf-8")
+    start = readme.index(heading)
+    rest = readme.index("\n## ", start + len(heading))
+    return readme[start:rest]
+
+
+def test_the_documented_update_never_rewrites_a_secret_in_place() -> None:
+    """The first draft of #60's fix seeded both pgweb variables with
+    `sed -i "s|^${var}=.*|${var}=$(openssl rand -hex 24)|"`, guarded only by a
+    `grep ||` that adds a missing *line*.
+
+    Only `PGWEB_DB_PASSWORD` was new; `PGWEB_PASSWORD` predates the read-only
+    role and the running server already authenticates with it, so the block
+    would have rotated a live basic-auth credential and locked the operator out
+    of the browser for a reason unconnected to the deploy. An update fills in
+    what is missing and leaves what is there alone.
+
+    This catches the one-line idiom, not every way to write an unconditional
+    overwrite: a rewrite split across two lines would pass. It is a tripwire on
+    the shape that caused the bug, not a proof of idempotence.
+    """
+    offenders = [
+        line.strip()
+        for line in _readme_section("## Updating").splitlines()
+        if ROTATES_IN_PLACE.search(line)
+    ]
+    assert not offenders, (
+        "deploy/README.md's update procedure rewrites an env value in place with a new "
+        f"secret: {offenders}. Generate only what is missing or empty — an operator running "
+        "the documented update must not lose a credential that already works."
+    )
