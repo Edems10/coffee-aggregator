@@ -477,9 +477,7 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "množství kávy",
         "množstvo kávy",
         "dávka kávy",
-        "dávka kávy na espresso",
         "výsledná váha",
-        "výsledná hmotnosť",
     ),
 }
 
