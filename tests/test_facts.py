@@ -466,6 +466,37 @@ def test_a_second_size_in_the_name_belongs_to_a_second_article() -> None:
     assert weighed(label="250 g", name="Mlýnek s násypkou 1 kg + káva 250 g") == 250
 
 
+def test_a_carton_that_restates_its_own_bag_size_is_still_one_article() -> None:
+    """kava.cz's "BANUA Café 5 kg (20x250g)" carries a 250 g weight label.
+
+    Both sizes describe one article and the multiplication reconciles them, so
+    counting them as two left the carton on the single bag: 17 160 CZK/kg
+    against a true 858, and the top row of the dearest-per-kilogram panel (#70).
+    """
+    assert weighed(label="250 g", name="BANUA Café 5 kg (20x250g)") == 5000
+
+
+def test_a_carton_without_a_weight_label_keeps_the_size_it_had() -> None:
+    """The second row of this shape on the live catalogue, right before #70 and after."""
+    assert weighed(name="Tonino Lamborghini Caffe Red zrnková 2,4 kg (12x200g)") == 2400
+
+
+def test_a_size_axis_in_the_name_is_still_not_a_pack() -> None:
+    """ciernaperla writes the ladder into the name of 10 live products and
+    prices the smaller bag; no multiplication reconciles those two sizes."""
+    name = "BRASIL Santos, pražená káva, 100% ARABIKA, 250g – 500g"
+
+    assert weighed(label="250 g", name=name) == 250
+
+
+def test_a_summed_set_is_not_a_carton_restating_itself() -> None:
+    """ciernaperla's "1x250g + 1x500g" states 750 g in two articles' worth of
+    sizes, and neither multiplication accounts for the other (#58)."""
+    name = "COFFEE SET 1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g"
+
+    assert weighed(label="250 g", name=name) == 250
+
+
 def test_a_plus_between_coffees_is_not_a_second_article() -> None:
     """kafista joins three coffees with "+" and states one size for all of them;
     of 3678 products only 21 names contain a "+" and two of those are real

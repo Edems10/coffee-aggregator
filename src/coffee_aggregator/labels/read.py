@@ -365,7 +365,8 @@ def headline_weight(
        weight label, because then the label is one bag and the name is what
        the price buys. Only a name that states one size at all: a second size
        belongs to a second article, and the bundled grinder is not what is
-       being weighed;
+       being weighed, unless the sizes reconcile: a carton that also spells
+       out the bags inside it ("5 kg (20x250g)") states one article twice;
     4. a weight the shop *states* on a weight label, when it states exactly one
        — several mean the label is really the size axis, not this bag;
     5. a weight the product name states, for the shops whose "Brasil 1000 g" is
@@ -485,18 +486,45 @@ def _one_article(name: str) -> bool:
     "Mlýnek s násypkou 1 kg + káva 250 g" states two sizes belonging to two
     different things, and the larger one is the grinder; believing it over the
     250 g label priced the coffee at a quarter of its true per-kilogram price.
-    A multipack never needs a second size — of 3678 products, 193 have the name
-    overrule the weight label and every one of them states a single size, while
-    the 14 names that state two state them for two articles or for a size axis
-    ("250g – 500g"). Refusing the second size therefore costs nothing measured.
+    Counting the sizes was the first answer to that, and it was too blunt: a
+    carton that restates its own total — "BANUA Café 5 kg (20x250g)" — also
+    states two, and refusing them left it on the 250 g label at twenty times
+    its true per-kilogram price (#70). Of 3816 live products, 12 names state
+    two sizes: 10 are one shop's size axis ("250g – 500g") and 2 are cartons
+    whose multiplication reconciles them.
 
     Args:
         name: The product name.
 
     Returns:
-        True when the name states at most one distinct weight.
+        True when the name states at most one distinct weight, or states
+        several that describe one package.
     """
-    return len(set(normalize.parse_weights_grams(name))) <= 1
+    sizes = set(normalize.parse_weights_grams(name))
+    return len(sizes) <= 1 or _restates_its_own_total(name, sizes)
+
+
+def _restates_its_own_total(name: str, sizes: set[int]) -> bool:
+    """Say whether a name's several sizes are one multipack written twice.
+
+    "BANUA Café 5 kg (20x250g)" names the carton and the bag inside it, and the
+    multiplication reconciles the two: 20 x 250 g is exactly the 5 kg the same
+    name states. A bundle's sizes never reconcile that way, which is what tells
+    the carton apart from the grinder #27 was written for.
+
+    Args:
+        name: The product name.
+        sizes: The distinct weights the name states.
+
+    Returns:
+        True when every size the name states is either one package of a
+        multiplication it spells out or that multiplication's total.
+    """
+    multiplied = normalize.parse_multiplied_pack_grams(name)
+    if multiplied is None:
+        return False
+    each, total = multiplied
+    return total in sizes and sizes <= {each, total}
 
 
 def _weight_priced_exactly(variants: Sequence[Variant], price: float | None) -> int | None:

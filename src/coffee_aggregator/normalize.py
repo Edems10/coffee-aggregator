@@ -164,18 +164,41 @@ def parse_pack_grams(text: str | None) -> int | None:
     """
     if not text:
         return None
+    if _PACK_RE.search(text) is None:
+        return parse_weight_grams(text)
+    multiplied = parse_multiplied_pack_grams(text)
+    return None if multiplied is None else multiplied[1]
+
+
+def parse_multiplied_pack_grams(text: str | None) -> tuple[int, int] | None:
+    """Parse a spelt-out multiplication into one package and the whole pack.
+
+    Both halves matter to a reader that has to tell a carton from a bundle:
+    ``"BANUA Café 5 kg (20x250g)"`` names two sizes that are one article,
+    because 20 x 250 g is the 5 kg the same name states (#70).
+
+    Args:
+        text: Text such as ``"6 x 100 g"`` or ``"20x250g"``.
+
+    Returns:
+        The weight of one package and of all of them, in grams, or None when
+        the text spells no usable multiplication.
+    """
+    if not text:
+        return None
     match = _PACK_RE.search(text)
     if match is None:
-        return parse_weight_grams(text)
+        return None
     count = int(match.group(1))
     each = _to_float(match.group(2))
     if each is None or each <= 0 or count <= 0:
         return None
     unit = match.group(3).lower()
-    grams = count * (each * 1000 if unit.startswith(("kg", "kilo")) else each)
-    if not math.isfinite(grams):
+    grams = each * 1000 if unit.startswith(("kg", "kilo")) else each
+    total = count * grams
+    if not math.isfinite(total):
         return None
-    return round(grams)
+    return round(grams), round(total)
 
 
 def parse_weight_grams(text: str | None) -> int | None:
