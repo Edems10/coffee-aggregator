@@ -537,3 +537,60 @@ def test_parse_pack_count_reads_a_case_of_bags(text: str, count: int | None) -> 
 def test_a_blend_ratio_is_not_a_list(text: str, items: list[str]) -> None:
     """A slash between digits is a ratio; between words it still separates."""
     assert normalize.split_list(text) == items
+
+
+@pytest.mark.parametrize(
+    ("text", "millilitres"),
+    [
+        ("Cold Brew - Koncentrat - Colombia Tolima - 1000ml", 1000),
+        ("Cold Brew Papua 330ml", 330),
+        ("Nitro Flat White (200 ml)", 200),
+        ("Nitro Flat White (5x200 ml)", 200),
+        ("Cold brew 0,5 l", 500),
+        ("Cold brew 1 litr", 1000),
+        ("Lahev 2 dl", 200),
+        ("Etiopie 250 g", None),
+        ("Vortex melon nitro - kava 100% Arabica", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_parse_volume_ml(text: str | None, millilitres: int | None) -> None:
+    """A multiplier is not applied: "5x200 ml" is a case of 200 ml cans."""
+    assert normalize.parse_volume_ml(text) == millilitres
+
+
+@pytest.mark.parametrize(
+    ("text", "grams"),
+    [
+        ("Blend 75/25 1000ml", 1000),
+        ("Cold brew 2x330 ml", 330),
+    ],
+)
+def test_two_numbers_are_not_one_volume(text: str, grams: int) -> None:
+    """The guard _WEIGHT_RE needed against "75/25 250 g" is needed here too."""
+    assert normalize.parse_volume_ml(text) == grams
+
+
+@pytest.mark.parametrize(
+    ("name", "by_volume"),
+    [
+        ("Cold Brew - Koncentrat - Colombia Tolima - 1000ml", True),
+        ("Cold Brew Papua 330ml", True),
+        ("Nitro Flat White: Kava s ovesnym mlekem a dusikem (200 ml)", True),
+        # The two markers #24 measured and refused: both of these are beans.
+        ("COLD BREW", False),
+        ("Colombia Finca Milan Nitro Fermented 250 g", False),
+        # A weight in the same name is what the price buys; the mug is not.
+        ("Darkova sada: kava 250 g + hrnek 330 ml", False),
+        ("Brasil 1000 g", False),
+        (None, False),
+    ],
+)
+def test_states_volume_refuses_only_a_package_measured_in_liquid(
+    name: str | None,
+    *,
+    by_volume: bool,
+) -> None:
+    """Of 3678 catalogue names, 12 state a volume and not one of them is beans."""
+    assert normalize.states_volume(name) is by_volume

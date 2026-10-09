@@ -222,6 +222,70 @@ def _match_grams(match: re.Match[str]) -> int | None:
     return round(grams)
 
 
+# The same guard as _WEIGHT_RE, for the same reason: a number glued to the one
+# before it is not a volume of its own.
+_VOLUME_RE = re.compile(
+    r"(?<![\d/-])(\d[\d\s .,]*)\s*(ml|mililitr\w*|cl|dl|l|litr\w*|liter\w*)\b",
+    re.IGNORECASE,
+)
+
+#: Millilitres in one of the two-letter units ``_VOLUME_RE`` admits; the spelt
+#: out ones are decided by their prefix.
+_ML_PER_UNIT = {"ml": 1.0, "cl": 10.0, "dl": 100.0, "l": 1000.0}
+
+
+def parse_volume_ml(text: str | None) -> int | None:
+    """Parse the package volume a text states, in millilitres.
+
+    Args:
+        text: Text such as ``"330ml"``, ``"0,5 l"`` or ``"5x200 ml"``. A
+            multiplier is not applied: this reads the size of one container.
+
+    Returns:
+        The volume in millilitres, or None when the text states none.
+    """
+    if not text:
+        return None
+    match = _VOLUME_RE.search(text)
+    if match is None:
+        return None
+    value = _to_float(match.group(1))
+    if value is None or value <= 0:
+        return None
+    unit = match.group(2).lower()
+    factor = _ML_PER_UNIT.get(unit, 1.0 if unit.startswith("mili") else 1000.0)
+    millilitres = value * factor
+    if not math.isfinite(millilitres):
+        return None
+    return round(millilitres)
+
+
+def states_volume(text: str | None) -> bool:
+    """Say whether a name sells a volume of liquid rather than a weight of beans.
+
+    A litre of cold brew is not a kilogram of coffee, and no density may be
+    invented to pretend otherwise, so the package is only comparable by what the
+    page itself states. Two measurements decide where the unit is believed. It
+    is read from the product name alone, because a volume *label* means
+    something else: 13 simplecoffee bags of beans carry "OBJEM ESPRESSA
+    35 - 45 ml" as brewing advice, and one 250 g gift box states "OBJEM 0,18L"
+    for the mug inside it. And it yields to a weight in the same name, which
+    costs nothing measured — of 3678 products not one name states both — but
+    keeps a future "250 g + hrnek 330 ml" set weighed by its coffee.
+
+    Over the whole catalogue 12 names state a volume and none of them is beans:
+    three cold brews in cans, a body scrub, a descaler and paper cups. The name
+    markers refused in #24 ("cold brew", "nitro") each delist real coffee.
+
+    Args:
+        text: The product name.
+
+    Returns:
+        True when the name states a volume and no weight.
+    """
+    return parse_volume_ml(text) is not None and parse_weight_grams(text) is None
+
+
 _CURRENCIES: tuple[tuple[str, str], ...] = (
     ("eur", "EUR"),
     ("€", "EUR"),

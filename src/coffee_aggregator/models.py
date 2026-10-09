@@ -307,10 +307,21 @@ class Coffee:
            the product page simply does not say which bag the price is for, and
            a made-up answer is worse than an empty column.
 
+        A package the name states in millilitres has no basis at all, whatever
+        weight the page carries beside it.
+
         Returns:
             The basis, or None when this product has no sound one.
         """
+        from coffee_aggregator import normalize  # noqa: PLC0415  (normalize imports this module)
+
         if self.price is None:
+            return None
+        # A bottle of cold brew weighs about what it holds, so a shipping weight
+        # or a "HMOTNOST 0.1 kg" label divides the price of a drink by the mass
+        # of its water: coffeesource's 1000 ml concentrate was published at
+        # 499 CZK/kg and kafista's 200 ml can at 820 CZK/kg.
+        if normalize.states_volume(self.name):
             return None
         weights = {
             variant.weight_g

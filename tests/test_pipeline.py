@@ -1146,3 +1146,42 @@ def test_wrote_nothing_names_only_the_empty_shops() -> None:
         RunReport(site_id="also-empty", written=0),
     ]
     assert wrote_nothing(reports) == ["also-empty", "empty"]
+
+
+def test_derive_refuses_a_per_kilogram_price_for_a_bottle() -> None:
+    """coffeesource's 1000 ml cold brew carried a 1000 g shipping weight: 499 CZK/kg."""
+    coffee = make_coffee(site="coffeesource", external_id="4")
+    coffee.name = "Cold Brew - Koncentrat - Colombia Tolima - 1000ml"
+    coffee.price = 499.0
+    coffee.currency = "CZK"
+    coffee.weight_g = 1000
+    coffee.variants = [
+        Variant(external_id="4-1", weight_g=1000, price=499.0, label="Default Title")
+    ]
+
+    derive(coffee, RATE)
+
+    assert coffee.price_basis is None
+    assert coffee.price_per_kg is None
+    assert (coffee.price_per_kg_eur, coffee.price_per_kg_czk) == (None, None)
+    # the weight the shop stated stays; only the division is refused
+    assert coffee.weight_g == 1000
+    assert coffee.price_czk == 499.0
+    variant = coffee.variants[0]
+    assert (variant.price_per_kg_eur, variant.price_per_kg_czk) == (None, None)
+    assert variant.price_czk == 499.0
+
+
+def test_derive_still_prices_a_bag_whose_shop_also_sells_drinks() -> None:
+    """The markers #24 refused: "COLD BREW" is a 250 g bag of beans at coffee77."""
+    coffee = make_coffee(site="coffee77", external_id="5")
+    coffee.name = "COLD BREW"
+    coffee.price = 290.0
+    coffee.currency = "CZK"
+    coffee.weight_g = 250
+    coffee.variants = []
+
+    derive(coffee, RATE)
+
+    assert coffee.price_per_kg == 1160.0
+    assert coffee.price_per_kg_czk == 1160.0
