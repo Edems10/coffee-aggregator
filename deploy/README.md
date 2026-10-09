@@ -26,10 +26,22 @@ sudo git clone https://github.com/Edems10/coffee_aggregator /opt/coffee-aggregat
 
 sudo install -d -m 700 /etc/coffee-aggregator
 sudo install -m 600 /opt/coffee-aggregator/deploy/env.example /etc/coffee-aggregator/env
+
+# All three secrets, before any compose command. compose.yml demands each of
+# them with ${VAR:?}, which rejects an empty value exactly as it rejects an
+# absent one, and compose interpolates the whole file before it works out which
+# services a profile selects — so one of these left blank makes every compose
+# command fail, build and `up` alike, whatever is being started.
+#
 # hex, not base64: a "/" in the password ends the URL's authority early, and the
 # DSN then reads the host as "coffee" and the rest of the password as the port.
 sudo sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" \
     /etc/coffee-aggregator/env
+sudo sed -i "s|^PGWEB_PASSWORD=.*|PGWEB_PASSWORD=$(openssl rand -hex 18)|" \
+    /etc/coffee-aggregator/env
+sudo sed -i "s|^PGWEB_DB_PASSWORD=.*|PGWEB_DB_PASSWORD=$(openssl rand -hex 24)|" \
+    /etc/coffee-aggregator/env
+
 sudo nano /etc/coffee-aggregator/env          # set COFFEE_AGG_CONTACT and RCLONE_REMOTE
 
 sudo install -d -m 700 /var/backups/coffee-aggregator
@@ -157,13 +169,16 @@ Migration `0006` creates `catalogue_reader`, a NOLOGIN group role that may
 `ALTER DEFAULT PRIVILEGES`, may read every table a later migration adds without
 anyone re-granting.
 
-The group role holds the privileges; each consumer holds a password. Create
-pgweb's login role once, after the first `update.sh` has applied `0006`:
+The group role holds the privileges; each consumer holds a password, and the
+two are created at different times. **The password goes into the env file
+before the first compose command** — see Install, which generates it — because
+compose refuses to render the file without it. **The role is created after
+`0006` has been applied**, which is the `init-db` above or the first
+`update.sh`; it is a login for a group role that does not exist until then.
+
+Create it once, with the password the env file already holds:
 
 ```bash
-sudo sed -i "s|^PGWEB_DB_PASSWORD=.*|PGWEB_DB_PASSWORD=$(openssl rand -hex 24)|" \
-    /etc/coffee-aggregator/env
-
 sudo docker compose --env-file /etc/coffee-aggregator/env exec -T db \
     psql -v ON_ERROR_STOP=1 -U coffee -d coffee \
     -v pw="$(sudo sed -n 's|^PGWEB_DB_PASSWORD=||p' /etc/coffee-aggregator/env)" <<'SQL'
@@ -315,6 +330,38 @@ journalctl -u coffee-aggregator.service -f
 ```bash
 sudo /opt/coffee-aggregator/deploy/update.sh            # pull, rebuild, migrate
 sudo /opt/coffee-aggregator/deploy/update.sh --crawl    # …and crawl now
+```
+
+**A server installed before the table browser existed has no
+`PGWEB_DB_PASSWORD` or `PGWEB_PASSWORD` in its env file, and `update.sh` will
+abort on its first command until they are there** — not with a pgweb that
+restarts, but with nothing deployed at all: compose interpolates the whole file
+before it builds anything, so the build step itself fails. Add them once, in
+this order:
+
+```bash
+# 1. the two new secrets, before update.sh runs at all
+for var in PGWEB_PASSWORD PGWEB_DB_PASSWORD; do
+    grep -q "^${var}=" /etc/coffee-aggregator/env \
+        || echo "${var}=" | sudo tee -a /etc/coffee-aggregator/env >/dev/null
+    sudo sed -i "s|^${var}=.*|${var}=$(openssl rand -hex 24)|" /etc/coffee-aggregator/env
+done
+
+# 2. now the update runs: pull, build, up, migrate — 0006 creates catalogue_reader
+sudo /opt/coffee-aggregator/deploy/update.sh
+
+# 3. the login role, which could not exist before 0006 was applied
+sudo docker compose --env-file /etc/coffee-aggregator/env \
+    -f /opt/coffee-aggregator/deploy/compose.yml exec -T db \
+    psql -v ON_ERROR_STOP=1 -U coffee -d coffee \
+    -v pw="$(sudo sed -n 's|^PGWEB_DB_PASSWORD=||p' /etc/coffee-aggregator/env)" <<'SQL'
+CREATE ROLE pgweb LOGIN PASSWORD :'pw';
+GRANT catalogue_reader TO pgweb;
+SQL
+
+# 4. pgweb has been restarting in a loop since step 2; now it has a role to use
+sudo docker compose --env-file /etc/coffee-aggregator/env \
+    -f /opt/coffee-aggregator/deploy/compose.yml up -d pgweb
 ```
 
 Three steps in the one order that works. The middle one is the step that is easy
