@@ -148,6 +148,9 @@ def test_every_config_is_registered_and_unique() -> None:
     ("site_id", "listing"),
     [
         ("ciernaperla", "BIALETTI Mokka kávovar"),
+        ("ciernaperla", "COFFEE SET 1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g"),
+        ("ciernaperla", "COFFEE SET 1+1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g + 1x1000g"),
+        ("ciernaperla", "DARČEKOVÉ BALENIE  Coffee set , 250g pražená odrodová káva, 100% ARABIKA"),
         ("penerini", "Plátěná taška PENERINI s kávovým motivem"),
         ("penerini", "White labeling - káva pod vlastní značkou"),
         ("theminers", "Aeropress Paper Filter (350pcs)"),
@@ -172,6 +175,10 @@ def test_a_shop_marker_catches_the_listing_it_was_measured_against(
     ("site_id", "listing"),
     [
         ("ciernaperla", "DARČEKOVÉ BALENIE  CUBA Venchi cigara, 250g pražená káva 100% ARABIKA"),
+        ("ciernaperla", "DARČEKOVÉ BALENIE  Mini BLACK PEARL, pražená káva, 100% ARABIKA,  3x100g"),
+        ("ciernaperla", "DARČEKOVÉ BALENIE  TRENDY BLACK PEARL, 2x 250g pražená káva 100% ARABIKA"),
+        ("cityroasters", "Degustační balení na espresso 3x100 g."),
+        ("cityroasters", "Degustační balení na filtr 3x100g."),
         ("theminers", "Ethiopia Kello Siko #3"),
         ("theminers", "Office Blend"),
         ("zlatezrnko", "Káva Zlaté Zrnko – Káva na filter Tanzánia 250g"),

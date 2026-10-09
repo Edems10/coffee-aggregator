@@ -475,10 +475,31 @@ def test_no_short_needle_shadows_a_later_longer_one(
         ("Hausbrandt Gourmet Columbus 24 kg", 24000),
         ("Etiopie Guji 250 g", 250),
         ("bez váhy", None),
+        ("DARČEKOVÉ BALENIE  Mini BLACK PEARL, pražená káva, 100% ARABIKA,  3x100g", 300),
+        ("DARČEKOVÉ BALENIE  TRENDY BLACK PEARL, 2x 250g pražená káva 100% ARABIKA", 500),
+        ("Degustační balení na espresso 3x100 g.", 300),
+        ("Degustační balení na filtr 3x100g.", 300),
     ],
 )
 def test_parse_pack_grams_multiplies_what_the_name_spells_out(text: str, grams: int | None) -> None:
     """The price on a "6 x 100 g" page buys all six bags, not one of them."""
+    assert normalize.parse_pack_grams(text) == grams
+
+
+@pytest.mark.parametrize(
+    ("text", "grams"),
+    [
+        ("COFFEE SET 1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g", 250),
+        ("COFFEE SET 1+1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g + 1x1000g", 250),
+        ("Dárkové „degustační“ balení pěti káv po 100g", 100),
+    ],
+)
+def test_a_summed_or_spelt_out_pack_is_read_as_one_bag(text: str, grams: int) -> None:
+    """A set these read short stays ignored per shop; this pins why (#58).
+
+    The reading is wrong for the product — 750 g, 1750 g and 500 g are what the
+    prices buy — so the shops keep their markers until a parser reads the sum.
+    """
     assert normalize.parse_pack_grams(text) == grams
 
 

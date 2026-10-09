@@ -29,11 +29,15 @@ ignore = [
   "poukazka",
   "caje",
   "cokolad",
-  # The multi-coffee sets state no single origin. The single-coffee gift
-  # packs ("DARČEKOVÉ BALENIE CUBA Venchi") are real listings and stay.
+  # "COFFEE SET 1+1" and "1+1+1" state "1x250g + 1x500g", a sum no parser
+  # reads: the name yields 250 g and the price buys 750 g or 1750 g. The
+  # "DARČEKOVÉ BALENIE Coffee set" is a hamper — its 60 € buys 2x250g of
+  # coffee plus the Bialetti moka pot this shop sells alone for 26 €, so the
+  # 250 g in its name would publish 240 €/kg against a true 68 €/kg at most.
+  # The Mini (3x100g) and TRENDY (2x 250g) packs state the coffee their price
+  # buys, so they parse to 300 g and 500 g and left this list (#58); TRENDY's
+  # added chocolate is the same extra the "Venchi" 250 g pack already carries.
   "coffee set",
-  "mini black pearl",
-  "trendy black pearl",
   # A moka pot. The brand is not a global marker: Bialetti sells coffee too.
   "bialetti",
 ]
