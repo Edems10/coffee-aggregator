@@ -11,9 +11,8 @@ currency = "EUR"
 max_pages = 20
 pagination = "path"
 
-# The category mixes beans with cascara and brewing gear.
+# The category mixes beans with brewing gear.
 ignore = [
-  "cascara",
   "mlyncek",
   "chemex",
   "filtre",

@@ -1,5 +1,6 @@
 # LAB Cafe — product names carry the shop's own ●○ strength and acidity bars;
-# the category also lists vouchers and tasting sets, ignored by name.
+# the category also lists vouchers, which the shared ignore list drops, and
+# tasting sets, which it does not.
 platform = "shoptet"
 site_id = "labcafe"
 name = "LAB Cafe"
@@ -11,7 +12,5 @@ max_pages = 10
 pagination = "path"
 
 ignore = [
-  "darkovy poukaz",
   "ochutnavkovy set",
-  "cascara",
 ]

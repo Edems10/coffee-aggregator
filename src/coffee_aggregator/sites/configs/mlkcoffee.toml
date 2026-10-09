@@ -1,5 +1,5 @@
 # MLK Coffee — the coffee category is "/kafe/"; it also lists Nespresso
-# capsules and cascara, which are ignored by name.
+# capsules and cascara, both of which the shared ignore list already drops.
 platform = "shoptet"
 site_id = "mlkcoffee"
 name = "MLK Coffee"
@@ -11,6 +11,4 @@ max_pages = 10
 pagination = "path"
 
 ignore = [
-  "kavove kapsle",
-  "cascara",
 ]

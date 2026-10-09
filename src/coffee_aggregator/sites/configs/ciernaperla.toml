@@ -26,7 +26,6 @@ category_urls = [
 
 # The catalogue also sells things that are not coffee beans.
 ignore = [
-  "poukazka",
   "caje",
   "cokolad",
   # "COFFEE SET 1+1" and "1+1+1" state "1x250g + 1x500g", a sum no parser

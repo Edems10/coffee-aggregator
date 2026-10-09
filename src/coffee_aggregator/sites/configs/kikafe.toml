@@ -10,10 +10,4 @@ currency = "CZK"
 max_pages = 20
 pagination = "path"
 
-# The category also lists things that are not whole beans.
-ignore = [
-  "cascara",
-  "darkovy poukaz",
-]
-
 # Parameter names this shop invents that the built-in CZ/SK/EN map

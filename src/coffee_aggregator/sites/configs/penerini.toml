@@ -14,7 +14,6 @@ pagination = "path"
 # "white labeling" is a roasting service the shop prices at 99 899 999 001
 # CZK so that nobody buys it by accident; the tote bag is merchandise.
 ignore = [
-  "kapsle",
   "platena taska",
   "white labeling",
 ]

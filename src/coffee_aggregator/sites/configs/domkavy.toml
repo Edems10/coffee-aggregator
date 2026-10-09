@@ -17,8 +17,7 @@ currency = "EUR"
 max_pages = 10
 pagination = "path"
 
-# Green (unroasted) beans and a subscription box share the listing.
+# Green (unroasted) beans share the listing with the roasted ones.
 ignore = [
   "zelena zrnkova",
-  "predplatne",
 ]

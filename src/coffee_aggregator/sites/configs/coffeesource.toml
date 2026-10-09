@@ -17,10 +17,7 @@ max_pages = 3
 # "vsechny-produkty" (932) drag in chocolate, tea and hardware.
 collections = ["vyberova-kava"]
 
-# Beside the coffee the shop sells courses, subscriptions and tasting boxes.
+# Beside the coffee the shop sells tasting boxes.
 ignore = [
   "degustacni sada",
-  "predplatne",
-  "kurz",
-  "darkovy poukaz",
 ]

@@ -1,5 +1,6 @@
 # Káva Poděbrady — one roasted-coffee category that also lists cascara,
-# subscriptions and tasting sets, so those are ignored by name.
+# subscriptions and tasting sets; only the tasting sets still need a marker of
+# their own, the rest are on the shared ignore list.
 platform = "shoptet"
 site_id = "kavapodebrady"
 name = "Káva Poděbrady"
@@ -11,9 +12,5 @@ max_pages = 10
 pagination = "path"
 
 ignore = [
-  "cascara",
-  "kavove predplatne",
-  "darkovy poukaz",
   "degustacni set",
-  "kapslesso",
 ]

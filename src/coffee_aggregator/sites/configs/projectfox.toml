@@ -16,8 +16,3 @@ max_pages = 3
 # "coffee" is titled "Balíčky kávy" and holds the 23 coffees; the subscription
 # and the accessories are sibling collections.
 collections = ["coffee"]
-
-# The shop sells its coffee on subscription as well as by the bag.
-ignore = [
-  "predplatne",
-]

@@ -12,5 +12,4 @@ pagination = "path"
 
 ignore = [
   "degustacny balicek",
-  "darcekovy poukaz",
 ]

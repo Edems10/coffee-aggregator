@@ -23,7 +23,6 @@ category_urls = [
 
 # The catalogue also sells things that are not coffee beans.
 ignore = [
-  "cascara",
   "raffes",
 ]
 
