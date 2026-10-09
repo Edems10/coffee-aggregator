@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "beautifulsoup4>=4.13.3",
-    "coffee-contracts>=1.0.0",
+    "coffee-contracts>=2.1.0",
     "httpx2>=2.13.1",
     "lxml>=5.3.0",
     "nats-py>=2.9.0",
@@ -91,12 +91,5 @@ files = ["src", "tests"]
 module = ["lxml.*"]
 ignore_missing_imports = true
 
-# coffee-contracts ships no py.typed marker yet, so mypy would otherwise read
-# the whole contract as Any — which is the one import where that is least
-# acceptable. Its source is fully annotated, so follow it anyway.
-[[tool.mypy.overrides]]
-module = ["coffee_contracts.*"]
-follow_untyped_imports = true
-
 [tool.uv.sources]
-coffee-contracts = { git = "https://github.com/Edems10/coffee-contracts.git", rev = "v1.0.0" }
+coffee-contracts = { git = "https://github.com/Edems10/coffee-contracts.git", rev = "v2.1.0" }
