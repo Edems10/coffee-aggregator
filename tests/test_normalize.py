@@ -487,6 +487,23 @@ def test_parse_pack_grams_multiplies_what_the_name_spells_out(text: str, grams: 
 
 
 @pytest.mark.parametrize(
+    ("text", "parsed"),
+    [
+        ("BANUA Café 5 kg (20x250g)", (250, 5000)),
+        ("Tonino Lamborghini Caffe Red zrnková 2,4 kg (12x200g)", (200, 2400)),
+        ("Baranelli Forte Zrnková Káva 6 x 1kg", (1000, 6000)),
+        ("Etiopie Guji 250 g", None),
+        ("bez váhy", None),
+    ],
+)
+def test_parse_multiplied_pack_grams_keeps_the_bag_beside_the_total(
+    text: str, parsed: tuple[int, int] | None
+) -> None:
+    """A carton is told from a bundle by whether the bag and the total agree (#70)."""
+    assert normalize.parse_multiplied_pack_grams(text) == parsed
+
+
+@pytest.mark.parametrize(
     ("text", "grams"),
     [
         ("COFFEE SET 1+1, pražená káva, 100% ARABICA, 1x250g + 1x500g", 250),
