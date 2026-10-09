@@ -9,6 +9,7 @@ from itertools import islice
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
+from coffee_aggregator import normalize
 from coffee_aggregator.config import DEFAULT_BATCH_SIZE
 from coffee_aggregator.fx import convert
 from coffee_aggregator.http import FetchDisallowed, FetchError, FetchResult
@@ -483,6 +484,8 @@ def derive(coffee: Coffee, fx_rate: FxRate | None = None) -> None:
     weight of the very package that price is for — and only then converted, so a
     250 g price can never be divided by a kilogram stated somewhere else on the
     page. A variant's own per-kilogram prices come from its own two numbers.
+    A package the shop measures in millilitres gets none of them: its weight
+    describes water, not coffee.
 
     Args:
         coffee: The freshly parsed product, modified in place.
@@ -499,11 +502,15 @@ def derive(coffee: Coffee, fx_rate: FxRate | None = None) -> None:
         amount = basis.amount_per_kg()
         coffee.price_per_kg_eur = convert.to_eur(amount, basis.currency, fx_rate)
         coffee.price_per_kg_czk = convert.to_czk(amount, basis.currency, fx_rate)
+    # The same refusal as the product's basis: coffeesource ships its 1000 ml
+    # cold brew as one "Default Title" option carrying the bottle's 1000 g
+    # shipping weight, which made the variant row claim 499 CZK/kg too.
+    by_volume = normalize.states_volume(coffee.name)
     for variant in coffee.variants:
         currency = variant.currency or coffee.currency
         variant.price_eur = convert.to_eur(variant.price, currency, fx_rate)
         variant.price_czk = convert.to_czk(variant.price, currency, fx_rate)
-        variant_per_kg = per_kg(variant.price, variant.weight_g)
+        variant_per_kg = None if by_volume else per_kg(variant.price, variant.weight_g)
         variant.price_per_kg_eur = convert.to_eur(variant_per_kg, currency, fx_rate)
         variant.price_per_kg_czk = convert.to_czk(variant_per_kg, currency, fx_rate)
 
