@@ -267,6 +267,37 @@ def test_an_implausible_variant_weight_is_never_believed() -> None:
     assert weighed(variants=[variant(1, 9.0)], price=9.0) is None
 
 
+def test_a_tasting_set_weighs_its_whole_pack_not_one_bag() -> None:
+    """Čierna perla's 3x100g gift pack labels 100 g — one bag — and sells three.
+
+    The shop's own options are unpriced ("3x100g 100% ARABIKA komoditná"), so
+    only the name says what the 20 € buys; believing the label published
+    200 €/kg against a true 67 €/kg (#58).
+    """
+    weight = weighed(
+        label="100 g",
+        name="DARČEKOVÉ BALENIE  Mini BLACK PEARL, pražená káva, 100% ARABIKA,  3x100g",
+        variants=[variant(100, None), variant(100, None), variant(100, None)],
+    )
+
+    assert weight == 300
+
+
+def test_a_set_sold_as_one_option_weighs_what_the_option_states() -> None:
+    """City Roasters sells its 3x100 g box as a single "Default Title" option.
+
+    Shopify carries the 300 g there as the merchant's shipping weight, so the
+    option and the name agree and the box is 300 g however precedence is read.
+    """
+    weight = weighed(
+        name="Degustační balení na filtr 3x100g.",
+        variants=[variant(300, 400.0)],
+        price=400.0,
+    )
+
+    assert weight == 300
+
+
 def test_the_fallback_is_the_last_resort() -> None:
     assert weighed(fallback="300 g") == 300
     assert weighed(name="Brasil 250 g", fallback="300 g") == 250

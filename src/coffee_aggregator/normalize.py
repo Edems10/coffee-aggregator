@@ -109,6 +109,12 @@ _WEIGHT_RE = re.compile(
 )
 
 
+# One multiplication only, never a sum. "1x250g + 1x500g" is an honest 750 g,
+# but of 3678 products exactly two names are shaped that way and both belong to
+# one shop, while 12 of the 14 names stating two sizes are that same shop's
+# size axis ("250g – 500g") whose headline price is the smaller bag. Summing
+# would have to overrule the guard that keeps those 12 and the grinder bundles
+# right, and a wrong per-kilogram price costs more than two missing rows (#58).
 _PACK_RE = re.compile(
     r"(\d{1,3})\s*[x\u00d7]\s*(\d[\d\s.,]*)\s*(kg|kilogram\w*|kilo|gram\w*|gr|g)\b",
     re.IGNORECASE,

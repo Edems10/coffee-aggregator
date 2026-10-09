@@ -17,9 +17,6 @@ max_pages = 3
 # collections it does not contain.
 collections = ["kava"]
 
-# The "Káva" collection also holds the two tasting boxes, each three different
-# coffees in one listing. They carry no single origin and their description
-# names all three countries, so they would otherwise be given the first one.
-ignore = [
-  "degustacni baleni",
-]
+# The two "Degustační balení … 3x100 g" tasting boxes were ignored here until
+# #58: the pack weight now parses to 300 g, and neither name states a country,
+# so no single origin is invented for them.
