@@ -32,6 +32,15 @@ if TYPE_CHECKING:
 #: "salka" (its only hit, "Šálka nádeje pre Vilyho", is a 250 g bag),
 #: "kavovar" (thirteen of sixteen hits read "pro automatické kávovary") and
 #: "filtr" (sixty-odd filter roasts).
+#: The capsule markers settled #54: the catalogue is beans and ground coffee,
+#: where a per-kilogram comparison means something, and a capsule's stored
+#: weight is a count of capsules read as grams — a Nespresso capsule holds
+#: about 5.5 g, so a "10ks" listing is roughly 55 g, not the 100 g stored.
+#: Measured over the same snapshot: "kapsl" catches 4 names, "nespresso" 7,
+#: ten rows between them and no false positive. "pod" was rejected: anchored
+#: at a word start it still catches "Podzimní káva" and five more real
+#: coffees, and "capsule", "kapsul", "dolce gusto", "tassimo" and "senseo"
+#: were measured at zero hits, so none of them is shipped unmeasured.
 DEFAULT_IGNORED = (
     "tasting pack",
     "cascara",
@@ -46,6 +55,8 @@ DEFAULT_IGNORED = (
     "kurz",  # a barista course is a service, and weighs nothing
     "mydlo",
     "peeling",
+    "kapsl",  # CZ/SK: a capsule, whose weight is a capsule count read as grams
+    "nespresso",  # the capsule format, written out where "kapsl" is not
 )
 
 
