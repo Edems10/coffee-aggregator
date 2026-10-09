@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -122,3 +123,89 @@ def test_every_named_volume_a_service_mounts_is_declared() -> None:
                 assert source in declared, (
                     f"service {name!r} mounts volume {source!r}, which compose does not declare"
                 )
+
+
+#: Every `${VAR:?}` compose.yml interpolates. Interpolation happens before
+#: profiles are filtered, so one of these missing fails *every* compose command
+#: — including the `--profile crawler build` that update.sh runs first.
+REQUIRED_VAR = re.compile(r"\$\{([A-Z0-9_]+):\?")
+
+DEPLOY = Path(__file__).resolve().parent.parent / "deploy"
+README = DEPLOY / "README.md"
+ENV_EXAMPLE = DEPLOY / "env.example"
+
+
+def _required_variables() -> list[str]:
+    return sorted(set(REQUIRED_VAR.findall(COMPOSE.read_text("utf-8"))))
+
+
+@pytest.mark.parametrize("variable", _required_variables())
+def test_a_required_variable_is_set_before_the_first_compose_command(variable: str) -> None:
+    """#60: pgweb's password was `:?` in compose.yml and documented as a step to
+    take *after* the first `update.sh`, which cannot be done.
+
+    `${VAR:?}` rejects an empty value as well as an absent one, and compose
+    interpolates the whole file before it decides which services a profile
+    selects — so the missing credential of a service nobody is starting still
+    aborts `compose --profile crawler build`, the first thing update.sh runs.
+    A variable compose demands is therefore part of the install, never a
+    follow-up step.
+    """
+    readme = README.read_text("utf-8")
+    prelude = readme[: readme.index("docker compose")]
+    assert re.search(rf"^.*\b{variable}=", prelude, re.MULTILINE), (
+        f"compose.yml requires {variable}, but deploy/README.md does not tell the operator "
+        f"to set it before the first docker compose command. Every `:?` variable has to be in "
+        f"the env file before update.sh builds, or the whole update aborts at the build step."
+    )
+
+
+@pytest.mark.parametrize("variable", _required_variables())
+def test_a_required_variable_ships_in_the_example_env_file(variable: str) -> None:
+    """The example env file is what gets installed as /etc/coffee-aggregator/env,
+    so a required variable missing from it is a server that cannot run compose.
+    """
+    assert re.search(rf"^{variable}=", ENV_EXAMPLE.read_text("utf-8"), re.MULTILINE), (
+        f"compose.yml requires {variable}, which deploy/env.example does not carry"
+    )
+
+
+#: An in-place rewrite of an env line that supplies a freshly generated secret.
+#: Fine in Install, where the file was copied from env.example a moment ago and
+#: holds nothing worth keeping; a lockout in Updating, where every value in that
+#: file is one a running stack is already authenticating with.
+ROTATES_IN_PLACE = re.compile(r"sed -i.*openssl rand")
+
+
+def _readme_section(heading: str) -> str:
+    readme = README.read_text("utf-8")
+    start = readme.index(heading)
+    rest = readme.index("\n## ", start + len(heading))
+    return readme[start:rest]
+
+
+def test_the_documented_update_never_rewrites_a_secret_in_place() -> None:
+    """The first draft of #60's fix seeded both pgweb variables with
+    `sed -i "s|^${var}=.*|${var}=$(openssl rand -hex 24)|"`, guarded only by a
+    `grep ||` that adds a missing *line*.
+
+    Only `PGWEB_DB_PASSWORD` was new; `PGWEB_PASSWORD` predates the read-only
+    role and the running server already authenticates with it, so the block
+    would have rotated a live basic-auth credential and locked the operator out
+    of the browser for a reason unconnected to the deploy. An update fills in
+    what is missing and leaves what is there alone.
+
+    This catches the one-line idiom, not every way to write an unconditional
+    overwrite: a rewrite split across two lines would pass. It is a tripwire on
+    the shape that caused the bug, not a proof of idempotence.
+    """
+    offenders = [
+        line.strip()
+        for line in _readme_section("## Updating").splitlines()
+        if ROTATES_IN_PLACE.search(line)
+    ]
+    assert not offenders, (
+        "deploy/README.md's update procedure rewrites an env value in place with a new "
+        f"secret: {offenders}. Generate only what is missing or empty — an operator running "
+        "the documented update must not lose a credential that already works."
+    )
