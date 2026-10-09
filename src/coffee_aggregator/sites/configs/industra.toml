@@ -21,9 +21,7 @@ category_urls = [
 
 # The catalogue also sells things that are not coffee beans.
 ignore = [
-  "mydlo",
   "soap",
-  "kurz",
   "matcha",
   "chawan",
   # Stickers, and the two tasting boxes of three different coffees each.

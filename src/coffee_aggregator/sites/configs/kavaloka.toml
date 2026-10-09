@@ -22,9 +22,8 @@ category_urls = [
   "https://www.kavaloka.cz/kategorie-produktu/kavove-smesi-kavaloka/",
 ]
 
-# The catalogue also sells dried fruit, nuts, gift boxes and vouchers.
+# The catalogue also sells dried fruit, nuts and gift boxes.
 ignore = [
-  "darkovy poukaz",
   "darkove baleni",
   "kornout",
 ]

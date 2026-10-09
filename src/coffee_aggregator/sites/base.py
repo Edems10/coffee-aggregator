@@ -60,6 +60,23 @@ DEFAULT_IGNORED = (
 )
 
 
+def matches_marker(folded: str, marker: str) -> bool:
+    """Decide whether a folded product name carries one non-coffee marker.
+
+    Args:
+        folded: A folded product name.
+        marker: One folded marker.
+
+    Returns:
+        True when the marker starts a word in ``folded``.
+    """
+    # A marker matches at the start of a word, with any ending: shops write
+    # `ignore = ["darcek"]` to catch "Darčeková karta", so a stem must keep
+    # working. Anchoring the start is still worth it — plain containment let
+    # "test product" match "Latest Product".
+    return re.search(rf"(?<![a-z0-9]){re.escape(marker)}", folded) is not None
+
+
 @dataclass(slots=True)
 class ProductRef:
     """A product spotted on a listing page, before its detail page is fetched.
@@ -154,14 +171,7 @@ class SiteAdapter(ABC):
         folded = normalize.fold(name)
         if not folded:
             return False
-        # A marker matches at the start of a word, with any ending: shops write
-        # `ignore = ["darcek"]` to catch "Darčeková karta", so a stem must keep
-        # working. Anchoring the start is still worth it — plain containment let
-        # "test product" match "Latest Product".
-        return any(
-            re.search(rf"(?<![a-z0-9]){re.escape(marker)}", folded)
-            for marker in self.ignored_names()
-        )
+        return any(matches_marker(folded, marker) for marker in self.ignored_names())
 
     def ignored_names(self) -> tuple[str, ...]:
         """Return the lower-case markers that mark a product as non-coffee.

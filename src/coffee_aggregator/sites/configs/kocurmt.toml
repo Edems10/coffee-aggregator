@@ -16,8 +16,3 @@ api_category_ids = [127]
 category_urls = [
   "https://www.kocurmt.sk/kategoria-produktu/kava/",
 ]
-
-# The catalogue also sells things that are not coffee beans.
-ignore = [
-  "poukaz",
-]

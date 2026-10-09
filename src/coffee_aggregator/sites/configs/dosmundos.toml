@@ -12,9 +12,7 @@ pagination = "path"
 
 # The category also lists things that are not whole beans.
 ignore = [
-  "cascara",
   "drip coffee",
-  "predplatne",
 ]
 
 # Parameter names this shop invents that the built-in CZ/SK/EN map

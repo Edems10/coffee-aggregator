@@ -15,8 +15,6 @@ pagination = "path"
 ignore = [
   "degustacni",
   "darkov",
-  "poukaz",
-  "kapsle",
   "pro ucitele",
   "pro zdravotniky",
 ]

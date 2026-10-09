@@ -11,9 +11,6 @@ max_pages = 10
 pagination = "path"
 
 ignore = [
-  "darkovy voucher",
   "degustacni sada",
   "testovaci sada",
-  "cascara",
-  "kavove predplatne",
 ]

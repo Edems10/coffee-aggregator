@@ -12,5 +12,4 @@ pagination = "path"
 
 ignore = [
   "chai latte",
-  "cascara",
 ]

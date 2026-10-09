@@ -10,8 +10,7 @@ currency = "CZK"
 max_pages = 10
 pagination = "path"
 
-# The bean category also sells a jute sack and a voucher.
+# The bean category also sells a jute sack.
 ignore = [
   "jutovy pytel",
-  "darkovy poukaz",
 ]

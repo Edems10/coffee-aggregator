@@ -15,5 +15,4 @@ pagination = "path"
 
 ignore = [
   "ochutnavkovy set",
-  "darkovy poukaz",
 ]

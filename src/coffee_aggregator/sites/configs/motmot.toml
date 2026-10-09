@@ -15,7 +15,6 @@ pagination = "path"
 
 # The category also lists things that are not whole beans.
 ignore = [
-  "kapsle",
   "seznamka",
 ]
 

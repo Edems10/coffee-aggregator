@@ -14,9 +14,3 @@ max_pages = 3
 
 # "kava" holds all 67 coffees; "bestsellers" repeats them mixed with hardware.
 collections = ["kava"]
-
-# The catalogue also sells machines, books, glassware and subscriptions.
-ignore = [
-  "darkovy poukaz",
-  "predplatne",
-]

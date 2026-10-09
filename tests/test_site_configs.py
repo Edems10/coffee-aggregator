@@ -10,6 +10,7 @@ from coffee_aggregator import normalize, platforms, sites
 from coffee_aggregator.labels import KNOWN_FIELDS, map_label
 from coffee_aggregator.platforms.shoptet import DEFAULT_LABEL_MAP
 from coffee_aggregator.sites import CONFIG_DIR
+from coffee_aggregator.sites.base import DEFAULT_IGNORED, matches_marker
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -119,6 +120,22 @@ def test_no_shop_repeats_the_shared_vocabulary(path: Path) -> None:
     ]
 
     assert not repeated, f"{path.name}: move {repeated} into coffee_aggregator/labels.py"
+
+
+@pytest.mark.parametrize("path", CONFIGS, ids=ids)
+def test_no_shop_repeats_a_shared_ignore_marker(path: Path) -> None:
+    """A per-shop ignore entry is for that shop's oddities, not shared vocabulary."""
+    # Asked through the production matcher, with the marker read as a product
+    # name: that is exactly "would the shared list alone already drop it". Plain
+    # containment would also flag a marker that merely spells a shared one
+    # inside a word, which `is_ignored` never matches.
+    repeated = [
+        marker
+        for marker in load(path).get("ignore", [])
+        if any(matches_marker(normalize.fold(marker), shared) for shared in DEFAULT_IGNORED)
+    ]
+
+    assert not repeated, f"{path.name}: {repeated} is already in DEFAULT_IGNORED"
 
 
 @pytest.mark.parametrize("path", CONFIGS, ids=ids)

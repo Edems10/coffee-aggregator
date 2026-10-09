@@ -13,7 +13,6 @@ pagination = "path"
 
 # The category also lists brewing gear and gift packs.
 ignore = [
-  "cascara",
   "darcek",
   "mlyncek",
   "filtre",

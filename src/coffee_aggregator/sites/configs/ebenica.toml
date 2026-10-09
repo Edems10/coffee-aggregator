@@ -21,9 +21,7 @@ ignore = [
   "mlyncek",
   "dripper",
   "salka",
-  "poukaz",
   "degustacn",
-  "tricko",
 ]
 
 [label_map]

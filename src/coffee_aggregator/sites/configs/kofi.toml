@@ -18,7 +18,6 @@ pagination = "path"
 ignore = [
   "darcek",
   "degustacn",
-  "predplatne",
 ]
 
 [label_map]

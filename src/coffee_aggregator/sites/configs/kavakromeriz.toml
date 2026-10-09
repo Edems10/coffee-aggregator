@@ -1,5 +1,6 @@
 # Kromka (Káva Kroměříž) — a roaster-retailer whose /kava/ tree also carries
-# chocolate, keychains and subscriptions, so those are ignored by name.
+# chocolate, keychains and subscriptions; the subscriptions are dropped by the
+# shared ignore list, the rest by name.
 platform = "shoptet"
 site_id = "kavakromeriz"
 name = "Kromka - Káva Kroměříž"
@@ -13,9 +14,6 @@ pagination = "path"
 ignore = [
   "kavolada",
   "klicenka",
-  "kavove predplatne",
-  "darkovy poukaz",
   "degustacni",
-  "kapsle",
   "porcovany cukr",
 ]

@@ -22,9 +22,7 @@ collections = [
   "smesi-charisma",
 ]
 
-# The catalogue also sells machines, courses, vouchers and gift boxes of beans.
+# The catalogue also sells gift boxes of beans.
 ignore = [
   "darkova sada",
-  "voucher",
-  "kavovy kurz",
 ]

@@ -16,9 +16,7 @@ max_pages = 10
 # the brewing gear live in sibling collections it does not contain.
 collections = ["kava"]
 
-# The catalogue also sells grinders, kettles, gift cards and subscription boxes.
+# The catalogue also sells grinders, kettles and gift cards.
 ignore = [
   "darkova karta",
-  "darkovy poukaz",
-  "predplatne",
 ]
