@@ -97,6 +97,9 @@ class Variant:
     #: thing left that can tell a pre-order apart from a bag on the shelf.
     availability_raw: str | None = None
     label: str | None = None
+    #: "whole" or "ground" when the shop stated the grind of this package, None
+    #: when it stated none. Read by :func:`coffee_aggregator.labels.stated_grind`.
+    grind: str | None = None
     #: Filled by the pipeline's derive step from the day's fixing, never by an
     #: adapter: a shop states one price, in one currency.
     price_eur: float | None = None

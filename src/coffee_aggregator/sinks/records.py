@@ -32,6 +32,7 @@ def variant_record(variant: Variant) -> dict[str, Any]:
         "available": variant.available,
         "availability_raw": variant.availability_raw,
         "label": variant.label,
+        "grind": variant.grind,
         "price_eur": variant.price_eur,
         "price_czk": variant.price_czk,
         "price_per_kg_eur": variant.price_per_kg_eur,

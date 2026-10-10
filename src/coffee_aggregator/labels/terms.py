@@ -5,6 +5,7 @@ from typing import Final
 from coffee_aggregator import normalize
 
 __all__ = [
+    "BREWING_METHOD_MARKERS",
     "F_ACIDITY",
     "F_ALTITUDE",
     "F_BEST_BEFORE",
@@ -16,6 +17,7 @@ __all__ = [
     "F_DECAF",
     "F_FARM",
     "F_FLAVOR",
+    "F_GRIND",
     "F_HARVEST",
     "F_IGNORE",
     "F_PROCESS",
@@ -53,6 +55,7 @@ F_FLAVOR: Final = "flavor_notes"
 F_SCA: Final = "sca_score"
 F_SPECIES: Final = "species"
 F_DECAF: Final = "decaf"
+F_GRIND: Final = "grind"
 F_WEIGHT: Final = "weight"
 F_SHIP_WEIGHT: Final = "shipping_weight"
 F_ROAST_DATE: Final = "roast_date"
@@ -81,6 +84,7 @@ KNOWN_FIELDS: Final[frozenset[str]] = frozenset(
         F_SCA,
         F_SPECIES,
         F_DECAF,
+        F_GRIND,
         F_WEIGHT,
         F_SHIP_WEIGHT,
         F_ROAST_DATE,
@@ -273,6 +277,16 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "určené pre",
         "použití",
         "použitie",
+        "vhodné na přípravu",
+        "ideální příprava",
+        "ideální pro",
+        "stav kávy",
+        "na jakou kávu",
+        "forma kávy",
+        "brewing",
+        "preparation method",
+    ),
+    F_GRIND: (
         "mletí",
         "mletie",
         "mletí zrn",
@@ -281,16 +295,11 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "způsob mletí",
         "hrubost namletí",
         "zomlieť kávu",
-        "vhodné na přípravu",
-        "ideální příprava",
-        "ideální pro",
         "typ mletia",
         "stupeň mletí",
         "hrubost mletí",
         "hrubosť mletia",
         "hrúbka mletia",
-        "stav kávy",
-        "na jakou kávu",
         "hrubost kávy",
         "namelte",
         "kávu namelte na",
@@ -299,10 +308,7 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "chceš kávu namlít",
         "chcete kávu namlít",
         "zrnkovou nebo mletou",
-        "forma kávy",
         "mletá / zrnková",
-        "brewing",
-        "preparation method",
     ),
     F_FLAVOR: (
         "chuť",
@@ -481,6 +487,32 @@ TERMS: Final[dict[str, tuple[str, ...]]] = {
         "výsledná váha",
     ),
 }
+
+
+#: Brewing methods as a shop names them in a value, folded. A grind-labelled row
+#: whose value names one is a question with brewing answers ("Kávu namelte na:
+#: Espresso, Filtr, Turek"), so it stays a brewing statement and is not read as a
+#: grind; see :meth:`coffee_aggregator.labels.collect.Labels.add`.
+BREWING_METHOD_MARKERS: Final[tuple[str, ...]] = (
+    "espress",
+    "moka",
+    "mocca",
+    "mokka",
+    "jezv",
+    "dzezv",
+    "turek",
+    "filtr",
+    "filter",
+    "french press",
+    "aeropress",
+    "v60",
+    "chemex",
+    "dripper",
+    "prekap",
+    "preliv",
+    "zaleva",
+    "zaliev",
+)
 
 
 def build_map(
