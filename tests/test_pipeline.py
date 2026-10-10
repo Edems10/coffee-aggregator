@@ -600,12 +600,31 @@ def test_a_single_worker_keeps_the_plain_sequential_path() -> None:
 # --- the deadline -------------------------------------------------------------
 
 
-class SlowDiscovery(FakeSite):
-    """A shop whose listing walk costs a little time per product."""
+class FakeClock:
+    """Stands in for :func:`time.monotonic` so a deadline never depends on load.
 
-    def __init__(self, count: int, step_s: float) -> None:
+    A shop that sleeps per product gives a deadline only as steady as the
+    scheduler: on a busy machine the budget can run out before the first product
+    is reached. Advancing this clock instead makes the cut-off the same every run.
+    """
+
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
+
+
+class SlowDiscovery(FakeSite):
+    """A shop whose listing walk costs a little time per product, on a fake clock."""
+
+    def __init__(self, count: int, step_s: float, clock: FakeClock) -> None:
         super().__init__(count)
         self.step_s = step_s
+        self.clock = clock
 
     def discover(
         self,
@@ -614,7 +633,7 @@ class SlowDiscovery(FakeSite):
         max_pages: int | None = None,
     ) -> Iterator[ProductRef]:
         for ref in super().discover(fetcher, max_pages=max_pages):
-            time.sleep(self.step_s)
+            self.clock.advance(self.step_s)
             yield ref
 
 
@@ -629,9 +648,13 @@ def test_a_deadline_already_passed_stops_before_the_first_product() -> None:
     assert report.complete is False
 
 
-def test_a_truncated_run_never_delists() -> None:
+def test_a_truncated_run_never_delists(monkeypatch: pytest.MonkeyPatch) -> None:
     """The whole reason the deadline is reported rather than raised."""
-    site, fetcher, sink = SlowDiscovery(20, 0.01), FakeFetcher(), FakeSink()
+    clock = FakeClock()
+    # Patched before the Deadline is built, so Deadline.after reads the fake clock.
+    # pipeline.py reads time.monotonic from this same time module.
+    monkeypatch.setattr(time, "monotonic", clock.monotonic)
+    site, fetcher, sink = SlowDiscovery(20, 0.01, clock), FakeFetcher(), FakeSink()
 
     report = _run(site, fetcher, sink, batch_size=2, deadline=Deadline.after(0.03))
 
@@ -651,8 +674,12 @@ def test_a_run_inside_its_deadline_is_complete_and_delists() -> None:
     assert sink.delisted == [("fake", {"0", "1", "2"})]
 
 
-def test_the_deadline_stops_between_batches_not_inside_one() -> None:
-    site, fetcher, sink = SlowDiscovery(10, 0.01), FakeFetcher(), FakeSink()
+def test_the_deadline_stops_between_batches_not_inside_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = FakeClock()
+    monkeypatch.setattr(time, "monotonic", clock.monotonic)
+    site, fetcher, sink = SlowDiscovery(10, 0.01, clock), FakeFetcher(), FakeSink()
 
     report = _run(site, fetcher, sink, batch_size=3, deadline=Deadline.after(0.045))
 
@@ -662,8 +689,10 @@ def test_the_deadline_stops_between_batches_not_inside_one() -> None:
     assert report.discovered % 3 == 0
 
 
-def test_one_deadline_covers_every_shop_of_a_run() -> None:
-    shops = [SlowDiscovery(10, 0.01) for _ in range(3)]
+def test_one_deadline_covers_every_shop_of_a_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = FakeClock()
+    monkeypatch.setattr(time, "monotonic", clock.monotonic)
+    shops = [SlowDiscovery(10, 0.01, clock) for _ in range(3)]
     for index, shop in enumerate(shops):
         shop.site_id = f"shop{index}"
 
