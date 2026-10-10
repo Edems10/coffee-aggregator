@@ -13,7 +13,7 @@ from coffee_aggregator.db.connect import (
     DEFAULT_STATEMENT_TIMEOUT_MS,
     connect,
 )
-from coffee_aggregator.sinks import outbox
+from coffee_aggregator.sinks import kind_decisions, outbox
 from coffee_aggregator.sinks.base import SinkResult
 from coffee_aggregator.sinks.records import coffee_record
 
@@ -124,10 +124,10 @@ JSON_COLUMNS: frozenset[str] = frozenset(
 #: Columns the database owns and the sink never overwrites from a record.
 MANAGED_COLUMNS: tuple[str, ...] = ("first_seen_at", "last_seen_at", "delisted_at")
 
-#: Decided by the seed loader and, later, the decider, never by a crawl. A crawl has
-#: no decision of its own to write, and an upsert that copied its NULLs over these
-#: would clear every stored kind on the next run. The INSERT still names them, so a
-#: new row takes whatever the coffee carries.
+#: Decided by the seed loader and by :mod:`~coffee_aggregator.sinks.kind_decisions`,
+#: never by the upsert. An upsert that copied a crawl's NULLs over these would clear
+#: every stored kind on the next run. The INSERT still names them, so a new row takes
+#: whatever the coffee carries.
 KIND_COLUMNS: tuple[str, ...] = (
     "product_kind",
     "product_kind_source",
@@ -491,7 +491,11 @@ class PostgresSink:
             cursor: The cursor of the open transaction.
             chunk: The coffees of this chunk.
         """
+        # Read before the upsert, so the decision sees what the store held for each row.
+        kind_rows = kind_decisions.rows_for(cursor, chunk)
         cursor.executemany(UPSERT_SQL, [row_for(coffee) for coffee in chunk])
+        if kind_rows:
+            cursor.executemany(kind_decisions.SET_SQL, kind_rows)
         cursor.executemany(PRICE_HISTORY_SQL, [price_row_for(coffee) for coffee in chunk])
         # The product row is written first and in the same transaction, so the
         # variants' foreign key is always satisfied by the time they arrive.

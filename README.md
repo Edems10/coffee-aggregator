@@ -399,12 +399,14 @@ live database cannot drift apart.
 
 `coffee` carries `product_kind`, `product_kind_source` and `product_kind_name_hash`
 (migration `0007`). `product_kind` says what a row is, from the vocabulary in
-`product_kind.py` (`beans`, `capsules`, `merch`, ...); `product_kind_source` says
-where that was decided, `seed` or `seed-reviewed` for the labelling pass; the hash
-is of the name it was decided from. The crawl never sets these and its upsert never
-overwrites them. `coffee-aggregator seed-kinds --file <csv>` writes the labelled seed
-onto the rows already stored and reports how many it wrote and how many it skipped
-for having no stored coffee. Nothing reads the kind yet.
+`product_kind.py` (`beans`, `capsules`, `merch`, ...); `product_kind_source` says where
+that was decided, `seed` or `seed-reviewed` for the labelling pass; the hash is of the
+name it was decided from. The upsert never overwrites them; a crawl sets them only when
+the row has no kind or its hash misses the current name, and only when
+`product_kind_rules.py` can place it. A row no rule can place is left as it was.
+`coffee-aggregator seed-kinds --file <csv>` writes the labelled seed onto the rows
+already stored and reports how many it wrote and how many it skipped for having no
+stored coffee. Nothing reads the kind yet.
 
 ## Migrations
 
@@ -744,7 +746,9 @@ shared reader toolkit every adapter imports as `kit` — bespoke modules under
 neither has a reason to re-implement a reading the other already has. Nothing
 in the project starts with a module docstring or a licence header; `D100`, `D104` and
 `CPY001` are ignored for that reason. `product_kind.py` holds the product-kind
-vocabulary and `product_kind_seed.py` loads the labelled seed onto it.
+vocabulary, `product_kind_seed.py` loads the labelled seed onto it,
+`product_kind_rules.py` decides a kind from a name, and `sinks/kind_decisions.py`
+writes it during a crawl.
 
 ## Development
 
