@@ -215,6 +215,7 @@ def test_cuba_single_origin(cuba: Coffee) -> None:
     assert cuba.price_per_kg == 49.95
     assert cuba.available is True
     assert cuba.decaf is None  # silent on caffeine; the old False was the coercion
+    assert cuba.specialty_grade is None  # silent on grading; the old False was the coercion
     assert cuba.origin.country == "CU"
     assert cuba.origin.region == "Oriente - Sierra Maestra"
     assert cuba.origin.farm == "drobní farmári z regiónu"
@@ -278,6 +279,7 @@ def test_elite_blend_is_kept_with_its_split(elite: Coffee) -> None:
     assert elite.species.robusta_pct == 10
     assert elite.species.is_blend is True
     assert elite.origin.country is None  # a blend's origin prose names its components
+    assert elite.specialty_grade is None  # silent on grading, as the cuba page is
     assert elite.weight_g == 200
     assert "508" in {variant.external_id for variant in elite.variants}
 

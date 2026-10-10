@@ -18,6 +18,7 @@ from coffee_aggregator.labels import (
     headline_weight,
     is_decaf,
     parse_origin,
+    specialty_grade,
 )
 from coffee_aggregator.models import (
     Coffee,
@@ -732,12 +733,15 @@ class CoffeeinSite(SiteAdapter):
             prose: Every description line that is not a labelled value.
         """
         hrefs = _category_hrefs(soup)
-        blob = normalize.fold(" ".join([coffee.name, *prose]))
         # `or` would turn the reader's None into False, which asserts caffeine.
         coffee.decaf = (
             True if DECAF_CATEGORY in hrefs else is_decaf(facts.labels, coffee.name, prose)
         )
-        coffee.specialty_grade = "specialty grade" in blob or SPECIALTY_CATEGORY in hrefs
+        # The same `or` on grading asserts the coffee is not specialty, which a page
+        # that never mentions grading has not said.
+        coffee.specialty_grade = (
+            True if SPECIALTY_CATEGORY in hrefs else specialty_grade(coffee.name, prose, None)
+        )
 
     def _apply_discount(self, coffee: Coffee, soup: BeautifulSoup) -> None:
         """Record the shop's only discount signal, the inline add-to-cart dict.
