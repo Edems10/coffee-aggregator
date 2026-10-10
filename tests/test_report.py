@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from coffee_aggregator.db.connect import Connection
 from coffee_aggregator.db.report import (
+    CONTRADICTORY_DUPLICATE,
     DARK_RUN_SHARE,
     HIGH,
     LOW,
@@ -93,16 +94,27 @@ def price(  # noqa: PLR0913  (same)
 
 
 class FakeCursor:
-    """Replays two lists of tuples, honouring the window each query asks for."""
+    """Replays the three lists of tuples, honouring the filters each query applies."""
 
-    def __init__(self, runs: Sequence[tuple[Any, ...]], prices: Sequence[tuple[Any, ...]]) -> None:
+    def __init__(
+        self,
+        runs: Sequence[tuple[Any, ...]],
+        prices: Sequence[tuple[Any, ...]],
+        live: Sequence[tuple[Any, ...]] = (),
+    ) -> None:
         self.runs = runs
         self.prices = prices
+        self.live = live
         self.rows: list[tuple[Any, ...]] = []
         self.queries: list[str] = []
 
     def execute(self, query: str, params: Sequence[Any] | None = None) -> None:
         self.queries.append(query)
+        if "delisted_at" in query:
+            # The live rows as the query reads them: no delisted row, and no
+            # row without a name. ``delisted_at`` is the last column of a fake.
+            self.rows = [row[:6] for row in self.live if row[6] is None and row[2] is not None]
+            return
         assert params is not None
         first, last = params
         if "crawl_run" in query:
@@ -125,13 +137,15 @@ class FakeConnection:
         self,
         runs: Sequence[tuple[Any, ...]] = (),
         prices: Sequence[tuple[Any, ...]] = (),
+        live: Sequence[tuple[Any, ...]] = (),
     ) -> None:
         self.runs = runs
         self.prices = prices
+        self.live = live
         self.cursors: list[FakeCursor] = []
 
     def cursor(self) -> FakeCursor:
-        cursor = FakeCursor(self.runs, self.prices)
+        cursor = FakeCursor(self.runs, self.prices, self.live)
         self.cursors.append(cursor)
         return cursor
 
@@ -142,8 +156,9 @@ def report(
     *,
     day: date = DAY,
     history_days: int = 7,
+    live: Sequence[tuple[Any, ...]] = (),
 ) -> list[Finding]:
-    return findings(FakeConnection(runs, prices), day=day, history_days=history_days)
+    return findings(FakeConnection(runs, prices, live), day=day, history_days=history_days)
 
 
 def kinds(found: Sequence[Finding]) -> list[str]:
@@ -724,6 +739,134 @@ def test_a_crawl_is_placed_on_the_utc_day_it_started() -> None:
 
     assert kinds(report([run("alpha", YESTERDAY, written=12), late])) == [NO_PRODUCTS]
     assert report([run("alpha", YESTERDAY, written=12), late], day=YESTERDAY) == []
+
+
+# --- contradictory-duplicate --------------------------------------------------
+
+
+def listing(  # noqa: PLR0913  (one keyword per column, as run() and price() do)
+    site: str,
+    external_id: str,
+    name: str,
+    weight_g: int | None,
+    price_per_kg: str | None,
+    *,
+    currency: str = "CZK",
+    delisted: bool = False,
+) -> tuple[Any, ...]:
+    """One coffee row, in the live query's order, plus the ``delisted_at`` it is filtered on."""
+    return (
+        site,
+        external_id,
+        name,
+        weight_g,
+        None if price_per_kg is None else Decimal(price_per_kg),
+        currency,
+        datetime(2026, 9, 1, tzinfo=UTC) if delisted else None,
+    )
+
+
+def test_one_name_at_ten_times_the_price_per_kilogram_is_one_high_finding() -> None:
+    live = [
+        listing("alpha", "101", "Terra", 1000, "121"),
+        listing("alpha", "102", "Terra", 1000, "1210"),
+    ]
+
+    (finding,) = report(live=live)
+
+    assert finding.kind == CONTRADICTORY_DUPLICATE
+    assert finding.severity == HIGH
+    assert finding.site == "alpha"
+    assert finding.summary == "alpha / Terra: 121 CZK/kg and 1210 CZK/kg, 10x apart"
+    assert finding.detail["external_ids"] == ["101", "102"]
+    assert finding.detail["metric"] == "price_per_kg"
+    assert (finding.detail["low"], finding.detail["high"]) == (121, 1210)
+    assert (finding.detail["low_external_id"], finding.detail["high_external_id"]) == (
+        "101",
+        "102",
+    )
+    assert json.loads(json.dumps(finding.detail)) == finding.detail
+
+
+def test_a_tenfold_weight_gap_under_one_name_is_flagged() -> None:
+    # vrescaffe's two Terra 100g rows: the 1 kg listing kept the old name.
+    live = [
+        listing("vrescaffe", "159", "Terra 100g", 100, "1210"),
+        listing("vrescaffe", "168", "Terra 100g", 1000, "1075"),
+    ]
+
+    (finding,) = report(live=live)
+
+    assert finding.kind == CONTRADICTORY_DUPLICATE
+    assert finding.detail["metric"] == "weight_g"
+    assert (finding.detail["low"], finding.detail["high"]) == (100, 1000)
+    assert finding.summary == "vrescaffe / Terra 100g: 100 g and 1000 g, 10x apart"
+
+
+def test_prices_and_weights_within_a_factor_of_ten_are_not_flagged() -> None:
+    live = [
+        listing("alpha", "1", "Terra", 1000, "121"),
+        listing("alpha", "2", "Terra", 1000, "1209"),
+        listing("alpha", "3", "Terra", 1000, "600"),
+        listing("alpha", "4", "Lima", 100, "900"),
+        listing("alpha", "5", "Lima", 999, "900"),
+    ]
+
+    assert report(live=live) == []
+
+
+def test_the_same_name_at_two_shops_is_not_a_contradiction() -> None:
+    live = [
+        listing("alpha", "1", "Terra", 1000, "121"),
+        listing("beta", "1", "Terra", 1000, "1210"),
+    ]
+
+    assert report(live=live) == []
+
+
+def test_a_delisted_row_never_contradicts_a_live_one() -> None:
+    live = [
+        listing("alpha", "1", "Terra", 1000, "121"),
+        listing("alpha", "2", "Terra", 1000, "1210", delisted=True),
+    ]
+
+    assert report(live=live) == []
+
+
+def test_a_name_listed_three_times_is_one_finding_naming_every_row() -> None:
+    live = [
+        listing("alpha", "1", "Terra", 1000, "121"),
+        listing("alpha", "2", "Terra", 1000, "130"),
+        listing("alpha", "3", "Terra", 1000, "1210"),
+    ]
+
+    (finding,) = report(live=live)
+
+    assert finding.detail["external_ids"] == ["1", "2", "3"]
+    assert finding.detail["high_external_id"] == "3"
+
+
+def test_rows_that_do_not_state_a_figure_are_left_out_of_the_comparison() -> None:
+    live = [
+        listing("alpha", "1", "Terra", None, "121"),
+        listing("alpha", "2", "Terra", 1000, None),
+        listing("alpha", "3", "Terra", 1000, "0"),
+        listing("alpha", "4", "Terra", 1000, "130"),
+    ]
+
+    assert report(live=live) == []
+
+
+def test_a_name_unique_in_its_shop_is_never_set_against_the_rest_of_it() -> None:
+    # The BANUA shape: 17 160 CZK/kg for a 5 kg pack whose weight was read as
+    # 250 g, beside a 1 kg bag at 659. Nothing shares the name, so nothing is
+    # compared, and the guard does not pretend otherwise.
+    live = [
+        listing("kava", "5642", "BANUA Café 5 kg (20x250g)", 250, "17160"),
+        listing("kava", "5415", "BANUA Café 1 kg (espreso)", 1000, "659"),
+    ]
+
+    assert report(live=live) == []
 
 
 # --- storing the day's findings ----------------------------------------------

@@ -5,13 +5,13 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, time, timedelta
+from decimal import Decimal
 from statistics import median
 from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from datetime import date
-    from decimal import Decimal
 
     from coffee_aggregator.db.connect import Connection, Cursor
 
@@ -28,6 +28,7 @@ PARSE_GAP: Final = "parse-gap"
 WEIGHT_CHANGE: Final = "weight-change"
 PRICE_JUMP: Final = "price-jump"
 NEW_FAILURES: Final = "new-failures"
+CONTRADICTORY_DUPLICATE: Final = "contradictory-duplicate"
 
 #: How much of its own recent median a shop may write before it is a drop.
 #: Measured over 2026-10-01 and 2026-10-02, 230 shop-days with a baseline: the
@@ -81,6 +82,15 @@ FAILURE_RISE_FACTOR: Final = 2.0
 #: Share of discovery a failure count has to reach to be called high. Below it
 #: the shop still delivered its catalogue and the failures are a nuisance.
 FAILURE_HIGH_SHARE: Final = 0.10
+#: The two figures a contradiction is read from, under the names its detail uses.
+_PRICE_PER_KG: Final = "price_per_kg"
+_WEIGHT_G: Final = "weight_g"
+#: How far apart two live rows of one shop, under one name, must sit to
+#: contradict each other. Ten is an order of magnitude, and the test is
+#: inclusive: 121 and 1 210 CZK/kg are exactly ten apart, and so are the 100 g
+#: and 1 000 g rows of vrescaffe's ``Terra 100g``, the one real hit on the
+#: live export of 9 October 2026.
+CONTRADICTION_FACTOR: Final = 10
 
 #: Grams in a kilogram, for the only comparable price a shop publishes.
 _GRAMS_PER_KG: Final = 1000
@@ -102,6 +112,15 @@ FROM price_history h
 LEFT JOIN coffee c ON c.site = h.site AND c.external_id = h.external_id
 WHERE h.seen_on >= %s AND h.seen_on <= %s
 ORDER BY h.site, h.external_id, h.seen_on
+"""
+
+#: The live catalogue as the night left it. A delisted row is a product the
+#: shop no longer lists, and a row with no name cannot be matched to another.
+_LIVE_SQL = """
+SELECT site, external_id, name, weight_g, price_per_kg, currency
+FROM coffee
+WHERE delisted_at IS NULL AND name IS NOT NULL
+ORDER BY site, name, external_id
 """
 
 #: Where a night's findings are kept once they have been printed.
@@ -137,10 +156,11 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     Every judgement here is a shop against its own recent history, never
     against an absolute figure: a shop that writes four coffees a day is not
     broken for being small, and one that wrote 126 yesterday and 4 today is
-    broken however large 4 sounds. The one exception is :data:`PARSE_GAP`,
-    whose baseline is an identity rather than a history -- every page a shop
-    fetches becomes a row, in all 472 runs on record -- so it needs no past to
-    compare against and fires on the first day a parser rots.
+    broken however large 4 sounds. Two judgements need no history at all.
+    :data:`PARSE_GAP` has an identity for its baseline rather than a history --
+    every page a shop fetches becomes a row, in all 472 runs on record -- so it
+    fires on the first day a parser rots. :data:`CONTRADICTORY_DUPLICATE`
+    compares a shop's live rows with one another, so it needs no past either.
 
     ``coverage-drop`` is deliberately absent. ``price_history`` carries price,
     currency, weight and availability and nothing else; ``origin_country``,
@@ -169,7 +189,9 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
             history[one.site].append(one)
 
     found = _crawl_findings(today, history)
-    found.extend(_price_findings(_read_pairs(connection, earliest, day)))
+    pairs, listings = _read_prices(connection, earliest, day)
+    found.extend(_price_findings(pairs))
+    found.extend(_contradictions(listings))
     return sorted(found, key=_order)
 
 
@@ -440,6 +462,31 @@ class _Pair:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class _Listing:
+    """One live row of the catalogue, as the contradiction check reads it."""
+
+    site: str
+    external_id: str
+    name: str
+    weight_g: int | None
+    price_per_kg: Decimal | None
+    currency: str
+
+    def figure(self, metric: str) -> Decimal | None:
+        """Return one of the two figures a contradiction is read from.
+
+        Args:
+            metric: ``price_per_kg`` or ``weight_g``.
+
+        Returns:
+            The figure, or None when this row does not state it.
+        """
+        if metric == _PRICE_PER_KG:
+            return self.price_per_kg
+        return None if self.weight_g is None else Decimal(self.weight_g)
+
+
 def _read_days(connection: Connection, earliest: date, day: date) -> list[_SiteDay]:
     """Read every run between two dates and fold it per shop per day.
 
@@ -474,12 +521,17 @@ def _read_days(connection: Connection, earliest: date, day: date) -> list[_SiteD
     return list(folded.values())
 
 
-def _read_pairs(connection: Connection, earliest: date, day: date) -> list[_Pair]:
-    """Read the price history and pair each product's day with its day before.
+def _read_prices(
+    connection: Connection,
+    earliest: date,
+    day: date,
+) -> tuple[list[_Pair], list[_Listing]]:
+    """Read the price history, pairing each product's day with its day before.
 
     The previous observation is the most recent one before ``day`` rather than
     yesterday's: a shop that failed yesterday would otherwise silently escape
-    every comparison on the day it comes back.
+    every comparison on the day it comes back. The live catalogue is read on
+    the same cursor, straight after the prices.
 
     Args:
         connection: Something to read from.
@@ -487,11 +539,14 @@ def _read_pairs(connection: Connection, earliest: date, day: date) -> list[_Pair
         day: The report's day.
 
     Returns:
-        One pair per product seen both on ``day`` and earlier in the window.
+        One pair per product seen both on ``day`` and earlier in the window,
+        and every live row of the catalogue.
     """
     with connection.cursor() as cursor:
         cursor.execute(_PRICES_SQL, (earliest, day))
         rows = cursor.fetchall()
+        cursor.execute(_LIVE_SQL)
+        live = cursor.fetchall()
 
     latest: dict[tuple[str, str], Sequence[Any]] = {}
     pairs: list[_Pair] = []
@@ -505,7 +560,18 @@ def _read_pairs(connection: Connection, earliest: date, day: date) -> list[_Pair
         before = latest.get(key)
         if before is not None:
             pairs.append(_pair(before, row))
-    return pairs
+    listings = [
+        _Listing(
+            site=str(row[0]),
+            external_id=str(row[1]),
+            name=str(row[2]),
+            weight_g=None if row[3] is None else int(row[3]),
+            price_per_kg=row[4],
+            currency=str(row[5] or ""),
+        )
+        for row in live
+    ]
+    return pairs, listings
 
 
 def _pair(before: Sequence[Any], after: Sequence[Any]) -> _Pair:
@@ -970,6 +1036,105 @@ def _both_moves(pair: _Pair) -> str:
         if move is not None
     ]
     return f" ({', '.join(parts)})" if parts else ""
+
+
+def _contradictions(listings: Sequence[_Listing]) -> list[Finding]:
+    """Flag a shop's live rows that share a name and are an order of magnitude apart.
+
+    Args:
+        listings: Every live row of the catalogue.
+
+    Returns:
+        One finding per shop, name and figure that contradict each other, in
+        no particular order.
+    """
+    # BANUA Café 5 kg (20x250g) went out at 17 160 CZK/kg against a true 858.
+    # Its weight was read as one 250 g pack rather than 5 kg, so every kilogram
+    # price was twenty times too high, and it sat at the top of the dearest-
+    # per-kilogram panel until somebody noticed by eye. Its name is unique in
+    # its shop, so this comparison cannot see that shape. Catching it means
+    # setting a row against the shop's other products, which is a different
+    # finding and not a lower factor here.
+    by_name: dict[tuple[str, str], list[_Listing]] = defaultdict(list)
+    for listing in listings:
+        by_name[listing.site, listing.name].append(listing)
+    found: list[Finding] = []
+    for (site, name), group in sorted(by_name.items()):
+        if len(group) <= 1:
+            continue
+        for metric in (_PRICE_PER_KG, _WEIGHT_G):
+            contradiction = _contradiction(site, name, group, metric)
+            if contradiction is not None:
+                found.append(contradiction)
+    return found
+
+
+def _contradiction(
+    site: str,
+    name: str,
+    group: Sequence[_Listing],
+    metric: str,
+) -> Finding | None:
+    """Compare one figure across the live rows that share a name in one shop.
+
+    Args:
+        site: The shop.
+        name: The name its rows share.
+        group: Those rows, at least two of them.
+        metric: ``price_per_kg`` or ``weight_g``.
+
+    Returns:
+        A high finding when the largest figure is at least
+        :data:`CONTRADICTION_FACTOR` times the smallest, or None. Rows that do
+        not state the figure, or state zero, are left out of the comparison.
+    """
+    known = [
+        (one, figure) for one in group if (figure := one.figure(metric)) is not None and figure > 0
+    ]
+    if len(known) <= 1:
+        return None
+    low_row, low = min(known, key=lambda pair: pair[1])
+    high_row, high = max(known, key=lambda pair: pair[1])
+    if high < CONTRADICTION_FACTOR * low:
+        return None
+    ratio = float(high / low)
+    currency = low_row.currency
+    return Finding(
+        kind=CONTRADICTORY_DUPLICATE,
+        site=site,
+        summary=(
+            f"{site} / {name}: {_show(low, metric, currency)} and "
+            f"{_show(high, metric, currency)}, {ratio:g}x apart"
+        ),
+        detail={
+            "name": name,
+            "metric": metric,
+            "currency": currency,
+            "external_ids": [one.external_id for one, _ in known],
+            "low": _number(low),
+            "low_external_id": low_row.external_id,
+            "high": _number(high),
+            "high_external_id": high_row.external_id,
+            "ratio": round(ratio, 2),
+        },
+        severity=HIGH,
+    )
+
+
+def _show(figure: Decimal, metric: str, currency: str) -> str:
+    """Format one of a contradiction's figures for its summary line.
+
+    Args:
+        figure: The figure, as :meth:`_Listing.figure` returned it.
+        metric: ``price_per_kg`` or ``weight_g``.
+        currency: The shop's currency, which a price is written in.
+
+    Returns:
+        ``"121 CZK/kg"`` for a price, ``"100 g"`` for a weight.
+    """
+    if metric == _PRICE_PER_KG:
+        return f"{_amount(figure, currency)}/kg"
+    return _grams(int(figure))
 
 
 def _ratio(after: float | Decimal | None, before: float | Decimal | None) -> float | None:
