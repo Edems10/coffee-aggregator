@@ -9,6 +9,7 @@ from decimal import Decimal
 from statistics import median
 from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
+from coffee_aggregator.labels import named_pack
 from coffee_aggregator.normalize import parse_weights_grams
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ PRICE_JUMP: Final = "price-jump"
 NEW_FAILURES: Final = "new-failures"
 CONTRADICTORY_DUPLICATE: Final = "contradictory-duplicate"
 NAME_WEIGHT_CONTRADICTION: Final = "name-weight-contradiction"
+REFUSED_WEIGHT: Final = "refused-weight"
 
 #: How much of its own recent median a shop may write before it is a drop.
 #: Measured over 2026-10-01 and 2026-10-02, 230 shop-days with a baseline: the
@@ -164,8 +166,9 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     every page a shop fetches becomes a row, in all 472 runs on record -- so it
     fires on the first day a parser rots. :data:`CONTRADICTORY_DUPLICATE`
     compares a shop's live rows with one another, and
-    :data:`NAME_WEIGHT_CONTRADICTION` reads each live row against its own name;
-    neither needs a past either.
+    :data:`NAME_WEIGHT_CONTRADICTION` reads each live row against its own name,
+    and :data:`REFUSED_WEIGHT` reads each row that stores no weight against the
+    name it still states; none of them needs a past either.
 
     ``coverage-drop`` is deliberately absent. ``price_history`` carries price,
     currency, weight and availability and nothing else; ``origin_country``,
@@ -198,6 +201,7 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     found.extend(_price_findings(pairs))
     found.extend(_contradictions(listings))
     found.extend(_name_weight_contradictions(listings))
+    found.extend(_refused_weight_findings(listings))
     return sorted(found, key=_order)
 
 
@@ -1125,6 +1129,48 @@ def _contradiction(
         },
         severity=HIGH,
     )
+
+
+def _refused_weight_findings(listings: Sequence[_Listing]) -> list[Finding]:
+    """Flag a live row that stores no weight although its name states one pack.
+
+    :func:`coffee_aggregator.labels.headline_weight` leaves the weight empty
+    only when a weight label contradicts a one-pack name and no option settles
+    which bag is priced. Such a refusal is otherwise invisible: the name-weight
+    rule compares a row with its stored weight, and there is none to compare.
+
+    Args:
+        listings: Every live row of the catalogue.
+
+    Returns:
+        One low finding per row that stores no weight and whose name states
+        exactly one pack, counts excluded.
+    """
+    found: list[Finding] = []
+    for listing in listings:
+        if listing.weight_g is not None:
+            continue
+        stated = named_pack(listing.name)
+        if stated is None:
+            continue
+        found.append(
+            Finding(
+                kind=REFUSED_WEIGHT,
+                site=listing.site,
+                summary=(
+                    f"{listing.site} / {listing.name}: name states {_grams(stated)}, "
+                    "row stores no weight: the page's weight label contradicts it"
+                ),
+                detail={
+                    "name": listing.name,
+                    "external_id": listing.external_id,
+                    "stated_g": stated,
+                    "rule": "refused-label",
+                },
+                severity=LOW,
+            )
+        )
+    return found
 
 
 def _name_weight_contradictions(listings: Sequence[_Listing]) -> list[Finding]:

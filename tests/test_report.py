@@ -19,6 +19,7 @@ from coffee_aggregator.db.report import (
     NO_PRODUCTS,
     PARSE_GAP,
     PRICE_JUMP,
+    REFUSED_WEIGHT,
     ROLLUP_PRODUCTS,
     WEIGHT_CHANGE,
     WRITE_DROP,
@@ -961,6 +962,69 @@ def test_a_lone_product_is_judged_on_its_own_name_without_dividing_anything() ->
 
     assert report(live=agrees) == []
     assert kinds(report(live=contradicts)) == [NAME_WEIGHT_CONTRADICTION]
+
+
+# --- refused-weight ----------------------------------------------------------
+
+#: The seven rows whose label was refused against their own name (issue #95).
+REFUSED_ROWS = [
+    ("nejkafe", "15648", "Aromaniac Cibetková káva Gayo Highlands Kopi Luwak zrnková 50 g"),
+    ("kava", "8399", "BLACK STAR Indonésie Frinsa 250 g (espreso)"),
+    ("kava", "8396", "BLACK STAR Indonésie Frinsa 500 g (espreso)"),
+    ("kava", "7998", "KAVA.CZ Guatemala SHB Teresita 500 g (espreso)"),
+    ("kava", "7775", "CAFÉ SATI Heure Exquise 500 g"),
+    ("kava", "7847", "AROMANIAC Kolumbie Patio Bonito 200 g (filtr)"),
+    ("coffeeveronia", "2912", "Coffee Veronia Jamaica Blue Mountain zrnková káva 150g"),
+]
+
+
+@pytest.mark.parametrize(("site", "external_id", "name"), REFUSED_ROWS)
+def test_a_row_whose_weight_was_refused_is_reported(site: str, external_id: str, name: str) -> None:
+    # The row stores no weight, so the name-weight rule cannot read it, and the
+    # refusal is the only thing that says the shop's label and its name disagree.
+    live = [listing(site, external_id, name, None, None)]
+
+    (finding,) = only(report(live=live), REFUSED_WEIGHT)
+
+    assert finding.severity == LOW
+    assert finding.site == site
+    assert finding.detail["external_id"] == external_id
+    assert finding.detail["rule"] == "refused-label"
+    assert json.loads(json.dumps(finding.detail)) == finding.detail
+
+
+def test_a_refusal_is_reported_where_the_name_weight_rule_is_silent() -> None:
+    # nejkafe/15648 stored 500 g against a 50 g name. The name-weight rule reads
+    # only a name that states more than the row, so it said nothing about this
+    # row before the refusal either. Storing no weight is what makes it visible.
+    stored = [listing("nejkafe", "15648", REFUSED_ROWS[0][2], 500, "17180")]
+    refused = [listing("nejkafe", "15648", REFUSED_ROWS[0][2], None, None)]
+
+    assert report(live=stored) == []
+    assert kinds(report(live=refused)) == [REFUSED_WEIGHT]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Kafista exkluzivní sada zrnkových káv - Monzunová Robusta",
+        "Illy Classico zrnková káva 250g 12ks",
+        "Mlýnek s násypkou 1 kg + káva 250 g",
+        "Sada 250 g + 1 kg",
+    ],
+)
+def test_a_row_without_a_weight_and_no_one_pack_name_is_not_refused(name: str) -> None:
+    # No size, a carton named by its count, or two articles: none of them is a
+    # pack the label could have been refused against.
+    live = [listing("alpha", "1", name, None, None)]
+
+    assert only(report(live=live), REFUSED_WEIGHT) == []
+
+
+def test_a_row_that_stores_a_weight_is_never_a_refusal() -> None:
+    live = [listing("kava", "1430", "BANUA Café 250 g (espreso)", 250, "1036")]
+
+    assert only(report(live=live), REFUSED_WEIGHT) == []
 
 
 # --- storing the day's findings ----------------------------------------------

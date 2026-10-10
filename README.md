@@ -496,11 +496,10 @@ this file still contains it, so the runbook cannot drift from what was tested.
 human's attention. Detection lives in `src/coffee_aggregator/db/report.py`,
 which returns a list of findings — each one a `kind` slug (`no-products`,
 `write-drop`, `parse-gap`, `weight-change`, `price-jump`, `new-failures`,
-`contradictory-duplicate`, `name-weight-contradiction`, `coverage-drop`), the
-`site` it is about or `""`
-for the whole catalogue, a one-line `summary` with the numbers in it, the
-`detail` behind it, and a `severity` of `high` or `low`. They arrive most
-severe first.
+`contradictory-duplicate`, `name-weight-contradiction`, `refused-weight`,
+`coverage-drop`), the `site` it is about or `""` for the whole catalogue, a
+one-line `summary` with the numbers in it, the `detail` behind it, and a
+`severity` of `high` or `low`. They arrive most severe first.
 `src/coffee_aggregator/reporting/` turns that list into one of three formats and
 has no opinion about where the numbers came from.
 

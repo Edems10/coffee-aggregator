@@ -51,6 +51,7 @@ __all__ = [
     "blend_verdict",
     "headline_weight",
     "is_decaf",
+    "named_pack",
     "notes_from_text",
     "option_list",
     "parse_origin",
@@ -619,6 +620,22 @@ def stated_pack(text: str | None) -> int | None:
     return whole if plausible_pack(whole) else None
 
 
+def named_pack(name: str) -> int | None:
+    """Read the pack a name states for one article, refusing counts and sets.
+
+    Args:
+        name: The product name.
+
+    Returns:
+        The pack weight in grams, or None when the name states none, states
+        several articles, or counts its bags ("250g 12ks"), since a count is a
+        carton whose label may state its own total.
+    """
+    if normalize.parse_pack_count(name) is not None or not _one_article(name):
+        return None
+    return stated_pack(name)
+
+
 def headline_weight(
     labels: Labels,
     name: str,
@@ -650,7 +667,9 @@ def headline_weight(
        being weighed, unless the sizes reconcile: a carton that also spells
        out the bags inside it ("5 kg (20x250g)") states one article twice;
     4. a weight the shop *states* on a weight label, when it states exactly one
-       — several mean the label is really the size axis, not this bag;
+       — several mean the label is really the size axis, not this bag — and
+       the name does not state one smaller pack, which would mean the label
+       describes a family of packs and the page cannot say which;
     5. a weight the product name states, for the shops whose "Brasil 1000 g" is
        the only place the size is written at all;
     6. the weight of the cheapest priced variant, since every platform quotes
@@ -721,11 +740,31 @@ def _one_package(
     if from_pack is not None:
         return from_pack
     if from_label is not None:
-        return from_label
+        return None if _label_outweighs_name(name, from_label) else from_label
     from_name = stated_weight(name)
     if from_name is not None:
         return from_name
     return _weight_no_statement_settles(variants, fallback)
+
+
+def _label_outweighs_name(name: str, from_label: int) -> bool:
+    """Say whether a weight label is heavier than the pack a name states.
+
+    kava.cz prints "Velikost balení: 1 kg" on its 250 g, 500 g and 1 kg pages
+    alike, so the label names a family, not the bag, and nothing on the page
+    settles which. The weight is left empty rather than guessed.
+
+    Args:
+        name: The product name.
+        from_label: The weight a label states, in grams.
+
+    Returns:
+        True when the name states one article's pack, with no count, that is
+        lighter than the label. A counted name ("250g 12ks") is a carton the
+        label may state whole, so it is never compared.
+    """
+    from_name = named_pack(name)
+    return from_name is not None and from_name < from_label
 
 
 def _pack_the_name_states(name: str, from_label: int | None) -> int | None:
