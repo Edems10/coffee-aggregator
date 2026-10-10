@@ -395,6 +395,91 @@ def test_a_listing_page_failing_mid_walk_keeps_what_was_already_found() -> None:
     assert sink.delisted == []
 
 
+def test_an_empty_discovery_records_an_error() -> None:
+    """A shop that answers with nothing must not look like one that sells nothing.
+
+    ``cokafe`` on 2026-10-09 finished as ``discovered 0`` with ``errors: []``;
+    this is the run shape that must now say so out loud.
+    """
+    report = _run(FakeSite(0), FakeFetcher(), FakeSink())
+
+    assert report.discovered == 0
+    assert report.discovery_ok is False
+    assert len(report.errors) == 1
+    assert "fake" in report.errors[0]
+
+
+@pytest.mark.parametrize(("limit", "max_pages"), [(1, None), (None, 1)])
+def test_a_capped_empty_discovery_records_no_error(
+    limit: int | None,
+    max_pages: int | None,
+) -> None:
+    """A capped run legitimately sees nothing, so it is not an error."""
+    report = _run(FakeSite(0), FakeFetcher(), FakeSink(), limit=limit, max_pages=max_pages)
+
+    assert report.discovered == 0
+    assert report.discovery_ok is True
+    assert report.errors == []
+
+
+def test_a_run_that_finds_products_records_no_error() -> None:
+    report = _run(FakeSite(3), FakeFetcher(), FakeSink())
+
+    assert report.discovery_ok is True
+    assert report.errors == []
+
+
+def test_a_deadline_before_the_first_product_is_not_an_empty_shop() -> None:
+    """The walk never finished, so "found no products" would be untrue."""
+    report = _run(
+        FakeSite(5),
+        FakeFetcher(),
+        FakeSink(),
+        deadline=Deadline(at=time.monotonic() - 1),
+    )
+
+    assert report.deadline_reached is True
+    assert report.discovery_ok is True
+    assert report.errors == []
+
+
+def test_a_failed_discovery_records_exactly_one_error() -> None:
+    class ExplodingSite(FakeSite):
+        def discover(
+            self,
+            fetcher: PoliteFetcher,
+            *,
+            max_pages: int | None = None,
+        ) -> Iterator[ProductRef]:
+            error = FetchError(f"{BASE}/list", "HTTP 503")
+            raise error
+
+    report = _run(ExplodingSite(), FakeFetcher(), FakeSink())
+
+    assert report.discovery_ok is False
+    assert len(report.errors) == 1
+
+
+def test_a_refused_discovery_is_not_recorded_as_an_empty_one() -> None:
+    """A refusal already marks the run unhealthy and records no error entry."""
+
+    class RefusedSite(FakeSite):
+        def discover(
+            self,
+            fetcher: PoliteFetcher,
+            *,
+            max_pages: int | None = None,
+        ) -> Iterator[ProductRef]:
+            refused = FetchDisallowed(f"{BASE}/list")
+            raise refused
+
+    report = _run(RefusedSite(), FakeFetcher(), FakeSink())
+
+    assert report.disallowed == 1
+    assert report.discovery_ok is False
+    assert report.errors == []
+
+
 def test_error_list_is_capped() -> None:
     report = RunReport(site_id="fake")
     for index in range(MAX_REPORTED_ERRORS + 10):
