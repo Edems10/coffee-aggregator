@@ -5,6 +5,8 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Self
 
+import pytest
+
 from coffee_aggregator.db.connect import Connection
 from coffee_aggregator.db.report import (
     CONTRADICTORY_DUPLICATE,
@@ -12,6 +14,7 @@ from coffee_aggregator.db.report import (
     HIGH,
     LOW,
     MIN_DARK_SHOPS,
+    NAME_WEIGHT_CONTRADICTION,
     NEW_FAILURES,
     NO_PRODUCTS,
     PARSE_GAP,
@@ -860,13 +863,104 @@ def test_rows_that_do_not_state_a_figure_are_left_out_of_the_comparison() -> Non
 def test_a_name_unique_in_its_shop_is_never_set_against_the_rest_of_it() -> None:
     # The BANUA shape: 17 160 CZK/kg for a 5 kg pack whose weight was read as
     # 250 g, beside a 1 kg bag at 659. Nothing shares the name, so nothing is
-    # compared, and the guard does not pretend otherwise.
+    # compared, and the guard does not pretend otherwise. The name rule reads
+    # that row on its own; its tests are below.
     live = [
         listing("kava", "5642", "BANUA Café 5 kg (20x250g)", 250, "17160"),
         listing("kava", "5415", "BANUA Café 1 kg (espreso)", 1000, "659"),
     ]
 
+    assert only(report(live=live), CONTRADICTORY_DUPLICATE) == []
+
+
+# --- name-weight-contradiction ------------------------------------------------
+
+
+def test_a_name_stating_ten_times_the_stored_weight_is_flagged_on_its_own() -> None:
+    # BANUA Café 5 kg (20x250g) was the only row at kava with that name, so no
+    # same-name comparison ever put it beside anything.
+    live = [listing("kava", "5642", "BANUA Café 5 kg (20x250g)", 250, "17160")]
+
+    (finding,) = only(report(live=live), NAME_WEIGHT_CONTRADICTION)
+
+    assert finding.severity == HIGH
+    assert finding.site == "kava"
+    assert finding.summary == (
+        "kava / BANUA Café 5 kg (20x250g): name states 5000 g, row stores 250 g, 20x apart"
+    )
+    assert finding.detail == {
+        "name": "BANUA Café 5 kg (20x250g)",
+        "external_id": "5642",
+        "weight_g": 250,
+        "stated_g": 5000,
+        "stated_weights_g": [5000, 250],
+        "ratio": 20.0,
+        "rule": "name-weight-token",
+    }
+    assert json.loads(json.dumps(finding.detail)) == finding.detail
+
+
+def test_the_correct_rows_beside_it_are_left_alone() -> None:
+    live = [
+        listing("kava", "5642", "BANUA Café 5 kg (20x250g)", 250, "17160"),
+        listing("kava", "5415", "BANUA Café 1 kg (espreso)", 1000, "659"),
+        listing("kava", "1430", "BANUA Café 250 g (espreso)", 250, "1036"),
+    ]
+
+    assert [finding.detail["external_id"] for finding in report(live=live)] == ["5642"]
+
+
+@pytest.mark.parametrize(
+    ("name", "weight_g", "price_per_kg"),
+    [
+        # The three dear coffees the guard was measured against. Their names agree
+        # with their weights, so only a price-based rule could flag them.
+        ("Cibetková káva Kopi Luwak 50 g", 50, "11400"),
+        ("Panama – Hacienda Barbara / Limited Luxury Edition 75 g", 75, "9173"),
+        ("BAZZARA Panama Geisha Zrnkova Kava 250g", 250, "7960"),
+    ],
+)
+def test_a_dear_coffee_whose_name_agrees_with_its_weight_is_not_flagged(
+    name: str,
+    weight_g: int,
+    price_per_kg: str,
+) -> None:
+    live = [listing("kavakromeriz", "1", name, weight_g, price_per_kg)]
+
     assert report(live=live) == []
+
+
+def test_a_multipack_stored_at_its_total_is_not_flagged() -> None:
+    # "250g 12ks" is twelve bags, so 3000 g is the right figure. The reverse
+    # direction is not read, for exactly this reason.
+    live = [listing("nejkafe", "20392", "Illy Colombia zrnková káva 250g 12ks", 3000, "666")]
+
+    assert report(live=live) == []
+
+
+def test_a_name_stating_two_sizes_is_judged_by_the_larger() -> None:
+    # The size axis "250g – 1 kg" carries its headline price on the smaller bag.
+    live = [listing("alpha", "1", "Espresso 250g – 1 kg", 250, "1200")]
+
+    assert report(live=live) == []
+
+
+def test_a_row_with_no_stored_weight_or_no_stated_one_is_left_alone() -> None:
+    live = [
+        listing("alpha", "1", "BANUA Café 5 kg (20x250g)", None, "17160"),
+        listing("alpha", "2", "Terra", 250, "121"),
+        listing("alpha", "3", "Terra 5 kg", 0, "121"),
+    ]
+
+    assert only(report(live=live), NAME_WEIGHT_CONTRADICTION) == []
+
+
+def test_a_lone_product_is_judged_on_its_own_name_without_dividing_anything() -> None:
+    agrees = [listing("solo", "1", "Lima 1 kg", 1000, "300")]
+    contradicts = [listing("solo", "1", "BANUA Café 5 kg", 250, "17160")]
+
+    assert report(live=agrees) == []
+    assert kinds(report(live=contradicts)) == [NAME_WEIGHT_CONTRADICTION]
 
 
 # --- storing the day's findings ----------------------------------------------
