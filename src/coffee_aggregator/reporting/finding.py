@@ -65,6 +65,13 @@ KIND_NOTES: Final[dict[str, str]] = {
         "a 1 kg listing still titled 100 g is the case on record. Open both URLs in the "
         "detail before changing anything."
     ),
+    "name-weight-contradiction": (
+        "A live row's name states a weight at least ten times the weight stored for it: "
+        "'5 kg' in the name and 250 g in the row is the case on record. Every price per "
+        "kilogram on that row is wrong by the same factor. Open the URL in the detail and "
+        "read the pack size on the page before changing the stored weight: the name is "
+        "sometimes the stale half."
+    ),
     "coverage-drop": (
         "Catalogue-wide: the share of products carrying a field fell. One large shop "
         "can move this number on its own, so read the per-shop numbers before "

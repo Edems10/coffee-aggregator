@@ -9,6 +9,8 @@ from decimal import Decimal
 from statistics import median
 from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
+from coffee_aggregator.normalize import parse_weights_grams
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from datetime import date
@@ -29,6 +31,7 @@ WEIGHT_CHANGE: Final = "weight-change"
 PRICE_JUMP: Final = "price-jump"
 NEW_FAILURES: Final = "new-failures"
 CONTRADICTORY_DUPLICATE: Final = "contradictory-duplicate"
+NAME_WEIGHT_CONTRADICTION: Final = "name-weight-contradiction"
 
 #: How much of its own recent median a shop may write before it is a drop.
 #: Measured over 2026-10-01 and 2026-10-02, 230 shop-days with a baseline: the
@@ -160,7 +163,9 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     :data:`PARSE_GAP` has an identity for its baseline rather than a history --
     every page a shop fetches becomes a row, in all 472 runs on record -- so it
     fires on the first day a parser rots. :data:`CONTRADICTORY_DUPLICATE`
-    compares a shop's live rows with one another, so it needs no past either.
+    compares a shop's live rows with one another, and
+    :data:`NAME_WEIGHT_CONTRADICTION` reads each live row against its own name;
+    neither needs a past either.
 
     ``coverage-drop`` is deliberately absent. ``price_history`` carries price,
     currency, weight and availability and nothing else; ``origin_country``,
@@ -192,6 +197,7 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     pairs, listings = _read_prices(connection, earliest, day)
     found.extend(_price_findings(pairs))
     found.extend(_contradictions(listings))
+    found.extend(_name_weight_contradictions(listings))
     return sorted(found, key=_order)
 
 
@@ -1119,6 +1125,62 @@ def _contradiction(
         },
         severity=HIGH,
     )
+
+
+def _name_weight_contradictions(listings: Sequence[_Listing]) -> list[Finding]:
+    """Flag a live row whose name states a weight ten times the one it stores.
+
+    Args:
+        listings: Every live row of the catalogue.
+
+    Returns:
+        One high finding per row whose name's largest stated weight is at least
+        :data:`CONTRADICTION_FACTOR` times its ``weight_g``. A row that stores no
+        weight, or whose name states none, cannot contradict it and is skipped.
+    """
+    # BANUA Café 5 kg (20x250g) was stored as one 250 g pack rather than 5 kg, so
+    # its 17 160 CZK/kg was 858 in truth. Its name is unique at kava, so no
+    # comparison between rows could reach it. The row disagrees with its own
+    # name, which needs no neighbours, so a shop with one product is checked the
+    # same way as one with four hundred.
+    # Only the largest weight a name states is read. The 250g inside that name is
+    # the bag inside the pack and agrees with the row, so requiring every stated
+    # weight to disagree would clear the very row this rule exists to catch.
+    # The reverse direction is deliberately not read: on the live export it fired
+    # on ten correct multipacks ("Illy ... 250g 12ks" stored at 3000 g) for two
+    # real suspects.
+    found: list[Finding] = []
+    for listing in listings:
+        if listing.weight_g is None or listing.weight_g <= 0:
+            continue
+        stated = parse_weights_grams(listing.name)
+        if not stated:
+            continue
+        largest = max(stated)
+        if largest < CONTRADICTION_FACTOR * listing.weight_g:
+            continue
+        ratio = largest / listing.weight_g
+        found.append(
+            Finding(
+                kind=NAME_WEIGHT_CONTRADICTION,
+                site=listing.site,
+                summary=(
+                    f"{listing.site} / {listing.name}: name states {_grams(largest)}, "
+                    f"row stores {_grams(listing.weight_g)}, {round(ratio, 1):g}x apart"
+                ),
+                detail={
+                    "name": listing.name,
+                    "external_id": listing.external_id,
+                    "weight_g": listing.weight_g,
+                    "stated_g": largest,
+                    "stated_weights_g": stated,
+                    "ratio": round(ratio, 2),
+                    "rule": "name-weight-token",
+                },
+                severity=HIGH,
+            )
+        )
+    return found
 
 
 def _show(figure: Decimal, metric: str, currency: str) -> str:
