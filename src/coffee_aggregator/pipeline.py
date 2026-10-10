@@ -67,15 +67,6 @@ class Deadline:
         """
         return cls(at=time.monotonic() + seconds)
 
-    @property
-    def remaining_s(self) -> float:
-        """How long is left, never below zero.
-
-        Returns:
-            The remaining seconds.
-        """
-        return max(0.0, self.at - time.monotonic())
-
     def expired(self) -> bool:
         """Whether the budget is spent.
 
