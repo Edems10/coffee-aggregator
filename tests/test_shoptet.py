@@ -844,3 +844,62 @@ def test_a_worded_option_keeps_the_phrase_the_shop_wrote(tmp_path: Path) -> None
         "Není skladem",
     ]
     assert [variant.available for variant in coffee.variants] == [True, True, False]
+
+
+# --- blend: what the page states decides it, never a default -----------------
+
+
+def _product(name: str, rows: str) -> str:
+    return (
+        f'<html><body><div class="p-detail"><h1>{name}</h1>'
+        f'<table class="detail-parameters">{rows}</table></div></body></html>'
+    )
+
+
+def test_a_blend_the_shop_files_under_blends_is_a_blend(tmp_path: Path) -> None:
+    """kavaoliver's Klasik: its category and its general information both say so."""
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = _product(
+        "Káva Oliver Klasik 250g",
+        "<tr><th>Kategorie</th><td>Kávové směsi</td></tr>"
+        "<tr><th>Obecné informace</th><td>Kávová směs: 3 druhů výběrových káv</td></tr>",
+    )
+
+    coffee = parse(adapter, page, "1", "https://tiny.sk/klasik/")
+
+    assert coffee.species.is_blend is True
+    assert coffee.origin.country is None
+
+
+def test_a_shop_origin_of_smes_is_a_blend_naming_no_country(tmp_path: Path) -> None:
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = _product("Zrnková káva Lollo", "<tr><th>Země původu</th><td>Směs</td></tr>")
+
+    coffee = parse(adapter, page, "1", "https://tiny.sk/lollo/")
+
+    assert coffee.species.is_blend is True
+    assert coffee.origin.country is None
+
+
+def test_a_single_origin_the_page_states_is_false_with_its_country(tmp_path: Path) -> None:
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = _product(
+        "Ethiopia Yirgacheffe 250g",
+        "<tr><th>Kategorie</th><td>Jednodruhové plantážní kávy</td></tr>"
+        "<tr><th>Země původu</th><td>Etiopie</td></tr>",
+    )
+
+    coffee = parse(adapter, page, "1", "https://tiny.sk/yirgacheffe/")
+
+    assert coffee.species.is_blend is False
+    assert coffee.origin.country == "ET"
+
+
+def test_a_page_stating_nothing_about_blending_is_none_not_false(tmp_path: Path) -> None:
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    page = _product("Espresso Classic 250g", "<tr><th>Hmotnost</th><td>250 g</td></tr>")
+
+    coffee = parse(adapter, page, "1", "https://tiny.sk/classic/")
+
+    assert coffee.species.is_blend is None
+    assert coffee.origin.country is None

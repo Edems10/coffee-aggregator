@@ -27,6 +27,7 @@ from coffee_aggregator.labels.terms import (
     F_SWEETNESS,
     F_VARIETY,
     F_WEIGHT,
+    KIND_LABELS,
 )
 from coffee_aggregator.models import (
     DEFAULT_TASTE_SCALE_MAX,
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "bar",
+    "blend_verdict",
     "headline_weight",
     "is_decaf",
     "notes_from_text",
@@ -58,6 +60,24 @@ __all__ = [
     "stated_weight",
 ]
 
+#: Folded kind labels, matched against the labels as the shop wrote them.
+_KIND_KEYS: Final = frozenset(normalize.fold(label) for label in KIND_LABELS)
+#: Kind-row stems that name a single origin: "Jednodruhové plantážní kávy" and
+#: "Výběrové kávy Single Origin".
+_SINGLE_ORIGIN_STEMS: Final = ("jednodruh", "single origin", "single estate", "monokult")
+#: Meta texts the shop writes about the product itself, where a blend is described
+#: in a sentence rather than in a labelled row.
+_PAGE_TEXT_KEYS: Final = ("OG_TITLE", "OG_DESCRIPTION", "META_DESCRIPTION")
+#: An origin value longer than this is a paragraph that happens to name a country,
+#: not a statement of where the coffee grew.
+_MAX_ORIGIN_VALUE_WORDS: Final = 6
+#: Names that make a product a set of several coffees, which no single blend word
+#: about one member can describe.
+_SET_NAME_RE: Final = re.compile(r"\b(?:sada|sady|set|degustac\w*|ochutnavk\w*|box|darkov\w*)\b")
+#: Whole-word blend terms in folded prose; a substring would match "mixteca".
+_BLEND_WORD_RE: Final = re.compile(
+    r"\b(?:smes|smesi|smesou|zmes|zmesi|zmesou|blend|blendy|blendu|blendem|mix)\b"
+)
 _MIN_SCA_SCORE: Final = 50.0
 _SPECIALTY_SCORE: Final = 80.0
 _MAX_SCA_SCORE: Final = 100.0
@@ -194,14 +214,15 @@ def parse_roast(labels: Labels, categories: list[str]) -> Roast:
     )
 
 
-def parse_origin(labels: Labels, name: str, *, blend: bool) -> Origin:
+def parse_origin(labels: Labels, name: str, *, blend: bool | None) -> Origin:
     """Build the origin part of the model.
 
     Args:
         labels: Every labelled value on the page.
         name: The product name — for single origins the most reliable source.
-        blend: Whether the product is a blend, in which case no single country
-            is claimed.
+        blend: Whether the product is a blend. Only a stated blend withholds the
+            country; an unknown answer keeps the country the page names, as it
+            always has.
 
     Returns:
         The origin block.
@@ -241,8 +262,214 @@ def parse_species(labels: Labels, name: str) -> Species:
         arabica_pct=arabica,
         robusta_pct=robusta,
         other=raw,
-        is_blend=normalize.detect_blend(f"{name} {raw or ''}", arabica, robusta),
+        is_blend=blend_verdict(labels, name, arabica, robusta),
     )
+
+
+def blend_verdict(
+    labels: Labels,
+    name: str,
+    arabica: int | None,
+    robusta: int | None,
+) -> bool | None:
+    """Decide whether a product is a blend from everything its page states.
+
+    A blend claim is the word "směs" (or blend, zmes, mix) in the name or a species
+    row, a kind row such as "Kávové směsi", an origin row that is just "Směs", a
+    whole word of that kind in the shop's own meta texts, or a split across two
+    species. A single-origin claim is a kind row, an origin row or a meta text that
+    says "jednodruhová" or "single origin". Weaker is exactly one country named by
+    the name and the origin row. A species split naming one species, or a farm name,
+    is no evidence either way, because blends have both. A weak claim never
+    overrules a blend claim.
+
+    A kind row that names both kinds is a list of the shop's categories, not a
+    claim about this product, so it is read as nothing. A strong single-origin
+    claim that contradicts a blend claim is reported as None. A page that names two
+    countries claims no single origin, so it is None unless it says blend. A set or
+    gift box is judged only by its name and species row, because a blend word about
+    one of its members says nothing about the set.
+
+    Args:
+        labels: Every labelled value on the page, with every value each field got.
+        name: The product name.
+        arabica: The arabica share, when stated.
+        robusta: The robusta share, when stated.
+
+    Returns:
+        True for a blend, False for single origin and None when the page states
+        neither or both.
+    """
+    species_rows = labels.stated.get(F_SPECIES, [])
+    text_says = normalize.detect_blend(" ".join([name, *species_rows]), arabica, robusta)
+    if _is_a_set(name):
+        # A set names several coffees, so a blend word about one of them says
+        # nothing about the set; only the name and the species row can speak.
+        kinds: list[str] = []
+        origins: list[str] = []
+        page_text = ""
+    else:
+        kinds = _kind_rows(labels)
+        origins = labels.stated.get(F_COUNTRY, [])
+        page_text = _page_text(labels)
+    claims = [_kind_claim(kind) for kind in kinds]
+    claims += [_origin_claim(value) for value in origins]
+    meta = _meta_claim(page_text)
+    blend = text_says is True or True in claims or meta is True
+    single_kind = False in claims
+    if blend and single_kind:
+        return None
+    if blend:
+        return True
+    # One species at 100 % says nothing about where the coffee grew: Caffè Borbone's
+    # "100% Arabica" is a blend. A meta text or one country named by the name or an
+    # origin row say so only weakly, because prose describes a blend's components
+    # as single origins, and a page can name a country it does not sell.
+    if single_kind or meta is False or _names_one_origin(name, origins):
+        return False
+    return None
+
+
+def _is_a_set(name: str) -> bool:
+    """Say whether the product is a tasting set or a gift box of several coffees.
+
+    Args:
+        name: The product name.
+
+    Returns:
+        True for a name that calls the product a set, tasting pack or box.
+    """
+    return _SET_NAME_RE.search(normalize.fold(name)) is not None
+
+
+def _origin_claim(value: str) -> bool | None:
+    """Read one origin row: a bare "Směs" is a blend, "(Single Origin)" is single origin.
+
+    Only the blend word is length-limited, because a long origin row is often a
+    run of other labels; an explicit single-origin statement is believed anywhere.
+
+    Args:
+        value: The value the shop wrote under the origin label.
+
+    Returns:
+        True for a blend, False for single origin, and None when the row names
+        neither or both.
+    """
+    blend = _names_a_blend(value)
+    single = _names_single_origin(value)
+    if blend == single:
+        return None
+    return blend
+
+
+def _names_single_origin(value: str) -> bool:
+    """Say whether a text names a single origin in so many words.
+
+    Args:
+        value: Any text the shop wrote.
+
+    Returns:
+        True when one of the single-origin stems appears in it.
+    """
+    folded = normalize.fold(value)
+    return any(stem in folded for stem in _SINGLE_ORIGIN_STEMS)
+
+
+def _kind_rows(labels: Labels) -> list[str]:
+    """Return the value of every kind row the page states, in page order.
+
+    Args:
+        labels: The labelled values of the page, as written.
+
+    Returns:
+        The values under a category, form or general-information label.
+    """
+    return [value for key, value in labels.raw.items() if normalize.fold(key) in _KIND_KEYS]
+
+
+def _kind_claim(value: str) -> bool | None:
+    """Read one kind row as a blend or as single origin.
+
+    Args:
+        value: The value the shop wrote under a kind label.
+
+    Returns:
+        True for a blend, False for single origin, and None when the row names
+        neither or names both.
+    """
+    blend = normalize.detect_blend(value, None, None) is True
+    if blend == _names_single_origin(value):
+        return None
+    return blend
+
+
+def _page_text(labels: Labels) -> str:
+    """Join the shop's own product texts: the meta title and descriptions.
+
+    Args:
+        labels: The labelled values of the page, including the meta texts.
+
+    Returns:
+        The texts that exist, joined, empty when the page has none.
+    """
+    return " ".join(labels.raw[key] for key in _PAGE_TEXT_KEYS if key in labels.raw)
+
+
+def _meta_claim(page_text: str) -> bool | None:
+    """Read the shop's own product texts as a blend or as single origin.
+
+    A whole word is required for a blend: "mixteca", a place in Mexico, is not
+    "mix". A text naming both a blend and single origins describes a blend's
+    components, or lists the shop's range, so it claims neither.
+
+    Args:
+        page_text: The meta texts, as :func:`_page_text` joins them.
+
+    Returns:
+        True for a blend, False for single origin, and None when the text names
+        neither or both.
+    """
+    folded = normalize.fold(page_text)
+    blend = _BLEND_WORD_RE.search(folded) is not None
+    if blend == _names_single_origin(page_text):
+        return None
+    return blend
+
+
+def _names_a_blend(value: str) -> bool:
+    """Say whether an origin row is itself a blend statement, such as "Směs".
+
+    Args:
+        value: The value the shop wrote under the origin label.
+
+    Returns:
+        True for a short value that says blend; a long one is prose.
+    """
+    if len(value.split()) > _MAX_ORIGIN_VALUE_WORDS:
+        return False
+    return normalize.detect_blend(value, None, None) is True
+
+
+def _names_one_origin(name: str, values: list[str]) -> bool:
+    """Say whether the name and origin rows together name exactly one country.
+
+    Meta texts are left out: they list countries in passing, and a sampler that
+    names four origins would otherwise read as one, because the table does not
+    know every Czech case ending ("Indonésie", "Keni").
+
+    Args:
+        name: The product name, which often opens with its origin.
+        values: Every value the origin label received.
+
+    Returns:
+        True when one country, and no other, is named across the name and the
+        short origin values.
+    """
+    countries = set(normalize.countries_in(name))
+    for value in values:
+        if len(value.split()) <= _MAX_ORIGIN_VALUE_WORDS:
+            countries |= normalize.countries_in(value)
+    return len(countries) == 1
 
 
 def specialty_grade(name: str, categories: list[str], cupping: float | None) -> bool | None:

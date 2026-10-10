@@ -312,10 +312,15 @@ class Labels:
     Attributes:
         raw: Labels as written (trimmed, upper-cased) -> value, for the sink.
         by_field: Canonical field name -> the first value that fed it.
+        stated: Canonical field name -> every value the page gave for it, kept
+            even when :attr:`by_field` refused it as implausible. A roastery's
+            "Země původu: Směs" is no origin, but it is still a statement that
+            the coffee is a blend.
     """
 
     raw: dict[str, str] = field(default_factory=dict)
     by_field: dict[str, str] = field(default_factory=dict)
+    stated: dict[str, list[str]] = field(default_factory=dict)
 
     def add(self, label: str | None, value: str | None, label_map: dict[str, str]) -> None:
         """Record one ``label: value`` pair.
@@ -331,7 +336,10 @@ class Labels:
             return
         self.raw.setdefault(cleaned.upper(), text)
         mapped = map_label(normalize.fold(cleaned), label_map)
-        if mapped and plausible(mapped, text):
+        if not mapped:
+            return
+        self.stated.setdefault(mapped, []).append(text)
+        if plausible(mapped, text):
             self.by_field.setdefault(mapped, text)
 
     def get(self, field_name: str) -> str | None:

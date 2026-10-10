@@ -13,6 +13,8 @@ from coffee_aggregator.labels import (
     F_BREWING,
     F_PROCESS,
     F_ROAST,
+    Labels,
+    blend_verdict,
     headline_weight,
     is_decaf,
     parse_origin,
@@ -226,7 +228,7 @@ def _card_image(card: Tag) -> str | None:
     return dom.absolute(BASE_URL, match.group("url")) if match else None
 
 
-def _species_from_lines(lines: Iterable[str], name: str) -> Species:
+def _species_from_lines(lines: Iterable[str], name: str, labels: Labels) -> Species:
     """Read the arabica/robusta split from the description lines.
 
     Parsing line by line (rather than over the whole block) is what keeps the
@@ -235,6 +237,7 @@ def _species_from_lines(lines: Iterable[str], name: str) -> Species:
     Args:
         lines: Every line of the description blocks.
         name: The product name, used to spot the word "zmes"/"blend".
+        labels: The labelled values of the page, which may name a blend too.
 
     Returns:
         The composition; percentages stay None when the page never states them.
@@ -250,21 +253,22 @@ def _species_from_lines(lines: Iterable[str], name: str) -> Species:
     return Species(
         arabica_pct=arabica,
         robusta_pct=robusta,
-        is_blend=normalize.detect_blend(name, arabica, robusta),
+        is_blend=blend_verdict(labels, name, arabica, robusta),
     )
 
 
-def _species_from_tags(soup: BeautifulSoup, name: str) -> Species:
+def _species_from_tags(soup: BeautifulSoup, name: str, labels: Labels) -> Species:
     """Fall back to the ``<strong>`` tags when no description line states a split.
 
     Args:
         soup: The parsed detail page.
         name: The product name.
+        labels: The labelled values of the page.
 
     Returns:
         The composition parsed from the emphasised text.
     """
-    return _species_from_lines((dom.text(tag) or "" for tag in soup.select("strong")), name)
+    return _species_from_lines((dom.text(tag) or "" for tag in soup.select("strong")), name, labels)
 
 
 def _parse_variants(soup: BeautifulSoup, ref: ProductRef, price: float | None) -> list[Variant]:
@@ -462,7 +466,13 @@ def _category_hrefs(soup: BeautifulSoup) -> str:
     return " ".join(dom.attr(link, "href") or "" for link in soup.select(selector))
 
 
-def _detect_country(name: str, soup: BeautifulSoup, origin_text: str | None, *, blend: bool) -> str:
+def _detect_country(
+    name: str,
+    soup: BeautifulSoup,
+    origin_text: str | None,
+    *,
+    blend: bool | None,
+) -> str:
     """Work out the country of origin, which the shop never states as a field.
 
     Args:
@@ -470,7 +480,8 @@ def _detect_country(name: str, soup: BeautifulSoup, origin_text: str | None, *, 
         soup: The parsed detail page, for the keyword meta and breadcrumbs.
         origin_text: The "Pôvod kávy" prose.
         blend: Whether the product is a blend — a blend's origin prose names the
-            countries of its components, so it must not set a single country.
+            countries of its components, so it must not set a single country. An
+            unknown answer reads the prose, as a single origin always has.
 
     Returns:
         An ISO alpha-2 code, or an empty string when nothing is recognised.
@@ -624,9 +635,9 @@ class CoffeeinSite(SiteAdapter):
         # a real label always wins, so this only ever adds.
         kit.keep(facts.raw, dom.page_meta(soup))
         price, currency = self._parse_price(soup, ref)
-        species = _species_from_lines([*prose, *facts.values()], name)
+        species = _species_from_lines([*prose, *facts.values()], name, facts.labels)
         if species.arabica_pct is None and species.robusta_pct is None:
-            species = _species_from_tags(soup, name)
+            species = _species_from_tags(soup, name, facts.labels)
         origin_text = dom.text(soup.select_one("div#coffee_origin"))
         variants = _parse_variants(soup, ref, price)
         availability, availability_raw = _parse_availability(soup)
@@ -687,7 +698,7 @@ class CoffeeinSite(SiteAdapter):
         name: str,
         origin_text: str | None,
         *,
-        blend: bool,
+        blend: bool | None,
     ) -> Origin:
         """Read the origin block, with the country the shop never labels.
 
