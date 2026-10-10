@@ -549,6 +549,38 @@ def test_two_numbers_are_not_one_weight(text: str, grams: int) -> None:
     assert normalize.parse_weight_grams(text) == grams
 
 
+# A comma followed by a space separates two numbers; a decimal comma is written
+# with no gap after it and stays one number (#86). The first two rows are the
+# shapes that were read as one weight; the rest are counter-examples that the
+# fix must not move.
+_COMMA_SHAPES = [
+    ("intenzita 10, 450g", [450]),
+    ("Blend 7, 1 kg", [1000]),
+    ("0,25 kg", [250]),
+    ("1,1 kg", [1100]),
+    ("6,6 kg", [6600]),
+    ("2,4 kg (12x200g)", [2400, 200]),
+    ("75/25 250 g", [250]),
+    ("Brasil 1000 g", [1000]),
+    ("SCA:85,5", []),
+    ("BANUA Café 5 kg (20x250g)", [5000, 250]),
+]
+
+
+@pytest.mark.parametrize(("text", "grams"), _COMMA_SHAPES)
+def test_a_comma_before_a_space_separates_weights(text: str, grams: list[int]) -> None:
+    """ "intenzita 10, 450g" is 450 g; "10, 450" read as 10 450 g and was wrong (#86)."""
+    assert normalize.parse_weights_grams(text) == grams
+
+
+@pytest.mark.parametrize(("text", "grams"), _COMMA_SHAPES)
+def test_single_weight_readers_take_the_first_weight(text: str, grams: list[int]) -> None:
+    """parse_weight_grams and parse_pack_grams both read the first weight a name states."""
+    first = grams[0] if grams else None
+    assert normalize.parse_weight_grams(text) == first
+    assert normalize.parse_pack_grams(text) == first
+
+
 @pytest.mark.parametrize(
     ("text", "count"),
     [
