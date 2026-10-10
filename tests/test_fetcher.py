@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 import httpx2
 import pytest
 
+from coffee_aggregator.config import KEEPALIVE_EXPIRY_S
 from coffee_aggregator.http import (
     FetchDisallowed,
     FetchError,
@@ -887,8 +888,8 @@ def test_a_single_shop_run_keeps_one_connection_per_worker() -> None:
 
 def test_an_idle_connection_outlives_the_gap_between_two_visits() -> None:
     """httpx2 expires one after 5 s, which is inside a polite crawler's window."""
-    assert make_fetcher().limits.keepalive_expiry == fetcher_module.KEEPALIVE_EXPIRY_S
-    assert fetcher_module.KEEPALIVE_EXPIRY_S >= 30.0
+    assert make_fetcher().limits.keepalive_expiry == KEEPALIVE_EXPIRY_S
+    assert KEEPALIVE_EXPIRY_S >= 30.0
 
 
 def test_a_disallow_rule_is_reported_as_the_shop_speaking(http: MockHTTP) -> None:

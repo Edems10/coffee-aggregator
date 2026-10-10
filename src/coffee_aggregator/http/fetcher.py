@@ -18,6 +18,20 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx2
 
+from coffee_aggregator.config import (
+    ACCEPT_LANGUAGE,
+    DEFAULT_DELAY_S,
+    DEFAULT_MAX_RETRY_WAIT_S,
+    DEFAULT_RETRIES,
+    DEFAULT_ROBOTS_RETRY_S,
+    DEFAULT_TIMEOUT_S,
+    DEFAULT_WORKERS,
+    KEEPALIVE_EXPIRY_S,
+    MAX_REDIRECTS,
+    RETRY_BACKOFF_FACTOR,
+    RETRY_STATUSES,
+    THROTTLE_STATUSES,
+)
 from coffee_aggregator.robots import RobotsRules
 
 if TYPE_CHECKING:
@@ -26,24 +40,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-ACCEPT_LANGUAGE = "sk,cs;q=0.9,en;q=0.5"
-RETRY_STATUSES = (429, 500, 502, 503, 504)
-#: Statuses that mean "you are asking too often": they slow the whole host down,
-#: not just the URL that happened to collect them.
-THROTTLE_STATUSES = (429, 503)
-#: Multiplier of the exponential backoff between two attempts at the same URL.
-RETRY_BACKOFF_FACTOR = 0.5
-#: Longest wait a single retry may ask for. A shop answering 429 with
-#: ``Retry-After: 3600`` is not asking us to sleep for an hour, it is asking us
-#: to go away, so anything above this gives the URL up instead of waiting.
-MAX_RETRY_WAIT_S = 60.0
-#: How long an unreachable robots.txt stays unreachable before it is tried again.
-ROBOTS_RETRY_S = 300.0
 #: Redirects are followed by hand so every hop passes robots.txt and the limiter.
 REDIRECT_STATUSES = (301, 302, 303, 307, 308)
-MAX_REDIRECTS = 5
-#: Product tokens that mean "this User-Agent is pretending to be a browser".
-BROWSER_TOKENS = ("mozilla", "opera", "safari", "chrome")
 #: robots.txt's wildcard agent, used when nobody said who we are.
 ANY_USER_AGENT = "*"
 _HTTP_ERROR_FLOOR = 400
@@ -63,10 +61,6 @@ _CHARSET_SNIFF_BYTES = 4096
 #: five byte values, so it is the terminal guess rather than a candidate.
 _SNIFF_ENCODINGS = ("utf-8", "cp1250")
 _META_CHARSET_RE = re.compile(rb"""charset\s*=\s*["']?\s*([A-Za-z0-9_.:-]+)""", re.IGNORECASE)
-#: How long an idle connection is kept. urllib3 held a pooled connection until
-#: the pool evicted it; httpx2 expires it after five seconds, which is shorter
-#: than the gap a polite crawler leaves between two visits to the same shop.
-KEEPALIVE_EXPIRY_S = 30.0
 
 
 class FetchDisallowed(Exception):  # noqa: N818  (the name is fixed by the architecture contract)
@@ -471,7 +465,7 @@ class RobotsCache:
         timeout_s: float,
         limiter: RateLimiter | None = None,
         ua_token: str = ANY_USER_AGENT,
-        unreachable_retry_s: float = ROBOTS_RETRY_S,
+        unreachable_retry_s: float = DEFAULT_ROBOTS_RETRY_S,
     ) -> None:
         """Build the cache.
 
@@ -871,16 +865,16 @@ class PoliteFetcher:
         self,
         user_agent: str,
         contact: str,
-        delay_s: float = 1.0,
+        delay_s: float = DEFAULT_DELAY_S,
         jitter_s: float = 0.5,
-        workers: int = 2,
-        timeout_s: float = 15.0,
-        retries: int = 3,
+        workers: int = DEFAULT_WORKERS,
+        timeout_s: float = DEFAULT_TIMEOUT_S,
+        retries: int = DEFAULT_RETRIES,
         cache_dir: Path | None = None,
         ua_token: str | None = None,
         hosts_in_flight: int = 1,
-        max_retry_wait_s: float = MAX_RETRY_WAIT_S,
-        robots_retry_s: float = ROBOTS_RETRY_S,
+        max_retry_wait_s: float = DEFAULT_MAX_RETRY_WAIT_S,
+        robots_retry_s: float = DEFAULT_ROBOTS_RETRY_S,
     ) -> None:
         """Build the fetcher and its client.
 
