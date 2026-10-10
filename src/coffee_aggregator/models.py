@@ -256,6 +256,15 @@ class Coffee:
     description: str | None = None
     origin_text: str | None = None
     raw_attributes: dict[str, str] = field(default_factory=dict)
+    #: What kind of product this is, from :mod:`coffee_aggregator.product_kind`. The
+    #: crawl never decides it: the seed loader sets it, and an upsert leaves it alone.
+    #: ``None`` means no decision has reached the row.
+    product_kind: str | None = None
+    #: Where :attr:`product_kind` was decided: a labelled seed, and later a rule or a review.
+    product_kind_source: str | None = None
+    #: :func:`~coffee_aggregator.normalize.product_name_hash` of the name the decision
+    #: was made from, so a rename is noticed rather than inherited.
+    product_kind_name_hash: str | None = None
     scraped_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     #: The roastery behind the coffee, which is what makes the same lot in two
     #: shops the same lot. An adapter that knows it may set it; every adapter

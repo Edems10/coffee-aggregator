@@ -13,6 +13,7 @@ from coffee_aggregator.sinks.postgres import (
     COLUMNS,
     DELIST_SQL,
     JSON_COLUMNS,
+    KIND_COLUMNS,
     MANAGED_COLUMNS,
     PRICE_HISTORY_COLUMNS,
     PRICE_HISTORY_SQL,
@@ -122,10 +123,17 @@ def test_upsert_sql_conflicts_on_the_primary_key() -> None:
 
 def test_upsert_sql_refreshes_every_data_column() -> None:
     for column in COLUMNS:
-        if column in {"site", "external_id"}:
+        if column in {"site", "external_id", *KIND_COLUMNS}:
             assert f"{column} = EXCLUDED.{column}" not in UPSERT_SQL
         else:
             assert f"{column} = EXCLUDED.{column}" in UPSERT_SQL
+
+
+def test_upsert_never_overwrites_the_kind_columns() -> None:
+    """A crawl has no kind to write, so its NULLs must not clear a stored one."""
+    for column in KIND_COLUMNS:
+        assert column in COLUMNS
+        assert f"{column} = EXCLUDED.{column}" not in UPSERT_SQL
 
 
 def test_upsert_never_overwrites_the_managed_columns() -> None:

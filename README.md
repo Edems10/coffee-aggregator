@@ -94,6 +94,7 @@ coffee-aggregator crawl --site <id>|all --sink jsonl|postgres \
 coffee-aggregator parse --site <id> --file page.html [--url URL]
 coffee-aggregator publish [--dsn URL] [--nats-url URL] [--batch-size 500] [--once]
 coffee-aggregator republish --all [--dsn URL]
+coffee-aggregator seed-kinds --file catalogue-labels.csv [--dsn URL]
 ```
 
 * `-v` switches logging to DEBUG, and is accepted before *or* after the
@@ -393,6 +394,17 @@ The sink's `COLUMNS` tuple is the single source of truth for the INSERT, and a t
 replays every migration to assert the two agree — with a second check against
 `information_schema.columns` in the integration suite, so the code, the DDL and the
 live database cannot drift apart.
+
+### Product kind
+
+`coffee` carries `product_kind`, `product_kind_source` and `product_kind_name_hash`
+(migration `0007`). `product_kind` says what a row is, from the vocabulary in
+`product_kind.py` (`beans`, `capsules`, `merch`, ...); `product_kind_source` says
+where that was decided, `seed` or `seed-reviewed` for the labelling pass; the hash
+is of the name it was decided from. The crawl never sets these and its upsert never
+overwrites them. `coffee-aggregator seed-kinds --file <csv>` writes the labelled seed
+onto the rows already stored and reports how many it wrote and how many it skipped
+for having no stored coffee. Nothing reads the kind yet.
 
 ## Migrations
 
@@ -731,7 +743,8 @@ shared reader toolkit every adapter imports as `kit` — bespoke modules under
 `sites/` and platform adapters under `platforms/` alike; it sits outside both so
 neither has a reason to re-implement a reading the other already has. Nothing
 in the project starts with a module docstring or a licence header; `D100`, `D104` and
-`CPY001` are ignored for that reason.
+`CPY001` are ignored for that reason. `product_kind.py` holds the product-kind
+vocabulary and `product_kind_seed.py` loads the labelled seed onto it.
 
 ## Development
 

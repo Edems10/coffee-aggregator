@@ -207,6 +207,14 @@ def build_parser() -> argparse.ArgumentParser:
     fx.add_argument("--refresh", action="store_true", help="fetch even when a rate is stored")
     fx.add_argument("--dsn", help="PostgreSQL DSN; without one the rate is cached in a file")
 
+    seed_kinds = subparsers.add_parser(
+        "seed-kinds",
+        help="write the labelled product kinds onto the coffees already stored",
+        parents=[common],
+    )
+    seed_kinds.add_argument("--file", required=True, type=Path, help="the labelling pass's CSV")
+    seed_kinds.add_argument("--dsn", help="PostgreSQL DSN; overrides DATABASE_URL")
+
     _add_outbox_parsers(subparsers, common)
 
     crawl = subparsers.add_parser("crawl", help="crawl one shop or every shop", parents=[common])
@@ -518,6 +526,36 @@ def cmd_fx(settings: Settings, args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_seed_kinds(settings: Settings, args: argparse.Namespace) -> int:
+    """Write the labelled product kinds onto the coffees already in the store.
+
+    A row whose coffee the crawl has not stored yet is skipped and counted, not an
+    error: the seed is a full labelling pass and the catalogue fills in over time.
+
+    Args:
+        settings: Environment-derived settings.
+        args: Parsed command line arguments.
+
+    Returns:
+        The process exit code.
+    """
+    from coffee_aggregator import product_kind_seed  # noqa: PLC0415  (optional path)
+    from coffee_aggregator.sinks.postgres import SchemaOutOfDateError  # noqa: PLC0415  (same)
+
+    try:
+        result = product_kind_seed.load_seed(settings.require_database_url(args.dsn), args.file)
+    except (product_kind_seed.SeedError, SchemaOutOfDateError) as exc:
+        logger.error("product kinds not written: %s", exc)  # noqa: TRY400  (the message is the point)
+        return EXIT_CONFIG_ERROR
+    logger.info(
+        "set product_kind on %d coffees; skipped %d seed rows with no stored coffee (of %d)",
+        result.written,
+        result.skipped,
+        result.written + result.skipped,
+    )
+    return EXIT_OK
+
+
 def cmd_publish(settings: Settings, args: argparse.Namespace) -> int:
     """Drain the outbox into the broker.
 
@@ -785,6 +823,7 @@ def _dispatch(settings: Settings, args: argparse.Namespace, command: str) -> int
         "runs": lambda: cmd_runs(settings, args),
         "report": lambda: cmd_report(settings, args),
         "fx": lambda: cmd_fx(settings, args),
+        "seed-kinds": lambda: cmd_seed_kinds(settings, args),
         "publish": lambda: cmd_publish(settings, args),
         "republish": lambda: cmd_republish(settings, args),
         "crawl": lambda: cmd_crawl(settings, args, command),
