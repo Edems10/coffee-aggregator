@@ -23,8 +23,24 @@ DEFAULT_SITE_WORKERS = 1
 #: finish inside a Lambda invocation needs them on the command line.
 DEFAULT_TIMEOUT_S = 15.0
 DEFAULT_RETRIES = 3
+#: Longest wait a single retry may ask for. A shop answering 429 with
+#: ``Retry-After: 3600`` is not asking us to sleep for an hour, it is asking us
+#: to go away, so anything above this gives the URL up instead of waiting.
 DEFAULT_MAX_RETRY_WAIT_S = 60.0
+#: How long an unreachable robots.txt stays unreachable before it is tried again.
 DEFAULT_ROBOTS_RETRY_S = 300.0
+ACCEPT_LANGUAGE = "sk,cs;q=0.9,en;q=0.5"
+RETRY_STATUSES = (429, 500, 502, 503, 504)
+#: Statuses that mean "you are asking too often": they slow the whole host down,
+#: not just the URL that happened to collect them.
+THROTTLE_STATUSES = (429, 503)
+#: Multiplier of the exponential backoff between two attempts at the same URL.
+RETRY_BACKOFF_FACTOR = 0.5
+MAX_REDIRECTS = 5
+#: How long an idle connection is kept. urllib3 held a pooled connection until
+#: the pool evicted it; httpx2 expires it after five seconds, which is shorter
+#: than the gap a polite crawler leaves between two visits to the same shop.
+KEEPALIVE_EXPIRY_S = 30.0
 #: How many products are fetched and written per round. It lived in
 #: ``pipeline.run`` and was reachable from nowhere.
 DEFAULT_BATCH_SIZE = 50
