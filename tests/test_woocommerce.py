@@ -389,6 +389,13 @@ def test_attributes_map_onto_canonical_fields(ripit: WooSite) -> None:
     assert coffee.raw_attributes["TYP"] == "Single origin"
 
 
+@pytest.mark.parametrize("product_id", [101, 102, 344, 637])
+def test_a_no_to_the_decaf_question_is_not_decaf(product_id: int) -> None:
+    """The page's "Decaf - bez kofeínu: Nie" says the coffee is not decaffeinated."""
+    site = cast("WooSite", get_site("caffe4u"))
+    assert parse_api(site, _by_id("caffe4u", product_id)).decaf is False
+
+
 def test_a_czech_shop_maps_its_own_spellings(kavaloka: WooSite) -> None:
     coffee = parse_api(kavaloka, _by_id("kavaloka", 9059))
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from coffee_aggregator import normalize
 from coffee_aggregator.labels.terms import (
@@ -29,6 +29,7 @@ __all__ = [
     "MAX_FUZZY_LABEL_WORDS",
     "MAX_PACK_WEIGHT_G",
     "MIN_BEAN_WEIGHT_G",
+    "Answer",
     "Labels",
     "bare_label",
     "clean_label",
@@ -327,6 +328,21 @@ def _is_bare_value(
     return not read(line, label_map) and not bare_label(line, label_map)
 
 
+class Answer(NamedTuple):
+    """A label the shop printed and the value it gave beside it.
+
+    The label is the question the value answers: "Decaf - bez kofeínu" with
+    "Nie" says the coffee is not decaffeinated, where "Nie" alone says nothing.
+
+    Attributes:
+        label: The label as the shop wrote it, decoration removed.
+        value: The value as the shop wrote it.
+    """
+
+    label: str
+    value: str
+
+
 @dataclass(slots=True)
 class Labels:
     """Every labelled value a product page states.
@@ -338,11 +354,14 @@ class Labels:
             even when :attr:`by_field` refused it as implausible. A roastery's
             "Země původu: Směs" is no origin, but it is still a statement that
             the coffee is a blend.
+        answered: Canonical field name -> the label and value that fed
+            :attr:`by_field`, so a reader can see which question its value answers.
     """
 
     raw: dict[str, str] = field(default_factory=dict)
     by_field: dict[str, str] = field(default_factory=dict)
     stated: dict[str, list[str]] = field(default_factory=dict)
+    answered: dict[str, Answer] = field(default_factory=dict)
 
     def add(self, label: str | None, value: str | None, label_map: dict[str, str]) -> None:
         """Record one ``label: value`` pair.
@@ -367,6 +386,7 @@ class Labels:
         self.stated.setdefault(mapped, []).append(text)
         if plausible(mapped, text):
             self.by_field.setdefault(mapped, text)
+            self.answered.setdefault(mapped, Answer(cleaned, text))
 
     def get(self, field_name: str) -> str | None:
         """Return the value mapped onto one field.
@@ -378,3 +398,15 @@ class Labels:
             The value, or None when no label fed that field.
         """
         return self.by_field.get(field_name)
+
+    def answer(self, field_name: str) -> Answer | None:
+        """Return the label and value that fed one field.
+
+        Args:
+            field_name: One of the ``F_*`` constants.
+
+        Returns:
+            The label the shop printed beside the value :meth:`get` returns, or
+            None when no label fed that field.
+        """
+        return self.answered.get(field_name)
