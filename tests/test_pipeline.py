@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import threading
 import time
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
@@ -28,6 +30,7 @@ from coffee_aggregator.pipeline import (
     shard_sites,
     wrote_nothing,
 )
+from coffee_aggregator.platforms import woocommerce
 from coffee_aggregator.sinks.base import SinkResult
 from coffee_aggregator.sinks.records import coffee_record
 from coffee_aggregator.sites.base import ProductRef, SiteAdapter
@@ -426,6 +429,133 @@ def test_a_run_that_finds_products_records_no_error() -> None:
     report = _run(FakeSite(3), FakeFetcher(), FakeSink())
 
     assert report.discovery_ok is True
+    assert report.errors == []
+
+
+NO_PRODUCTS_ON_PAGE_1 = "tinyroastery: category 7 lists no products on page 1"
+
+
+def _store_url(category: int, page: int) -> str:
+    query = f"per_page=100&page={page}&category={category}"
+    return f"https://tiny.sk/wp-json/wc/store/v1/products?{query}"
+
+
+def _store_products(*ids: int) -> str:
+    return json.dumps(
+        [
+            {
+                "id": identifier,
+                "name": f"Káva {identifier}",
+                "permalink": f"https://tiny.sk/produkt/{identifier}/",
+                "prices": {"price": "1250", "currency_code": "EUR", "currency_minor_unit": 2},
+            }
+            for identifier in ids
+        ]
+    )
+
+
+class StoreApiFetcher:
+    """Answers Store API URLs from a table, and an empty array for every other one."""
+
+    def __init__(self, bodies: dict[str, str]) -> None:
+        self.bodies = bodies
+
+    def get(self, url: str) -> FetchResult:
+        body = self.bodies.get(url, "[]")
+        return FetchResult(url, url, 200, body, from_cache=False, elapsed_s=0.0)
+
+
+def _tiny_shop() -> SiteAdapter:
+    """Build a two-category shop the way the registry builds one."""
+    config = {
+        "platform": "woocommerce",
+        "site_id": "tinyroastery",
+        "name": "Tiny Roastery",
+        "country": "SK",
+        "base_url": "https://tiny.sk",
+        "currency": "EUR",
+        "api_category_ids": [7, 8],
+    }
+    return woocommerce.build(config, Path("shop.toml"))
+
+
+def _crawl_tiny(shop: SiteAdapter, bodies: dict[str, str], sink: FakeSink) -> RunReport:
+    return run(
+        shop,
+        cast("PoliteFetcher", StoreApiFetcher(bodies)),
+        cast("Sink", sink),
+    )
+
+
+def test_an_empty_first_page_of_one_category_is_noted_without_failing_discovery() -> None:
+    """Category 7 is empty while category 8 delivers. The run names the empty category,
+    but a note is not a failed discovery or a lost product, so delisting still runs."""
+    sink = FakeSink()
+
+    report = _crawl_tiny(_tiny_shop(), {_store_url(8, 1): _store_products(5, 6)}, sink)
+
+    assert report.discovered == 2
+    assert report.discovery_ok is True
+    assert report.errors == [NO_PRODUCTS_ON_PAGE_1]
+    assert report.failed == 0
+    assert sink.delisted == [("tinyroastery", {"5", "6"})]
+
+
+def test_an_empty_second_page_is_normal_pagination_and_records_no_error() -> None:
+    bodies = {
+        _store_url(7, 1): _store_products(1),
+        _store_url(7, 2): "[]",
+        _store_url(8, 1): _store_products(2),
+        _store_url(8, 2): "[]",
+    }
+
+    report = _crawl_tiny(_tiny_shop(), bodies, FakeSink())
+
+    assert report.discovered == 2
+    assert report.errors == []
+
+
+def test_a_shop_whose_every_category_yields_products_records_no_error() -> None:
+    bodies = {_store_url(7, 1): _store_products(1), _store_url(8, 1): _store_products(2)}
+
+    report = _crawl_tiny(_tiny_shop(), bodies, FakeSink())
+
+    assert report.discovery_ok is True
+    assert report.errors == []
+
+
+def test_the_second_run_does_not_repeat_the_first_runs_notes() -> None:
+    """One adapter instance, two runs: the first run notes category 7, the second
+    finds it healthy. The second run must not inherit the first run's note."""
+    shop = _tiny_shop()
+    first = _crawl_tiny(shop, {_store_url(8, 1): _store_products(5)}, FakeSink())
+    assert first.errors == [NO_PRODUCTS_ON_PAGE_1]
+
+    second_bodies = {_store_url(7, 1): _store_products(1), _store_url(8, 1): _store_products(5)}
+    second = _crawl_tiny(shop, second_bodies, FakeSink())
+
+    assert second.errors == []
+
+
+@pytest.mark.parametrize("stop", ["limit", "deadline"])
+def test_a_run_that_never_walks_the_listings_repeats_no_notes(stop: str) -> None:
+    """With ``--limit 0`` or a deadline already past, discovery never starts, so it
+    never resets its notes. The earlier run's note must not be reported again."""
+    shop = _tiny_shop()
+    _crawl_tiny(shop, {_store_url(8, 1): _store_products(5)}, FakeSink())
+    fetcher = cast("PoliteFetcher", StoreApiFetcher({}))
+
+    if stop == "limit":
+        report = run(shop, fetcher, cast("Sink", FakeSink()), limit=0)
+    else:
+        report = run(
+            shop,
+            fetcher,
+            cast("Sink", FakeSink()),
+            deadline=Deadline(at=time.monotonic() - 1),
+        )
+
+    assert report.discovered == 0
     assert report.errors == []
 
 

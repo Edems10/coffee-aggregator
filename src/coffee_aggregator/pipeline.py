@@ -116,6 +116,18 @@ class RunReport:
             message: What went wrong, including the URL.
         """
         self.failed += 1
+        self.add_note(message)
+
+    def add_note(self, message: str) -> None:
+        """Record a finding that is not a failed product, under the same cap.
+
+        ``failed`` feeds :func:`_may_delist`, so a note must never be counted as a
+        lost product: a small shop with one empty category would fall under the
+        lost-fraction limit and stop delisting.
+
+        Args:
+            message: What the run noticed, naming the shop.
+        """
         if len(self.errors) < MAX_REPORTED_ERRORS:
             self.errors.append(message)
 
@@ -262,6 +274,24 @@ def _record_empty_discovery(
     logger.warning("%s: discovery completed but discovered no products", site.site_id)
 
 
+def _record_discovery_notes(site: SiteAdapter, report: RunReport) -> None:
+    """Copy what the last discovery noted into the report, without failing it.
+
+    A note is a fact about the shop that leaves its discovery healthy: a pinned
+    category came back empty while the others still delivered. It goes through
+    :meth:`RunReport.add_note` and never through ``add_error``, so ``discovery_ok``
+    and the lost-product count, and with them the delisting decision, stay exactly
+    as they were.
+
+    Args:
+        site: The shop that was crawled.
+        report: The report of the run that just finished discovery.
+    """
+    for note in site.take_discovery_notes():
+        report.add_note(note)
+        logger.warning("%s", note)
+
+
 def _may_delist(report: RunReport, *, limit: int | None, max_pages: int | None) -> bool:
     """Decide whether this run saw enough of the catalogue to delist the rest.
 
@@ -339,6 +369,7 @@ def run(  # noqa: PLR0913  (the contract fixes this signature)
         deadline=deadline,
     )
     _record_empty_discovery(site, report, limit=limit, max_pages=max_pages)
+    _record_discovery_notes(site, report)
 
     if seen and _may_delist(report, limit=limit, max_pages=max_pages):
         report.delisted = sink.mark_delisted(site.site_id, seen)
