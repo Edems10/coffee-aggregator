@@ -34,6 +34,7 @@ dev = [
     "ruff>=0.16.7",
     "pyyaml>=6.0.2",
     "types-pyyaml>=6.0.12",
+    "dead>=2.1.0",
 ]
 
 [tool.pytest.ini_options]

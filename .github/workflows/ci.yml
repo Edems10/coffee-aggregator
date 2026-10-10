@@ -32,6 +32,12 @@ jobs:
       - run: uv run ruff check --output-format=github
       - run: uv run ruff format --check
       - run: uv run mypy
+      # ruff reads one file at a time, so it cannot tell that a module-level name is
+      # read by nothing in the project. dead reads every tracked Python file. The
+      # allowlist holds the names it cannot follow: site classes that the @register
+      # decorator reads, and names only tests read (a test read counts as a use).
+      - name: No module-level name is read nowhere
+        run: uv run dead --symbol-allowlist .github/dead-allowlist.txt
 
   hooks:
     name: pre-commit
