@@ -20,23 +20,18 @@ MIGRATIONS_DIRECTORY = "migrations"
 MIGRATION_SUFFIX = ".sql"
 
 #: The bookkeeping table. It is the only thing the runner creates outside a
-#: migration, and it is created before the first version is applied.
+#: migration, and it is created before the first version is applied. ``IF NOT
+#: EXISTS`` leaves an existing table as it was created, so a database made
+#: before this column was NOT NULL keeps it nullable.
 VERSION_TABLE = "schema_migrations"
 CREATE_VERSION_TABLE_SQL = (
     f"CREATE TABLE IF NOT EXISTS {VERSION_TABLE} ("
     "version text PRIMARY KEY, "
-    "checksum text, "
+    "checksum text NOT NULL, "
     "applied_at timestamptz NOT NULL DEFAULT now())"
 )
-#: Databases migrated before checksums existed have the column added here; the
-#: rows keep a NULL checksum until the next ``apply_migrations`` backfills them.
-ADD_CHECKSUM_COLUMN_SQL = f"ALTER TABLE {VERSION_TABLE} ADD COLUMN IF NOT EXISTS checksum text"
 _SELECT_VERSIONS_SQL = f"SELECT version, checksum FROM {VERSION_TABLE}"  # noqa: S608  (same)
 _INSERT_VERSION_SQL = f"INSERT INTO {VERSION_TABLE} (version, checksum) VALUES (%s, %s)"  # noqa: S608  (same)
-_BACKFILL_CHECKSUM_SQL = (
-    f"UPDATE {VERSION_TABLE} SET checksum = %s "  # noqa: S608  (same)
-    "WHERE version = %s AND checksum IS NULL"
-)
 
 #: The key of the session-level advisory lock the runner holds while it
 #: migrates. Two Lambdas starting at once both find the same file pending and
@@ -159,17 +154,17 @@ def _applied(connection: Connection) -> dict[str, str | None]:
         connection: An open connection; the version table is created if missing.
 
     Returns:
-        Every recorded version mapped to the checksum stored for it, which is
-        None for a row written before checksums existed.
+        Every recorded version mapped to the checksum stored for it. The column
+        is NOT NULL on a fresh database; None can only come from one created
+        before that, and is refused rather than filled in.
 
     Raises:
         MigrationChecksumError: When a recorded file no longer matches what was
-            applied.
+            applied, or was recorded without a checksum.
     """
     cursor = connection.cursor()
     try:
         cursor.execute(CREATE_VERSION_TABLE_SQL)
-        cursor.execute(ADD_CHECKSUM_COLUMN_SQL)
         cursor.execute(_SELECT_VERSIONS_SQL)
         rows = cursor.fetchall()
     finally:
@@ -191,17 +186,26 @@ def _verify_checksums(recorded: dict[str, str | None]) -> None:
         recorded: Versions mapped to the checksum stored for each.
 
     Raises:
-        MigrationChecksumError: On the first file that does not match.
+        MigrationChecksumError: On the first file that does not match, or has
+            no checksum recorded.
     """
     for migration in load_migrations():
-        stored = recorded.get(migration.version)
-        if stored is None or stored == migration.checksum:
+        if migration.version not in recorded:
             continue
-        message = (
-            f"migration {migration.version} was applied as {stored[:12]} but the packaged file "
-            f"is {migration.checksum[:12]}: an applied migration must never be edited — "
-            "add a new one instead"
-        )
+        stored = recorded[migration.version]
+        if stored == migration.checksum:
+            continue
+        if stored is None:
+            # Skipping would leave this row unchecked for good, so an edit to its
+            # file would never be seen. Refusing is the only safe answer.
+            reason = "was recorded without a checksum, so it cannot be verified"
+        else:
+            reason = (
+                f"was applied as {stored[:12]} but the packaged file is "
+                f"{migration.checksum[:12]}: an applied migration must never be edited — "
+                "add a new one instead"
+            )
+        message = f"migration {migration.version} {reason}"
         raise MigrationChecksumError(message)
 
 
@@ -306,8 +310,6 @@ def _apply_locked(connection: Connection) -> list[str]:
     applied: list[str] = []
     for migration in load_migrations():
         if migration.version in done:
-            if done[migration.version] is None:
-                _backfill_checksum(connection, migration)
             continue
         logger.info("applying migration %s", migration.version)
         cursor = connection.cursor()
@@ -321,17 +323,6 @@ def _apply_locked(connection: Connection) -> list[str]:
     if not applied:
         logger.debug("no pending migrations")
     return applied
-
-
-def _backfill_checksum(connection: Connection, migration: Migration) -> None:
-    """Record the checksum of a file that was applied before checksums existed.
-
-    Args:
-        connection: An open connection.
-        migration: The already-applied migration to fingerprint.
-    """
-    _execute(connection, _BACKFILL_CHECKSUM_SQL, (migration.checksum, migration.version))
-    connection.commit()
 
 
 def table_columns(table: str) -> list[str]:

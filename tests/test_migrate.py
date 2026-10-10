@@ -25,8 +25,6 @@ class FakeCursor:
             self._rows = [(version, self.recorded[version]) for version in sorted(self.recorded)]
         elif sql == migrate._INSERT_VERSION_SQL and params:
             self.recorded[str(params[0])] = str(params[1])
-        elif sql == migrate._BACKFILL_CHECKSUM_SQL and params:
-            self.recorded[str(params[1])] = str(params[0])
 
     def fetchall(self) -> list[tuple[str, str | None]]:
         return self._rows
@@ -148,13 +146,15 @@ def test_an_edited_migration_is_refused_instead_of_silently_skipped() -> None:
         migrate.apply_migrations(connection)
 
 
-def test_a_database_from_before_checksums_gets_them_backfilled() -> None:
+def test_a_recorded_version_without_a_checksum_is_refused_not_filled_in() -> None:
     connection = FakeConnection({"0001_initial": None})
 
-    migrate.apply_migrations(cast("Any", connection))
+    with pytest.raises(migrate.MigrationChecksumError, match="0001_initial"):
+        migrate.pending(cast("Any", connection))
+    with pytest.raises(migrate.MigrationChecksumError, match="0001_initial"):
+        migrate.apply_migrations(cast("Any", connection))
 
-    assert connection.recorded["0001_initial"] == _checksum_of("0001_initial")
-    assert migrate.pending(cast("Any", connection)) == []
+    assert connection.recorded["0001_initial"] is None
 
 
 def test_a_checksum_is_the_fingerprint_of_the_file_itself() -> None:
