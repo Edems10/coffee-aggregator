@@ -4,11 +4,16 @@ on:
   pull_request:
   push:
     branches: [main]
+    # Every tag is a release: the image job publishes it as the version and as
+    # latest. See "Name the image" at the end of that job.
+    tags: ['*']
 
-# A superseded push to the same branch has nothing to tell us: cancel it.
+# A superseded pull request run has nothing to tell us: cancel it. A push is
+# never cancelled or replaced, because each one is published under its own
+# sha- tag, so every push gets a group of its own.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -91,6 +96,12 @@ jobs:
   image:
     name: docker image
     runs-on: ubuntu-latest
+    # packages: write is used only by the publish steps at the end, which run on
+    # a push and never on a pull request. GitHub cannot grant it per event, so
+    # the job holds it on every run.
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       # uv is here for the smoke test below, which compares what the image
@@ -127,6 +138,46 @@ jobs:
           rc=0
           docker run --rm coffee-aggregator:ci crawl --sink postgres >/dev/null 2>&1 || rc=$?
           test "$rc" -eq 2
+
+      # Only what the smoke tests above just ran against is pushed: the build is
+      # not repeated, so the registry holds the image CI verified. A pull request
+      # names nothing and pushes nothing. A push to main is named by its commit and
+      # as main; a tag is named by itself, the version, and as latest.
+      - name: Name the image
+        id: names
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tags=""
+          if [[ "$EVENT" == push && "$REF_TYPE" == tag ]]; then
+            tags="$REF_NAME latest"
+          elif [[ "$EVENT" == push && "$REF_TYPE" == branch && "$REF_NAME" == main ]]; then
+            tags="sha-$SHA main"
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+          echo "tags: ${tags:-none, so nothing is pushed}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Log in to GHCR
+        if: steps.names.outputs.tags != ''
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Push the tested image
+        if: steps.names.outputs.tags != ''
+        env:
+          TAGS: ${{ steps.names.outputs.tags }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          read -ra names <<< "$TAGS"
+          for name in "${names[@]}"; do
+            docker tag coffee-aggregator:ci "$image:$name"
+            docker push "$image:$name"
+            echo "pushed $image:$name" >> "$GITHUB_STEP_SUMMARY"
+          done
 
   diff-summary:
     name: changed files
