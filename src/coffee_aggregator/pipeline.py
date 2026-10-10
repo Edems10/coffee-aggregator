@@ -224,6 +224,44 @@ def _record_discovery_refusal(site: SiteAdapter, report: RunReport, exc: FetchDi
     logger.warning("%s: robots.txt disallows %s", site.site_id, exc.url)
 
 
+def _record_empty_discovery(
+    site: SiteAdapter,
+    report: RunReport,
+    *,
+    limit: int | None,
+    max_pages: int | None,
+) -> None:
+    """Record a run whose listing walk completed and found no products at all.
+
+    A shop that answers with nothing looks exactly like a shop that sells
+    nothing: the run finishes with ``discovery_ok`` set and no error recorded.
+    ``cokafe`` went out that way on 2026-10-09 as ``discovered 0, wrote 0``, and
+    it would have kept writing nothing until somebody read the per-shop counts.
+    A silent zero is worse than a loud failure precisely because nothing
+    surfaces it, whereas a loud failure gets fixed the next morning.
+
+    Nothing is recorded when the run was capped by ``limit`` or ``max_pages``,
+    since a capped run legitimately sees nothing; when discovery already failed
+    or was refused, since the run is already marked unhealthy; or when the
+    deadline ended the walk first, since that run never finished discovering and
+    "found no products" would be untrue.
+
+    Args:
+        site: The shop that was crawled.
+        report: The report of the run that just finished discovery.
+        limit: The ``--limit`` the caller passed, if any.
+        max_pages: The ``--max-pages`` the caller passed, if any.
+    """
+    if report.discovered or not report.discovery_ok or report.deadline_reached:
+        return
+    if limit is not None or max_pages is not None:
+        return
+    report.add_error(f"discovery for {site.site_id} completed but discovered no products")
+    report.complete = False
+    report.discovery_ok = False
+    logger.warning("%s: discovery completed but discovered no products", site.site_id)
+
+
 def _may_delist(report: RunReport, *, limit: int | None, max_pages: int | None) -> bool:
     """Decide whether this run saw enough of the catalogue to delist the rest.
 
@@ -300,6 +338,7 @@ def run(  # noqa: PLR0913  (the contract fixes this signature)
         fx_rate=fx_rate,
         deadline=deadline,
     )
+    _record_empty_discovery(site, report, limit=limit, max_pages=max_pages)
 
     if seen and _may_delist(report, limit=limit, max_pages=max_pages):
         report.delisted = sink.mark_delisted(site.site_id, seen)
