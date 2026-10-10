@@ -136,17 +136,9 @@ sudo docker compose --env-file /etc/coffee-aggregator/env run --rm \
 
 ### A note on the contracts repository
 
-The image's build resolves `coffee-contracts` from git, and that repository is
-private. Until it is public the build needs a credential, which is passed as a
-BuildKit secret and never lands in a layer:
-
-```bash
-docker build --secret id=github_token,env=GITHUB_TOKEN -t coffee-aggregator:local ..
-```
-
-`update.sh` does not pass one, so a server that has to build against the
-private repository needs either a token in its git config or that repository
-made public.
+The image's build resolves `coffee-contracts` from git at a pinned tag. That
+repository is public, so the build needs no credential: no token, no BuildKit
+secret, and `update.sh` passes none.
 
 ## The table browser
 
