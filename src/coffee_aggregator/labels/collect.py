@@ -5,7 +5,16 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 from coffee_aggregator import normalize
-from coffee_aggregator.labels.terms import F_COUNTRY, F_PROCESS, F_ROAST, F_SHIP_WEIGHT, F_WEIGHT
+from coffee_aggregator.labels.terms import (
+    BREWING_METHOD_MARKERS,
+    F_BREWING,
+    F_COUNTRY,
+    F_GRIND,
+    F_PROCESS,
+    F_ROAST,
+    F_SHIP_WEIGHT,
+    F_WEIGHT,
+)
 from coffee_aggregator.models import RoastLevel, RoastProfile
 
 if TYPE_CHECKING:
@@ -179,6 +188,19 @@ def plausible(field_name: str, value: str) -> bool:
     return True
 
 
+def _names_brewing_method(value: str) -> bool:
+    """Say whether a value names a brewing method rather than a grind.
+
+    Args:
+        value: The value the shop wrote for a grind-labelled row.
+
+    Returns:
+        True when the value contains a brewing-method marker.
+    """
+    folded = normalize.fold(value)
+    return any(marker in folded for marker in BREWING_METHOD_MARKERS)
+
+
 def _plausible_roast(value: str) -> bool:
     """Say whether a value can be the roast the label promised.
 
@@ -338,6 +360,10 @@ class Labels:
         mapped = map_label(normalize.fold(cleaned), label_map)
         if not mapped:
             return
+        # A grind selector that offers brewing methods is a brewing statement: its
+        # answers are what the coffee is ground for, so they stay in brewing_methods.
+        if mapped == F_GRIND and _names_brewing_method(text):
+            mapped = F_BREWING
         self.stated.setdefault(mapped, []).append(text)
         if plausible(mapped, text):
             self.by_field.setdefault(mapped, text)

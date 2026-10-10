@@ -1,0 +1,12 @@
+-- The grind a variant is sold in, as the shop stated it: `whole` or `ground`.
+--
+-- Grind belongs on the variant rather than the product: the same coffee is
+-- usually one page where the buyer picks the grind, exactly as they pick the
+-- weight, so one product can hold a whole-bean bag and a ground one. NULL is
+-- the truthful answer for a shop that says nothing about grind, and nothing
+-- fills it in: the preference for whole bean is a query, not a stored value.
+--
+-- This adds the column only. No adapter reads a grind into its variants yet,
+-- so the column stays NULL until one does; no backfill is possible either,
+-- since the source page is not kept.
+ALTER TABLE coffee_variant ADD COLUMN IF NOT EXISTS grind text;

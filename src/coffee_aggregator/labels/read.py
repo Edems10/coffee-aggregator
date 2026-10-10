@@ -56,6 +56,7 @@ __all__ = [
     "parse_taste",
     "score",
     "specialty_grade",
+    "stated_grind",
     "stated_pack",
     "stated_weight",
 ]
@@ -90,6 +91,45 @@ _PRICE_SUFFIX_RE: Final = re.compile(
     r"\s*[+\-−]\s*\d[\d\s.,]*\s*(?:kč|kc|czk|eur|€|\$|zl|huf)\s*$",
     re.IGNORECASE,
 )
+
+
+#: Folded grind values that name whole bean by their stem.
+_WHOLE_BEAN_STEMS: Final = ("zrnk", "cela zrna")
+#: "nemletá" and "bez mletia" say the bean is whole, yet contain the ground stem,
+#: so they are removed before the ground stem is looked for.
+_NEGATED_GRIND: Final = ("nemlet", "bez mlet")
+_GROUND_STEM: Final = "mlet"
+
+
+def stated_grind(text: str | None) -> str | None:
+    """Read the grind a variant is sold in.
+
+    A bare ``Ne`` or ``Áno`` answers a grind selector's question, "shall we grind
+    it for you?". ``Ne`` therefore means whole bean and ``Áno`` means ground, the
+    opposite of what the words say out of context.
+
+    A value that names both forms, or neither, is None. A missing grind is better
+    than a guessed one, and the preference for whole bean belongs in the query.
+
+    Args:
+        text: The value the shop wrote for the grind, or None.
+
+    Returns:
+        ``"whole"``, ``"ground"`` or None.
+    """
+    folded = normalize.fold(text)
+    if folded == "ne":
+        return "whole"
+    if folded == "ano":
+        return "ground"
+    whole = any(stem in folded for stem in (*_WHOLE_BEAN_STEMS, *_NEGATED_GRIND))
+    rest = folded
+    for negated in _NEGATED_GRIND:
+        rest = rest.replace(negated, "")
+    ground = _GROUND_STEM in rest
+    if whole == ground:
+        return None
+    return "whole" if whole else "ground"
 
 
 def option_list(text: str | None) -> list[str]:
