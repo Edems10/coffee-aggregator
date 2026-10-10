@@ -30,6 +30,7 @@ __all__ = [
     "F_SWEETNESS",
     "F_VARIETY",
     "F_WEIGHT",
+    "KIND_LABELS",
     "KNOWN_FIELDS",
     "LABEL_MAP",
     "TERMS",
@@ -502,6 +503,17 @@ def build_map(
         folded.update({normalize.fold(term): field for term, field in extra.items()})
     return folded
 
+
+#: Labels that say what kind of coffee a product is: a category, a form, a general
+#: information row. They name the shop's navigation as often as the product, so
+#: none of them is a field; a blend or a single origin is read from them directly.
+KIND_LABELS: Final[tuple[str, ...]] = (
+    "kategorie",
+    "kategória",
+    "forma kávy",
+    "obecné informace",
+    "všeobecné informace",
+)
 
 #: The shared vocabulary, ready for lookup. Platform adapters overlay their own
 #: readings on top of this rather than keeping a second copy.

@@ -22,6 +22,7 @@ from coffee_aggregator.labels.collect import (
 )
 from coffee_aggregator.labels.read import (
     bar,
+    blend_verdict,
     headline_weight,
     is_decaf,
     notes_from_text,
@@ -107,6 +108,7 @@ __all__ = [
     "Labels",
     "bar",
     "bare_label",
+    "blend_verdict",
     "build_map",
     "clean_label",
     "headline_weight",

@@ -763,6 +763,21 @@ def detect_country(text: str | None) -> str | None:
     return _COUNTRY_BY_TERM[match.group(0)]
 
 
+def countries_in(text: str | None) -> frozenset[str]:
+    """List every coffee-producing country a text names, not just the first.
+
+    Args:
+        text: An origin value such as ``"Brazílie, Keňa"`` or ``"Kolumbia · Cauca"``.
+
+    Returns:
+        The distinct ISO 3166-1 alpha-2 codes, empty when the text names none.
+    """
+    folded = fold(text)
+    if not folded:
+        return frozenset()
+    return frozenset(_COUNTRY_BY_TERM[match.group(0)] for match in _COUNTRY_RE.finditer(folded))
+
+
 _SPECIES_RE = re.compile(
     r"(?:(?P<pct_first>\d{1,3})\s*%?\s*(?P<name_last>arabi\w*|robus\w*)"
     r"|(?P<name_first>arabi\w*|robus\w*)\s*[:\-]?\s*(?P<pct_last>\d{1,3})\s*%)",
@@ -807,8 +822,12 @@ def parse_species(text: str | None) -> tuple[int | None, int | None]:
 _BLEND_MARKERS = ("blend", "zmes", "smes", "smesi", "zmesi", "mix", "espresso blend")
 
 
-def detect_blend(text: str | None, arabica_pct: int | None, robusta_pct: int | None) -> bool:
-    """Decide whether a product is a blend rather than a single origin.
+def detect_blend(text: str | None, arabica_pct: int | None, robusta_pct: int | None) -> bool | None:
+    """Read what one name or species split states about blending.
+
+    A single-species split is reported as False, but that is only a statement
+    about species: a blend of one species from several origins looks the same.
+    Callers weigh it against the rest of the page rather than trust it alone.
 
     Args:
         text: Product name or description.
@@ -816,14 +835,16 @@ def detect_blend(text: str | None, arabica_pct: int | None, robusta_pct: int | N
         robusta_pct: Robusta share, when known.
 
     Returns:
-        True when the name says blend or when neither species reaches 100 %.
+        True when the text says blend or the split mixes two species, False when
+        the split names one species alone, and None when neither is stated. An
+        unstated value is None, never False: False would assert single origin.
     """
     folded = fold(text)
     if any(marker in folded for marker in _BLEND_MARKERS):
         return True
     known = [pct for pct in (arabica_pct, robusta_pct) if pct is not None]
     if not known:
-        return False
+        return None
     return not any(pct == _MAX_PERCENT for pct in known)
 
 

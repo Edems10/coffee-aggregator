@@ -178,7 +178,9 @@ class Species:
     arabica_pct: int | None = None
     robusta_pct: int | None = None
     other: str | None = None
-    is_blend: bool = False
+    # None, not False, when the page says nothing about blending: False asserts
+    # single origin.
+    is_blend: bool | None = None
 
 
 @dataclass(slots=True)

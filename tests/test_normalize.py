@@ -7,6 +7,7 @@ import pytest
 from coffee_aggregator import normalize
 from coffee_aggregator.models import ProcessMethod, RoastLevel, RoastProfile
 from coffee_aggregator.normalize import (
+    countries_in,
     detect_blend,
     detect_country,
     detect_currency,
@@ -227,16 +228,32 @@ def test_parse_species(text: str | None, expected: tuple[int | None, int | None]
         ("Směs do espressa", None, None, True),
         ("Kuba Serrano", 100, 0, False),
         ("Nieco", 80, 20, True),
-        (None, None, None, False),
+        # Nothing stated is unknown, not single origin: False would assert it.
+        (None, None, None, None),
+        ("Kávová směs 100% arabik", 100, 0, True),
     ],
 )
 def test_detect_blend(
     text: str | None,
     arabica: int | None,
     robusta: int | None,
-    expected: bool,
+    expected: bool | None,
 ) -> None:
     assert detect_blend(text, arabica, robusta) is expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Brazílie", frozenset({"BR"})),
+        ("Kolumbia · Cauca", frozenset({"CO"})),
+        ("Brazílie, Keňa, Kolumbie", frozenset({"BR", "KE", "CO"})),
+        ("Směs", frozenset()),
+        (None, frozenset()),
+    ],
+)
+def test_countries_in_names_every_country(text: str | None, expected: frozenset[str]) -> None:
+    assert countries_in(text) == expected
 
 
 @pytest.mark.parametrize(

@@ -19,6 +19,7 @@ from coffee_aggregator.labels import (
     F_PROCESS,
     F_SWEETNESS,
     bar,
+    blend_verdict,
     headline_weight,
     is_decaf,
     map_label,
@@ -483,7 +484,7 @@ class NordbeansSite(SiteAdapter):
         return Species(
             arabica_pct=arabica,
             robusta_pct=robusta,
-            is_blend=normalize.detect_blend(name, arabica, robusta),
+            is_blend=blend_verdict(facts.labels, name, arabica, robusta),
         )
 
     def _taste(self, facts: kit.Facts, intensities: dict[str, int]) -> Taste:

@@ -14,6 +14,7 @@ from coffee_aggregator.labels import (
     F_FLAVOR,
     F_PROCESS,
     F_SPECIES,
+    blend_verdict,
     is_decaf,
     label_pair,
     parse_origin,
@@ -476,7 +477,7 @@ class FathersSite(SiteAdapter):
         return Species(
             arabica_pct=arabica,
             robusta_pct=robusta,
-            is_blend=normalize.detect_blend(name, arabica, robusta),
+            is_blend=blend_verdict(facts.labels, name, arabica, robusta),
         )
 
     def _taste(self, facts: kit.Facts, product: dict[str, object], slug: str | None) -> Taste:
