@@ -41,9 +41,12 @@ services:
       - catalogue
 
   crawler:
+    # `build` builds this image on the machine it runs on and tags it as `image`,
+    # the name CI pushes to. COFFEE_AGG_IMAGE_TAG chooses the tag: main by default,
+    # or sha-<commit> for an exact rollback once the server pulls instead of builds.
     build:
       context: ..
-    image: coffee-aggregator:local
+    image: ghcr.io/edems10/coffee-aggregator:${COFFEE_AGG_IMAGE_TAG:-main}
     # Behind a profile: `docker compose up -d` brings up only the database, and
     # the crawl is a `run --rm` that starts, works and exits.
     profiles: ["crawler"]
@@ -80,7 +83,7 @@ services:
   publisher:
     build:
       context: ..
-    image: coffee-aggregator:local
+    image: ghcr.io/edems10/coffee-aggregator:${COFFEE_AGG_IMAGE_TAG:-main}
     container_name: coffee-publisher
     restart: unless-stopped
     command: ["publish"]
