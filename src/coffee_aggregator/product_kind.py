@@ -6,9 +6,10 @@
 # bean or ground. The other kinds are recorded and kept out of that view, so a
 # change of mind about a product's kind is a change to one column, never a delete.
 #
-# `unknown` is a verdict, not a missing value: someone looked and could not tell
-# what the product is. NULL in product_kind says nobody has looked yet. The two
-# must stay apart, or a row nobody has reviewed looks the same as one that was
+# `unknown` is a verdict, not a missing value: a reviewer looked and could not tell
+# what the product is, and the decider never writes it. NULL in product_kind says
+# nothing has placed the row yet, so the decider tries it again on every crawl. The
+# two must stay apart, or a row nobody has reviewed looks the same as one that was
 # tried and failed.
 
 from __future__ import annotations
