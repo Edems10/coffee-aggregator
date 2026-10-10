@@ -214,7 +214,7 @@ def test_cuba_single_origin(cuba: Coffee) -> None:
     assert (cuba.price, cuba.currency, cuba.weight_g) == (9.99, "EUR", 200)
     assert cuba.price_per_kg == 49.95
     assert cuba.available is True
-    assert cuba.decaf is False
+    assert cuba.decaf is None  # silent on caffeine; the old False was the coercion
     assert cuba.origin.country == "CU"
     assert cuba.origin.region == "Oriente - Sierra Maestra"
     assert cuba.origin.farm == "drobní farmári z regiónu"

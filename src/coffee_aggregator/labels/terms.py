@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import re
 from typing import Final
 
 from coffee_aggregator import normalize
 
 __all__ = [
     "BREWING_METHOD_MARKERS",
+    "CAFFEINE_TERMS",
+    "DECAF_PATTERNS",
+    "DECAF_TERMS",
     "F_ACIDITY",
     "F_ALTITUDE",
     "F_BEST_BEFORE",
@@ -512,6 +516,35 @@ BREWING_METHOD_MARKERS: Final[tuple[str, ...]] = (
     "preliv",
     "zaleva",
     "zaliev",
+)
+
+#: Folded phrases that say the coffee has had its caffeine removed. They are
+#: checked before the caffeine words, so "dekofeinová" and "bez kofeinu" are
+#: never read as caffeinated.
+DECAF_TERMS: Final[tuple[str, ...]] = (
+    "decaf",
+    "bezkofein",
+    "bez kofein",
+    "bez obsahu kofein",
+    "dekofein",
+    "neobsahuje kofein",
+    "caffeine free",
+    "without caffeine",
+    "no caffeine",
+)
+#: Decaf wording a substring cannot express. "zbavená kofeinu" is stripped of its
+#: caffeine, and "0 % kofeínu" has none. "50 %" is a reduction, so the zero must
+#: stand alone, and "kofeinu 0 %" is the same statement the other way round.
+DECAF_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
+    re.compile(r"\bzbaven\w* kofein"),
+    re.compile(r"\b0 ?% ?(?:kofein|caffeine)"),
+    re.compile(r"(?:kofein|caffeine)\w* 0 ?%"),
+)
+#: Caffeine words, folded. A page with one and no decaf term is caffeinated, and
+#: that includes a reduction: "o 50 % méně kofeinu" says the caffeine is present.
+CAFFEINE_TERMS: Final[tuple[str, ...]] = (
+    "kofein",
+    "caffeine",
 )
 
 

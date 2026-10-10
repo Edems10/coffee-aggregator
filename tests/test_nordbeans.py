@@ -152,7 +152,7 @@ def test_gakenke_single_origin(gakenke: Coffee) -> None:
     assert (gakenke.price, gakenke.currency, gakenke.weight_g) == (375.0, "CZK", 250)
     assert gakenke.price_per_kg == 1500.0
     assert gakenke.available is True
-    assert gakenke.decaf is False
+    assert gakenke.decaf is None  # the page says nothing about caffeine
     assert gakenke.origin.country == "BI"
     assert gakenke.origin.region == "Kyanza"
     assert gakenke.origin.farm == "Gatara"
