@@ -618,6 +618,15 @@ class WooSite(ConfiguredSite[WooConfig]):
     kind = PLATFORM
     default_label_map: ClassVar[dict[str, str]] = DEFAULT_LABEL_MAP
 
+    def __init__(self, config: WooConfig) -> None:
+        """Build the adapter.
+
+        Args:
+            config: The shop's validated configuration.
+        """
+        super().__init__(config)
+        self._notes: list[str] = []
+
     # --- discovery -----------------------------------------------------------
 
     def api_url(self, page: int, category: int | None = None) -> str:
@@ -652,6 +661,9 @@ class WooSite(ConfiguredSite[WooConfig]):
             own JSON in ``payload``, so the pipeline never fetches their URL.
         """
         cap = max_pages if max_pages is not None else self.max_pages
+        # A discovery starts clean: this adapter is a registry singleton, so a second
+        # run must not report the notes of the first one.
+        self._notes = []
         if self.config.mode == "api":
             try:
                 yield from self._discover_api(fetcher, cap)
@@ -664,6 +676,17 @@ class WooSite(ConfiguredSite[WooConfig]):
             else:
                 return
         yield from self._discover_html(fetcher, cap)
+
+    def take_discovery_notes(self) -> tuple[str, ...]:
+        """Hand over the configured categories found empty on page 1, and forget them.
+
+        Returns:
+            One note per configured category whose first Store API page held no
+            products; empty when every configured category delivered.
+        """
+        notes = tuple(self._notes)
+        self._notes.clear()
+        return notes
 
     def _discover_api(self, fetcher: PoliteFetcher, cap: int) -> Iterator[ProductRef]:
         """Page through the Store API, one walk per configured category.
@@ -695,6 +718,16 @@ class WooSite(ConfiguredSite[WooConfig]):
                     logger.warning("%s: Store API stopped answering at %s", self.site_id, url)
                     return
                 if not items:
+                    if page == 1 and category is not None:
+                        # Page 1 only. A pinned category is asserted to hold products, so
+                        # an empty first page is a change at the shop: cokafe went out as
+                        # "discovered 0, no error" on 2026-10-09 and held 12 products when
+                        # crawled by hand. An empty page 2 is just the end of the walk.
+                        # pepecoffee's empty categories beside a live one looked healthy
+                        # and reached "last wrote 2" before anything noticed.
+                        self._notes.append(
+                            f"{self.site_id}: category {category} lists no products on page 1"
+                        )
                     logger.debug("%s: %s lists no products, stopping", self.site_id, url)
                     break
                 for item in items:

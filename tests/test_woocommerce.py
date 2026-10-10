@@ -211,6 +211,53 @@ def test_api_discovery_respects_max_pages(tmp_path: Path) -> None:
     assert fake.requested == [_url(1), _url(2)]
 
 
+def _category_url(category: int, page: int) -> str:
+    query = f"per_page=100&page={page}&category={category}"
+    return f"https://tiny.sk/wp-json/wc/store/v1/products?{query}"
+
+
+TWO_CATEGORIES_TOML = MINIMAL_TOML.replace("api_category_ids = [7]", "api_category_ids = [7, 8]")
+NO_PRODUCTS_ON_PAGE_1 = "tinyroastery: category 7 lists no products on page 1"
+
+
+def test_an_empty_first_page_of_a_configured_category_is_noted(tmp_path: Path) -> None:
+    adapter = cast("WooSite", platforms.build_from_config(_write(tmp_path, TWO_CATEGORIES_TOML)))
+    fake = FakeFetcher({_category_url(8, 1): _page([5, 6])})
+
+    refs = list(adapter.discover(as_fetcher(fake)))
+
+    assert [ref.external_id for ref in refs] == ["5", "6"]
+    assert adapter.take_discovery_notes() == (NO_PRODUCTS_ON_PAGE_1,)
+    assert adapter.take_discovery_notes() == ()
+
+
+def test_an_empty_second_page_is_ordinary_pagination(tmp_path: Path) -> None:
+    adapter = cast("WooSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+    fake = FakeFetcher({_url(1): _page([1]), _url(2): "[]"})
+
+    assert len(list(adapter.discover(as_fetcher(fake)))) == 1
+    assert adapter.take_discovery_notes() == ()
+
+
+def test_a_shop_whose_every_category_yields_products_notes_nothing(tmp_path: Path) -> None:
+    adapter = cast("WooSite", platforms.build_from_config(_write(tmp_path, TWO_CATEGORIES_TOML)))
+    fake = FakeFetcher({_category_url(7, 1): _page([1]), _category_url(8, 1): _page([2])})
+
+    assert len(list(adapter.discover(as_fetcher(fake)))) == 2
+    assert adapter.take_discovery_notes() == ()
+
+
+def test_each_discovery_starts_with_no_notes(tmp_path: Path) -> None:
+    adapter = cast("WooSite", platforms.build_from_config(_write(tmp_path, TWO_CATEGORIES_TOML)))
+    list(adapter.discover(as_fetcher(FakeFetcher({_category_url(8, 1): _page([2])}))))
+
+    # Nobody takes the first discovery's note, as after an interrupted run.
+    healthy = FakeFetcher({_category_url(7, 1): _page([1]), _category_url(8, 1): _page([2])})
+    list(adapter.discover(as_fetcher(healthy)))
+
+    assert adapter.take_discovery_notes() == ()
+
+
 def test_discovery_carries_the_payload_so_no_detail_page_is_fetched(tmp_path: Path) -> None:
     adapter = cast("WooSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
     fake = FakeFetcher({_url(1): _page([1]), _url(2): "[]"})

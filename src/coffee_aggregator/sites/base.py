@@ -180,3 +180,21 @@ class SiteAdapter(ABC):
             The default ignore list; override to extend it per shop.
         """
         return DEFAULT_IGNORED
+
+    def take_discovery_notes(self) -> tuple[str, ...]:
+        """Hand over what the last discovery noted that is not a failure, and forget it.
+
+        A note is a fact about the shop the run report should carry, such as a
+        configured category that came back empty while the others delivered. It
+        does not make the discovery unhealthy, so the pipeline records it without
+        counting a lost product. Only an adapter that has such facts overrides
+        this; every other adapter keeps the empty default.
+
+        Taking the notes, rather than reading them, is what keeps a run that never
+        starts discovery (``--limit 0``, a deadline already past) from reporting
+        the notes an earlier run left behind.
+
+        Returns:
+            The notes collected by the most recent discovery, in the order found.
+        """
+        return ()
