@@ -33,6 +33,7 @@ from coffee_aggregator.labels.read import (
     parse_taste,
     score,
     specialty_grade,
+    stated_grind,
     stated_pack,
     stated_weight,
 )
@@ -48,6 +49,7 @@ from coffee_aggregator.labels.terms import (
     F_DECAF,
     F_FARM,
     F_FLAVOR,
+    F_GRIND,
     F_HARVEST,
     F_IGNORE,
     F_PROCESS,
@@ -80,6 +82,7 @@ __all__ = [
     "F_DECAF",
     "F_FARM",
     "F_FLAVOR",
+    "F_GRIND",
     "F_HARVEST",
     "F_IGNORE",
     "F_PROCESS",
@@ -128,6 +131,7 @@ __all__ = [
     "says",
     "score",
     "specialty_grade",
+    "stated_grind",
     "stated_pack",
     "stated_weight",
 ]
