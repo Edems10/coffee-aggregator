@@ -27,11 +27,12 @@ sudo git clone https://github.com/Edems10/coffee_aggregator /opt/coffee-aggregat
 sudo install -d -m 700 /etc/coffee-aggregator
 sudo install -m 600 /opt/coffee-aggregator/deploy/env.example /etc/coffee-aggregator/env
 
-# All three secrets, before any compose command. compose.yml demands each of
-# them with ${VAR:?}, which rejects an empty value exactly as it rejects an
-# absent one, and compose interpolates the whole file before it works out which
-# services a profile selects — so one of these left blank makes every compose
-# command fail, build and `up` alike, whatever is being started.
+# The three generated secrets and NATS_URL, before any compose command.
+# compose.yml demands each of them with ${VAR:?}, which rejects an empty value
+# exactly as it rejects an absent one, and compose interpolates the whole file
+# before it works out which services a profile selects — so one of these left
+# blank makes every compose command fail, build and `up` alike, whatever is
+# being started.
 #
 # hex, not base64: a "/" in the password ends the URL's authority early, and the
 # DSN then reads the host as "coffee" and the rest of the password as the port.
@@ -42,9 +43,18 @@ sudo sed -i "s|^PGWEB_PASSWORD=.*|PGWEB_PASSWORD=$(openssl rand -hex 18)|" \
 sudo sed -i "s|^PGWEB_DB_PASSWORD=.*|PGWEB_DB_PASSWORD=$(openssl rand -hex 24)|" \
     /etc/coffee-aggregator/env
 
-sudo nano /etc/coffee-aggregator/env          # set COFFEE_AGG_CONTACT and RCLONE_REMOTE
+sudo nano /etc/coffee-aggregator/env          # set COFFEE_AGG_CONTACT, RCLONE_REMOTE and NATS_URL
 
 sudo install -d -m 700 /var/backups/coffee-aggregator
+```
+
+`NATS_URL` is set in the editor step above, because nothing can generate it. It
+carries the broker's password, the same secret as `COFFEE_NATS_PASSWORD` in
+`coffee-broker/.env`, and its host is the broker's container name on the
+`events` network:
+
+```
+NATS_URL=nats://coffee:<COFFEE_NATS_PASSWORD>@coffee-nats:4222
 ```
 
 The table browser sits behind your existing nginx-proxy-manager, which runs in
@@ -84,11 +94,14 @@ networks:                 # at the bottom of that file, if it has no networks: y
 
 The publisher needs a second shared network, for the same reason and in the
 same shape: the broker lives in its own compose stack, and `coffee-publisher`
-reaches it by service name. Create it once too:
+reaches it by container name, `coffee-nats`. Create it once too:
 
 ```bash
 docker network create events
 ```
+
+The publisher cannot publish until the broker is up and on this network, so
+start the broker's compose stack first.
 
 Bring the database up and build the crawler image. The build reads only four
 paths from the repo, because `.dockerignore` is an allowlist:
@@ -330,12 +343,18 @@ command until it is there** — not with a pgweb that restarts, but with nothing
 deployed at all: compose interpolates the whole file before it builds anything,
 so the build step itself fails.
 
-`PGWEB_DB_PASSWORD` is the only genuinely new variable. `PGWEB_PASSWORD` and
-`POSTGRES_PASSWORD` have been required for longer, so a server with a running
-stack already holds working values for both — **leave them exactly as they
-are.** Rotating `PGWEB_PASSWORD` here would change the browser's basic auth and
-lock you out with your saved credential, for a reason that has nothing to do
-with this deploy.
+`PGWEB_DB_PASSWORD` is the only genuinely new variable that update.sh generates.
+`PGWEB_PASSWORD` and `POSTGRES_PASSWORD` have been required for longer, so a
+server with a running stack already holds working values for both — **leave them
+exactly as they are.** Rotating `PGWEB_PASSWORD` here would change the browser's
+basic auth and lock you out with your saved credential, for a reason that has
+nothing to do with this deploy.
+
+`NATS_URL` cannot be generated, so it is set by hand. A server whose env file
+was copied from the old example already holds `nats://events:4222`: that value
+is not empty, so the `:?` check passes it, and the publisher cannot connect
+with it. Replace the line with the real address (see Install) before running
+update.sh.
 
 Fill in what is missing, in this order:
 
