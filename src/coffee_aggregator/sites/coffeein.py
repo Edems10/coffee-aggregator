@@ -733,7 +733,10 @@ class CoffeeinSite(SiteAdapter):
         """
         hrefs = _category_hrefs(soup)
         blob = normalize.fold(" ".join([coffee.name, *prose]))
-        coffee.decaf = is_decaf(facts.labels, coffee.name, prose) or DECAF_CATEGORY in hrefs
+        # `or` would turn the reader's None into False, which asserts caffeine.
+        coffee.decaf = (
+            True if DECAF_CATEGORY in hrefs else is_decaf(facts.labels, coffee.name, prose)
+        )
         coffee.specialty_grade = "specialty grade" in blob or SPECIALTY_CATEGORY in hrefs
 
     def _apply_discount(self, coffee: Coffee, soup: BeautifulSoup) -> None:
