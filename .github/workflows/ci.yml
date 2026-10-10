@@ -4,11 +4,15 @@ on:
   pull_request:
   push:
     branches: [main]
+    # Every tag reaches the tag step, which refuses any that is not a date version.
+    tags: ['*']
 
-# A superseded push to the same branch has nothing to tell us: cancel it.
+# A superseded pull request run has nothing to tell us: cancel it. A push is
+# never cancelled or replaced, because each one is published under its own
+# sha- tag, so every push gets a group of its own.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -97,8 +101,73 @@ jobs:
   image:
     name: docker image
     runs-on: ubuntu-latest
+    # packages: write is used only by the publish steps at the end, which run on
+    # a push and never on a pull request. GitHub cannot grant it per event, so
+    # the job holds it on every run.
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
+      # What this event publishes. A pull request publishes nothing. A push to
+      # main publishes the full commit and main. A date tag publishes the version
+      # and latest. Anything else is an error, not a silent skip.
+      - name: Tags for this event
+        id: tags
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          tags=""
+          case "$EVENT" in
+            pull_request) ;;
+            push)
+              case "$REF" in
+                refs/heads/main)
+                  # A run for an older merge can finish after a newer one. Only
+                  # the head of main may move the main tag; the sha- tag is
+                  # published either way.
+                  head="$(git ls-remote origin refs/heads/main | cut -f1)"
+                  tags="$image:sha-$SHA"
+                  if [[ "$head" == "$SHA" ]]; then
+                    tags="$tags"$'\n'"$image:main"
+                  fi
+                  ;;
+                refs/tags/*)
+                  version="${REF#refs/tags/}"
+                  date_version='^[0-9]{4}\.[0-9]{2}\.[0-9]{2}(\.[0-9]+)?$'
+                  if [[ ! "$version" =~ $date_version ]]; then
+                    echo "tag $version is not a date version (YYYY.MM.DD or YYYY.MM.DD.N)" >&2
+                    exit 1
+                  fi
+                  tags="$image:$version"$'\n'"$image:latest"
+                  ;;
+                *)
+                  echo "a push to $REF publishes nothing" >&2
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "event $EVENT is not expected here" >&2
+              exit 1
+              ;;
+          esac
+          if [[ -n "$tags" ]]; then
+            push=true
+          else
+            push=false
+          fi
+          {
+            echo "push=$push"
+            echo "tags<<TAGS"
+            if [[ -n "$tags" ]]; then printf '%s\n' "$tags"; fi
+            echo "TAGS"
+          } >> "$GITHUB_OUTPUT"
       # uv is here for the smoke test below, which compares what the image
       # ships against what the repo has; the build itself needs nothing but
       # docker, and reads only the four paths .dockerignore admits.
@@ -133,6 +202,25 @@ jobs:
           rc=0
           docker run --rm coffee-aggregator:ci crawl --sink postgres >/dev/null 2>&1 || rc=$?
           test "$rc" -eq 2
+
+      # The image pushed below is the one the smoke tests above ran against. It is
+      # not built a second time, so the registry holds the image CI verified.
+      - name: Log in to GHCR
+        if: steps.tags.outputs.push == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      - name: Push
+        if: steps.tags.outputs.push == 'true'
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+        run: |
+          set -euo pipefail
+          for tag in $TAGS; do
+            docker tag coffee-aggregator:ci "$tag"
+            docker push "$tag"
+          done
 
   diff-summary:
     name: changed files
