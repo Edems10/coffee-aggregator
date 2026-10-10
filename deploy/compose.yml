@@ -89,7 +89,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://coffee:${POSTGRES_PASSWORD:?}@db:5432/coffee
-      NATS_URL: ${NATS_URL:-nats://events:4222}
+      NATS_URL: ${NATS_URL:?set NATS_URL in the env file}
       TZ: ${TZ:-Europe/Prague}
     # It joins two networks: `default` to reach the database by name, and the
     # external `events` network to reach the broker by name.
