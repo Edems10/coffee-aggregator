@@ -99,12 +99,15 @@ def _to_float(raw: str) -> float | None:
     return value if math.isfinite(value) else None
 
 
-# The digit group admits spaces so "1 000 g" reads as one number. That also
-# glued two numbers together: "75/25 250 g" became 25250 g and the coffee was
-# the cheapest in the catalogue at 11 CZK/kg. A thousands separator is never
-# preceded by a digit, a slash or a dash, and a second number always is.
+# The digit group admits spaces so "1 000 g" reads as one number, and a comma so
+# "0,25 kg" does. The space after a comma is what tells the two apart: a decimal
+# comma is written with no gap, a separator is written with one, so the comma in
+# "10, 450g" must end the number and "450g" is the weight. Spaces also glued two
+# numbers together: "75/25 250 g" became 25250 g and the coffee was the cheapest
+# in the catalogue at 11 CZK/kg. A thousands separator is never preceded by a
+# digit, a slash or a dash, and a second number always is.
 _WEIGHT_RE = re.compile(
-    r"(?<![\d/-])(\d[\d\s .,]*)\s*(kg|kilogram\w*|kilo|gram\w*|gr|g)\b",
+    r"(?<![\d/-])(\d(?:[\d\s .]|,(?!\s))*)\s*(kg|kilogram\w*|kilo|gram\w*|gr|g)\b",
     re.IGNORECASE,
 )
 
