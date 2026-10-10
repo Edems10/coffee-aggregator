@@ -31,6 +31,8 @@ from coffee_aggregator.labels.terms import (
     F_VARIETY,
     F_WEIGHT,
     KIND_LABELS,
+    NO_ANSWERS,
+    YES_ANSWERS,
 )
 from coffee_aggregator.models import (
     DEFAULT_TASTE_SCALE_MAX,
@@ -43,7 +45,7 @@ from coffee_aggregator.models import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from coffee_aggregator.labels.collect import Labels
+    from coffee_aggregator.labels.collect import Answer, Labels
     from coffee_aggregator.models import Variant
 
 __all__ = [
@@ -66,6 +68,9 @@ __all__ = [
 
 #: Folded kind labels, matched against the labels as the shop wrote them.
 _KIND_KEYS: Final = frozenset(normalize.fold(label) for label in KIND_LABELS)
+#: Folded yes and no answers from the shared vocabulary.
+_YES_ANSWERS: Final = frozenset(normalize.fold(word) for word in YES_ANSWERS)
+_NO_ANSWERS: Final = frozenset(normalize.fold(word) for word in NO_ANSWERS)
 #: Kind-row stems that name a single origin: "Jednodruhové plantážní kávy" and
 #: "Výběrové kávy Single Origin".
 _SINGLE_ORIGIN_STEMS: Final = ("jednodruh", "single origin", "single estate", "monokult")
@@ -533,12 +538,65 @@ def specialty_grade(name: str, categories: list[str], cupping: float | None) -> 
     return True if "specialty" in blob or "speciality" in blob else None
 
 
+def _says_decaf(folded: str) -> bool:
+    """Say whether folded text names the coffee as decaffeinated.
+
+    Args:
+        folded: Text already folded with :func:`normalize.fold`.
+
+    Returns:
+        True when a decaf term or pattern occurs in it.
+    """
+    return any(term in folded for term in DECAF_TERMS) or any(
+        pattern.search(folded) for pattern in DECAF_PATTERNS
+    )
+
+
+def _yes_or_no(text: str | None) -> bool | None:
+    """Read a selector's answer as yes or no.
+
+    Args:
+        text: The value the shop wrote.
+
+    Returns:
+        True for a yes word, False for a no word, and None for anything else,
+        the empty value included.
+    """
+    folded = normalize.fold(text)
+    if folded in _YES_ANSWERS:
+        return True
+    if folded in _NO_ANSWERS:
+        return False
+    return None
+
+
+def _decaf_answer(answer: Answer | None) -> bool | None:
+    """Read the yes or no a value gives to a decaf question.
+
+    Args:
+        answer: The label and value that fed the decaf field, or None.
+
+    Returns:
+        The yes or no of the value when its label asks whether the coffee is
+        decaffeinated, and None when it asks another question or nothing is answered.
+    """
+    if answer is None or not _says_decaf(normalize.fold(answer.label)):
+        return None
+    return _yes_or_no(answer.value)
+
+
 def is_decaf(labels: Labels, name: str, categories: list[str]) -> bool | None:
     """Decide whether the product is decaffeinated, caffeinated, or unstated.
 
     Decaf wording is looked for first, so a decaf page is never read as a
     caffeinated one. Reduced caffeine is caffeinated: "o 50 % méně kofeinu" names
     the caffeine as present, and reads as False, not as decaf.
+
+    A label that asks whether the coffee is decaffeinated is answered by its value:
+    "Decaf - bez kofeínu: Nie" is False and "Decaf - bez kofeínu: Áno" is True.
+    The answer is read only where the name, the categories and the value's own
+    wording say nothing about decaf, so it can give a reading where there was none
+    but never overrules one.
 
     Args:
         labels: Every labelled value on the page.
@@ -551,13 +609,11 @@ def is_decaf(labels: Labels, name: str, categories: list[str]) -> bool | None:
         page is None, because False would assert that the coffee is caffeinated.
     """
     blob = normalize.fold(" ".join([name, labels.get(F_DECAF) or "", *categories]))
-    if any(term in blob for term in DECAF_TERMS) or any(
-        pattern.search(blob) for pattern in DECAF_PATTERNS
-    ):
+    if _says_decaf(blob):
         return True
     if any(term in blob for term in CAFFEINE_TERMS):
         return False
-    return None
+    return _decaf_answer(labels.answer(F_DECAF))
 
 
 def stated_weight(text: str | None) -> int | None:

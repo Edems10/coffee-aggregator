@@ -39,7 +39,9 @@ __all__ = [
     "KIND_LABELS",
     "KNOWN_FIELDS",
     "LABEL_MAP",
+    "NO_ANSWERS",
     "TERMS",
+    "YES_ANSWERS",
     "build_map",
 ]
 
@@ -546,6 +548,14 @@ CAFFEINE_TERMS: Final[tuple[str, ...]] = (
     "kofein",
     "caffeine",
 )
+
+#: Yes and no as a selector prints them. The label asks the question and the value
+#: answers it, and each field reader decides what yes means for its own question:
+#: "Decaf - bez kofeínu: Nie" says no to decaffeinated, while "KÁVU NAMELTE NA: Ne"
+#: says no to ground. Folded before lookup, so "Áno" and "Ano" are one answer. Any
+#: other value, the empty one included, answers nothing.
+YES_ANSWERS: Final[tuple[str, ...]] = ("ano", "áno", "yes")
+NO_ANSWERS: Final[tuple[str, ...]] = ("ne", "nie", "no")
 
 
 def build_map(
