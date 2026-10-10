@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import psycopg
 import pytest
 from psycopg import sql
-from psycopg.errors import InsufficientPrivilege
+from psycopg.errors import InsufficientPrivilege, NotNullViolation
 
 from coffee_aggregator import publish
 from coffee_aggregator.db import migrate, report
@@ -454,6 +454,16 @@ def test_an_edited_migration_is_refused(sink: PostgresSink) -> None:
 
     with pytest.raises(migrate.MigrationChecksumError, match="0001_initial"):
         sink.pending_migrations()
+
+
+def test_the_version_table_refuses_a_row_without_a_checksum(sink: PostgresSink) -> None:
+    """The runner no longer fills a NULL in, so the column itself must refuse one."""
+    with pytest.raises(NotNullViolation), sink.connection.cursor() as cursor:
+        cursor.execute(
+            f"INSERT INTO {migrate.VERSION_TABLE} (version, checksum) VALUES (%s, NULL)",  # noqa: S608
+            ("0099_no_checksum",),
+        )
+    sink.connection.rollback()
 
 
 def test_the_connection_is_not_pinned_by_a_prepared_statement(sink: PostgresSink) -> None:
