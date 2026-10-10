@@ -58,6 +58,13 @@ KIND_NOTES: Final[dict[str, str]] = {
         "for a robots.txt that changed — a host that closed is not a bug to fix in "
         "the parser."
     ),
+    "contradictory-duplicate": (
+        "Two live rows of one shop carry the same name, and their weight or their price "
+        "per kilogram is at least ten times apart. Usually one row has a name that went "
+        "stale when the pack changed, or a weight read from the wrong part of the page: "
+        "a 1 kg listing still titled 100 g is the case on record. Open both URLs in the "
+        "detail before changing anything."
+    ),
     "coverage-drop": (
         "Catalogue-wide: the share of products carrying a field fell. One large shop "
         "can move this number on its own, so read the per-shop numbers before "

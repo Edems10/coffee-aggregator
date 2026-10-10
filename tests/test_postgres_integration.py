@@ -591,6 +591,36 @@ def test_a_clean_night_clears_the_day_it_is_reporting_on(sink: PostgresSink) -> 
     assert _scalar(sink, "SELECT count(*) FROM crawl_finding") == 0
 
 
+def test_a_contradictory_duplicate_is_read_from_the_live_catalogue(sink: PostgresSink) -> None:
+    """The delisting filter is the database's own, so it is proved against one."""
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO coffee (site, external_id, name, weight_g, price_per_kg, currency, "
+            "delisted_at) VALUES "
+            "('vrescaffe', '159', 'Terra 100g', 100, 1210, 'CZK', NULL), "
+            "('vrescaffe', '168', 'Terra 100g', 1000, 1075, 'CZK', now())"
+        )
+    sink.connection.commit()
+
+    assert _contradictions(sink) == []
+
+    with sink.connection.cursor() as cursor:
+        cursor.execute("UPDATE coffee SET delisted_at = NULL WHERE external_id = '168'")
+    sink.connection.commit()
+
+    (finding,) = _contradictions(sink)
+    assert finding.detail["external_ids"] == ["159", "168"]
+    assert finding.detail["metric"] == "weight_g"
+
+
+def _contradictions(sink: PostgresSink) -> list[report.Finding]:
+    return [
+        finding
+        for finding in report.findings(sink.connection, day=FRIDAY)
+        if finding.kind == report.CONTRADICTORY_DUPLICATE
+    ]
+
+
 def test_the_dashboard_queries_run_against_this_schema(sink: PostgresSink) -> None:
     """The panels of coffee-observability#9, as that README has them.
 
