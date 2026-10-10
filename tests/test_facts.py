@@ -19,6 +19,7 @@ from coffee_aggregator.labels import (
     bare_label,
     build_map,
     headline_weight,
+    is_decaf,
     map_label,
     option_list,
     plausible,
@@ -542,3 +543,31 @@ def test_a_case_of_bags_is_weighed_whole(label: str | None, name: str, grams: in
 def test_an_implausible_count_is_ignored() -> None:
     """A count that produces something no shop sells was not a count."""
     assert weighed(label="1 kg", name="Kava 900 ks") == 1000
+
+
+@pytest.mark.parametrize(
+    ("name", "categories", "expected"),
+    [
+        ("Bezkofeinová Etiopie", [], True),
+        ("Kolumbia – dekofeínová 1 kg", [], True),
+        ("Káva zbavená kofeinu", [], True),
+        ("Etiopie – kofein 0 %", [], True),
+        ("Etiopie 0 % kofeinu", [], True),
+        ("Caffeine free Ethiopia", [], True),
+        ("Etiopie Guji", ["Bezkofeinová káva"], True),
+        ("Harmónia (o 50% menej kofeínu)", [], False),
+        ("Harmónia (méně kofeinu)", [], False),
+        ("Snížený obsah kofeinu", [], False),
+        ("Kofeínová Etiopie", [], False),
+        ("Etiopie Guji", [], None),
+        ("Etiopie 50 %", [], None),
+    ],
+)
+def test_is_decaf_says_true_false_or_nothing(
+    name: str, categories: list[str], expected: bool | None
+) -> None:
+    """A silent page is None, never False: False asserts the coffee is caffeinated.
+
+    Reduced caffeine names the caffeine as present, so it is False and not decaf.
+    """
+    assert is_decaf(Labels(), name, categories) is expected

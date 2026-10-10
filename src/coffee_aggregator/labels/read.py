@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Final
 from coffee_aggregator import normalize
 from coffee_aggregator.labels.collect import plausible_pack, plausible_weight
 from coffee_aggregator.labels.terms import (
+    CAFFEINE_TERMS,
+    DECAF_PATTERNS,
+    DECAF_TERMS,
     F_ACIDITY,
     F_ALTITUDE,
     F_BEST_BEFORE,
@@ -530,8 +533,12 @@ def specialty_grade(name: str, categories: list[str], cupping: float | None) -> 
     return True if "specialty" in blob or "speciality" in blob else None
 
 
-def is_decaf(labels: Labels, name: str, categories: list[str]) -> bool:
-    """Decide whether the product is decaffeinated.
+def is_decaf(labels: Labels, name: str, categories: list[str]) -> bool | None:
+    """Decide whether the product is decaffeinated, caffeinated, or unstated.
+
+    Decaf wording is looked for first, so a decaf page is never read as a
+    caffeinated one. Reduced caffeine is caffeinated: "o 50 % méně kofeinu" names
+    the caffeine as present, and reads as False, not as decaf.
 
     Args:
         labels: Every labelled value on the page.
@@ -539,10 +546,18 @@ def is_decaf(labels: Labels, name: str, categories: list[str]) -> bool:
         categories: The breadcrumb trail.
 
     Returns:
-        True when any of the three says so.
+        True when a decaf term is present, False when a caffeine term is present
+        without one, and None when the page says nothing about caffeine. A silent
+        page is None, because False would assert that the coffee is caffeinated.
     """
     blob = normalize.fold(" ".join([name, labels.get(F_DECAF) or "", *categories]))
-    return "bezkofein" in blob or "decaf" in blob or "bez kofein" in blob
+    if any(term in blob for term in DECAF_TERMS) or any(
+        pattern.search(blob) for pattern in DECAF_PATTERNS
+    ):
+        return True
+    if any(term in blob for term in CAFFEINE_TERMS):
+        return False
+    return None
 
 
 def stated_weight(text: str | None) -> int | None:

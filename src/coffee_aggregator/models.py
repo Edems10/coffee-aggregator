@@ -238,7 +238,9 @@ class Coffee:
     #: The schema.org token, or the stock wording when the page states one only
     #: in words. See :class:`Variant.availability_raw`.
     availability_raw: str | None = None
-    decaf: bool = False
+    #: None when the page says nothing about caffeine. False asserts the coffee is
+    #: caffeinated, which only a page that says so may do.
+    decaf: bool | None = None
     origin: Origin = field(default_factory=Origin)
     processing: Processing = field(default_factory=Processing)
     roast: Roast = field(default_factory=Roast)

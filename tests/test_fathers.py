@@ -138,7 +138,8 @@ def test_chapata_single_origin(chapata: Coffee) -> None:
     assert (chapata.price, chapata.currency, chapata.weight_g) == (399.8, "CZK", 250)
     assert chapata.price_per_kg == 1599.2
     assert chapata.available is True
-    assert chapata.decaf is False
+    # Silent on caffeine: the decaf links on this page point at another product.
+    assert chapata.decaf is None
     assert chapata.origin.country == "CO"
     assert chapata.origin.region == "Anserma, Caldas"
     assert chapata.origin.farm == "družstvo Anserma (projekt Attia - Chapata)"
