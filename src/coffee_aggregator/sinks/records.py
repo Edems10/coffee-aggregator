@@ -139,5 +139,8 @@ def coffee_record(coffee: Coffee, *, json_safe: bool = True) -> dict[str, Any]:
         "description": coffee.description,
         "origin_text": coffee.origin_text,
         "raw_attributes": dict(coffee.raw_attributes),
+        "product_kind": coffee.product_kind,
+        "product_kind_source": coffee.product_kind_source,
+        "product_kind_name_hash": coffee.product_kind_name_hash,
         "scraped_at": coffee.scraped_at.isoformat() if json_safe else coffee.scraped_at,
     }

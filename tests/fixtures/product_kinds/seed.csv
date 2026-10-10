@@ -1,0 +1,9 @@
+site,external_id,product_kind,confidence,why,reviewed,name,url
+demo,1,beans,high,named origin coffee,,Ethiopia Yirgacheffe 1 kg,https://demo.example/ethiopia-yirgacheffe
+demo,2,capsules,high,capsules for a coffee machine,,Espresso Capsules 10 ks,https://demo.example/espresso-capsules
+demo,3,merch,high,a paper cup,,Paper Cup 12 oz,https://demo.example/paper-cup
+demo,4,beans,low,a carton of bags counted as one product,coordinator,Carton 24 x 1 kg,https://demo.example/carton
+demo,5,sampler,high,a tasting pack of five origins,,Tasting Pack 5 x 100 g,https://demo.example/tasting-pack
+demo,6,not_a_product,high,a category page scraped as a product,,Coffee Shop Category,https://demo.example/category
+demo,7,unknown,low,no label could place it,,Mystery Item,https://demo.example/mystery
+demo,99,beans,high,a row the store does not hold,,Not Stored 1 kg,https://demo.example/not-stored

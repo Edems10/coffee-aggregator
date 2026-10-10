@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import unicodedata
@@ -47,6 +48,25 @@ def fold(text: str | None) -> str:
     flattened = stripped.lower().translate(_TRANSLATION)
     flattened = _PLUS_RE.sub(" +", flattened)
     return _WHITESPACE_RE.sub(" ", flattened).strip()
+
+
+# A product's kind was decided from its name, so the name is what to fingerprint.
+# It is folded, so a shop re-typesetting a title (case, accents, separators,
+# spacing) does not send a settled product back to review: the matchers in this
+# module already read names through fold, so that is the same name by the codebase's
+# own definition. SHA-256 rather than hash(), which is salted per process and would
+# change from one run to the next. A Unicode release that changes a decomposition
+# turns a match into a miss, which costs a review and never a wrong kind.
+def product_name_hash(name: str) -> str:
+    """Fingerprint a product name for the kind that was decided from it.
+
+    Args:
+        name: The product name as the shop wrote it.
+
+    Returns:
+        The SHA-256 hex digest of the folded name.
+    """
+    return hashlib.sha256(fold(name).encode("utf-8")).hexdigest()
 
 
 def dash_fold(text: str | None) -> str:

@@ -97,6 +97,9 @@ COLUMNS: tuple[str, ...] = (
     "description",
     "origin_text",
     "raw_attributes",
+    "product_kind",
+    "product_kind_source",
+    "product_kind_name_hash",
     "scraped_at",
 )
 
@@ -121,8 +124,20 @@ JSON_COLUMNS: frozenset[str] = frozenset(
 #: Columns the database owns and the sink never overwrites from a record.
 MANAGED_COLUMNS: tuple[str, ...] = ("first_seen_at", "last_seen_at", "delisted_at")
 
+#: Decided by the seed loader and, later, the decider, never by a crawl. A crawl has
+#: no decision of its own to write, and an upsert that copied its NULLs over these
+#: would clear every stored kind on the next run. The INSERT still names them, so a
+#: new row takes whatever the coffee carries.
+KIND_COLUMNS: tuple[str, ...] = (
+    "product_kind",
+    "product_kind_source",
+    "product_kind_name_hash",
+)
+
 _KEY_COLUMNS = ("site", "external_id")
-_UPDATABLE = tuple(column for column in COLUMNS if column not in _KEY_COLUMNS)
+_UPDATABLE = tuple(
+    column for column in COLUMNS if column not in _KEY_COLUMNS and column not in KIND_COLUMNS
+)
 
 UPSERT_SQL = (
     f"INSERT INTO coffee ({', '.join(COLUMNS)}) "  # noqa: S608  (column names are a module constant)
