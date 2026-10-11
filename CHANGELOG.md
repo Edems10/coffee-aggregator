@@ -10,6 +10,17 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.1.2 (2026-10-11)
+
+### Changed
+
+- The migration runner orders a version-named migration such as
+  `0.8.0_add_decaf.sql` by its version, not by its text, so `0.10.0` applies
+  after `0.9.0`; the text order would have put it first. Nothing changes for the
+  existing `0001_` migrations: they keep their order, names and checksums, so no
+  database runs one again. A `.sql` file named in neither form stops the runner
+  with an error rather than being placed by guess.
+
 ## 0.1.1 (2026-10-11)
 
 The first entry. It covers the changes merged from 8 October that change what a
