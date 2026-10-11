@@ -799,7 +799,7 @@ def countries_in(text: str | None) -> frozenset[str]:
 
 
 _SPECIES_RE = re.compile(
-    r"(?:(?P<pct_first>\d{1,3})\s*%?\s*(?P<name_last>arabi\w*|robus\w*)"
+    r"(?:(?P<pct_first>\d{1,3})\s*%\s*(?P<name_last>arabi\w*|robus\w*)"
     r"|(?P<name_first>arabi\w*|robus\w*)\s*[:\-]?\s*(?P<pct_last>\d{1,3})\s*%)",
     re.IGNORECASE,
 )

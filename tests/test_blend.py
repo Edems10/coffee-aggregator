@@ -176,3 +176,14 @@ def test_an_implausible_origin_is_still_a_stated_value(label: str) -> None:
     labels = labelled((label, "Směs"))
     assert labels.get("country") is None
     assert labels.stated["country"] == ["Směs"]
+
+
+# --- a count of varieties is not a share of the species -------------------------
+
+
+def test_a_variety_count_before_the_species_name_is_not_a_percentage() -> None:
+    # zlatezrnko's "Zmes 6-7 arabík" is a blend of six or seven arabica varieties.
+    labels = labelled(("ARABIKA", "Zmes 6-7 arabík"))
+    species = parse_species(labels, "Káva Zlaté Zrnko – Emília (Zmes 100% arabika)")
+    assert (species.arabica_pct, species.robusta_pct) == (None, None)
+    assert species.is_blend is True
