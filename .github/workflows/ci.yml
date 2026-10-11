@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    # Every tag reaches the tag step, which refuses any that is not a date version.
+    # Every tag reaches the tag step, which refuses any that is not vX.Y.Z.
     tags: ['*']
 
 # A superseded pull request run has nothing to tell us: cancel it. A push is
@@ -110,8 +110,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # What this event publishes. A pull request publishes nothing. A push to
-      # main publishes the full commit and main. A date tag publishes the version
-      # and latest. Anything else is an error, not a silent skip.
+      # main publishes the full commit and main. A version tag, vX.Y.Z, publishes
+      # the version without its v, and latest. Anything else is an error, not a
+      # silent skip.
       - name: Tags for this event
         id: tags
         env:
@@ -138,12 +139,15 @@ jobs:
                   fi
                   ;;
                 refs/tags/*)
-                  version="${REF#refs/tags/}"
-                  date_version='^[0-9]{4}\.[0-9]{2}\.[0-9]{2}(\.[0-9]+)?$'
-                  if [[ ! "$version" =~ $date_version ]]; then
-                    echo "tag $version is not a date version (YYYY.MM.DD or YYYY.MM.DD.N)" >&2
+                  tag="${REF#refs/tags/}"
+                  # A leading zero is refused: v01.2.3 would publish 01.2.3, not the
+                  # number pyproject.toml carries.
+                  semver='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+                  if [[ ! "$tag" =~ $semver ]]; then
+                    echo "tag $tag is not a semantic version (vX.Y.Z, such as v0.3.1)" >&2
                     exit 1
                   fi
+                  version="${tag#v}"
                   tags="$image:$version"$'\n'"$image:latest"
                   ;;
                 *)
