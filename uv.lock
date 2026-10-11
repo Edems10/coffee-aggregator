@@ -144,7 +144,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.13.3" },
-    { name = "coffee-contracts", git = "https://github.com/Edems10/coffee-contracts.git?rev=v2.1.0" },
+    { name = "coffee-contracts", git = "https://github.com/Edems10/coffee-contracts.git?rev=v2.4.0" },
     { name = "httpx2", specifier = ">=2.13.1" },
     { name = "lxml", specifier = ">=5.3.0" },
     { name = "nats-py", specifier = ">=2.9.0" },
@@ -167,8 +167,8 @@ dev = [
 
 [[package]]
 name = "coffee-contracts"
-version = "2.1.0"
-source = { git = "https://github.com/Edems10/coffee-contracts.git?rev=v2.1.0#afe90297cb36e9a9dee08e08681bb43ab8db9a20" }
+version = "2.4.0"
+source = { git = "https://github.com/Edems10/coffee-contracts.git?rev=v2.4.0#d2af866e87a381a4b39a826cb43ace8d4295455a" }
 dependencies = [
     { name = "jsonschema" },
 ]
