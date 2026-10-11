@@ -10,6 +10,21 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.2.1 (2026-10-11)
+
+The six fields reach the stream on the next crawl that reaches a coffee. A coffee that no
+crawl reaches keeps its earlier event until `republish --all`, which now publishes the same
+six values the crawl does.
+
+### Fixed
+
+- Every crawl's `coffee.state` event carries `first_seen_at`, `decaf`, `product_kind`,
+  `product_kind_source`, `arabica_pct` and `robusta_pct` from the row. They were published as
+  `null` (#142), which is the gap recorded under `0.1.1`. `decaf`, `arabica_pct` and
+  `robusta_pct` come from the parsed coffee. `first_seen_at`, `product_kind` and
+  `product_kind_source` are read back from the database inside the crawl's transaction,
+  because only the database holds them.
+
 ## 0.2.0 (2026-10-11)
 
 This entry corrects the number of the entries below it. `0.1.1` was numbered as a

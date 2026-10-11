@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Self
 
 import pytest
 from psycopg.types.json import Jsonb
 
 from coffee_aggregator.db import migrate
-from coffee_aggregator.sinks.outbox import OUTBOX_SQL
+from coffee_aggregator.sinks.outbox import OUTBOX_SQL, STORED_FIELDS_SQL
 from coffee_aggregator.sinks.postgres import (
     COLUMNS,
     DELIST_SQL,
@@ -65,10 +66,19 @@ class FakeCursor:
 
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> None:
         self.calls.append(("execute", sql, params))
+        # A statement answers only its own fetchall; rows never carry over to the next.
+        self._rows = []
         if sql == migrate._SELECT_VERSIONS_SQL:
             self._rows = [(version, _checksum_of(version)) for version in self.applied]
         elif sql == DELIST_SQL:
             self._rows = self.delisted
+        elif sql == STORED_FIELDS_SQL and params is not None:
+            sites, externals = params
+            stamped = datetime(2026, 9, 1, 8, 0, tzinfo=UTC)
+            self._rows = [
+                (site, external, stamped, None, None)
+                for site, external in zip(sites, externals, strict=True)
+            ]
 
     def executemany(self, sql: str, params_seq: Sequence[Sequence[Any]]) -> None:
         self.calls.append(("executemany", sql, list(params_seq)))

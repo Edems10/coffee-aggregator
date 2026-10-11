@@ -510,7 +510,10 @@ class PostgresSink:
         variant_rows = [row for _, rows in per_coffee for row in rows]
         if variant_rows:
             cursor.executemany(VARIANT_UPSERT_SQL, variant_rows)
-        event_rows = outbox.event_rows_for(chunk)
+        # After the kind decisions and the upsert, so the event names what the row now
+        # holds: the kind a seed set and the first_seen_at the INSERT stamped.
+        stored = outbox.read_stored_fields(cursor, chunk)
+        event_rows = outbox.event_rows_for(chunk, stored)
         if event_rows:
             cursor.executemany(outbox.OUTBOX_SQL, event_rows)
 
