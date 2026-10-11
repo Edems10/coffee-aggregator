@@ -10,6 +10,49 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.2.0 (2026-10-11)
+
+This entry corrects the number of the entries below it. `0.1.1` was numbered as a
+patch and understated what it carried. `0.1.2`, `0.1.3` and `0.1.4` are patches in
+their own right, but they were numbered on top of that understatement. No entry's text is
+changed, and the numbers are not renumbered here, because a reader may already have
+seen them.
+
+`0.1.1` describes capabilities: a product kind on every row, report findings,
+`availability_raw` and the image push. Those make it a minor. It also changes what
+three stored values mean, which is a major only for a reader who could observe the
+change, and none could (see below). So the version is `0.2.0`, one minor on top of
+`0.1.4`. The jump from `0.1.4` is this correction.
+
+`0.1.0` was set by the project's `uv init` in March 2025, and nothing moved it
+until the changelog was added on 11 October. The version did not change across the
+rebuild in September 2026, and the history behind every entry is in `git log`.
+
+### Stored meaning changed, safely
+
+- `decaf`, `is_blend` and `specialty_grade` store `NULL` where they used to store
+  `false` for "the page said nothing" (#89, #104, #116). A stored `false` had
+  meant *unknown* and now asserts *caffeinated* or *single origin*. A row keeps its
+  stored value until a crawl rewrites it, so until then a `false` still means
+  unknown.
+- No consumer could read the difference. `decaf` first reached `coffee-contracts`
+  in `v2.4.0`, tagged on 11 October, the day after these merges. `is_blend` and
+  `specialty_grade` have never been a contract field. No sibling repository reads
+  any of the three from the aggregator's data.
+
+### Carried from 0.1.1 to 0.1.4
+
+- Product kind on every row, decided from the page or by a labelled seed. Report
+  findings in `crawl_finding`. `availability_raw` beside `available`. The image
+  pushed as `sha-<commit>` and as `main`. Decaf read from its label. Details under
+  `0.1.1`.
+- The migration runner orders version-named migrations by version. Details under
+  `0.1.2`.
+- A CI check that fails a pull request unless it moves the version, adds its
+  changelog entry and raises the number. Details under `0.1.3`.
+- Release tags are semantic versions, `vX.Y.Z`, and the image is named without the
+  `v`. Details under `0.1.4`.
+
 ## 0.1.4 (2026-10-11)
 
 Nothing a crawl or an operator has to do. The crawler is unchanged.
