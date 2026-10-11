@@ -456,9 +456,13 @@ def test_a_tasting_pack_is_never_read_as_one_of_its_bags(name: str) -> None:
     assert weighed(name=name, variants=[variant(one, 9.0)], price=9.0) == stated_pack(name)
 
 
-def test_a_label_still_wins_when_the_name_states_no_more_than_it() -> None:
-    """The label stays the most trustworthy source for an ordinary single bag."""
-    assert weighed(label="1 kg", name="Brasil 250 g") == 1000
+def test_a_label_heavier_than_the_one_pack_the_name_states_is_refused() -> None:
+    """A label and a name that disagree about one pack, with nothing to settle it, store no weight.
+
+    Believing the label priced kava.cz's 250 g and 500 g bags, which carry the
+    family's "1 kg" parameter, at a per-kilogram figure two to four times too low.
+    """
+    assert weighed(label="1 kg", name="Brasil 250 g") is None
 
 
 def test_a_second_size_in_the_name_belongs_to_a_second_article() -> None:
@@ -543,6 +547,136 @@ def test_a_case_of_bags_is_weighed_whole(label: str | None, name: str, grams: in
 def test_an_implausible_count_is_ignored() -> None:
     """A count that produces something no shop sells was not a count."""
     assert weighed(label="1 kg", name="Kava 900 ks") == 1000
+
+
+@pytest.mark.parametrize(
+    ("label", "name", "price", "fallback", "grams"),
+    [
+        # A count is a carton: the price buys twelve bags, and no label is needed.
+        (None, "Illy Classico zrnková káva 250g 12ks", 1900.0, "4.8 kg", 3000),
+        # A carton whose label states its own total is not refused by the rule.
+        ("3 kg", "Illy Classico zrnková káva 250g 12ks", 1900.0, None, 3000),
+        ("20\u00d7 250 g", "BANUA Café 5 kg (20x250g)", 4290.0, None, 5000),
+        (None, "Degustační sada Intenso | sada zrnkové kávy 3\u00d7 100 g", 402.0, None, 300),
+        (
+            (
+                "1x100g ARABIKA Prémiová rada, 2x100g ARABIKA komoditná, "
+                "3x100g 100% ARABIKA komoditná, 3x100g 100% ARABIKA Prémiová rada"
+            ),
+            "DARČEKOVÉ BALENIE  Mini BLACK PEARL, pražená káva, 100% ARABIKA,  3x100g",
+            20.0,
+            None,
+            300,
+        ),
+        (
+            (
+                "2x 250g zrnková, 2x 250g zrnková (100% ARABICA +Cuba alebo Ethiopia), "
+                "2x250g mletá na alternatívu, 2x250g mletá na espresso"
+            ),
+            "DARČEKOVÉ BALENIE, pražená káva, 100% ARABIKA,  2x250g",
+            25.0,
+            None,
+            500,
+        ),
+        (
+            "1. DARK – horká čokoláda v tvare CIGARY – Aromatic Chocolate Cigar 100g. Bez lepku",
+            "DARČEKOVÉ BALENIE  CUBA Venchi cigara, 250g pražená káva 100% ARABIKA",
+            26.0,
+            None,
+            250,
+        ),
+        (
+            "4 ks kávy (celkem 1 kg)",
+            "Kafista balíček 4x250g - Single origin kávy",
+            942.0,
+            "1 kg",
+            1000,
+        ),
+        ("SET 4kg", "Coffee Veronia Espresso Coffee zrnková káva 4x1kg", 95.49, None, 4000),
+    ],
+)
+def test_a_named_counter_example_does_not_move(
+    label: str | None,
+    name: str,
+    price: float,
+    fallback: str | None,
+    grams: int,
+) -> None:
+    """Counter-examples from the live catalogue; each must keep its total.
+
+    Each row here is a shape the guard that refuses a label heavier than its
+    name is written to leave alone: a carton named by its count, a carton whose
+    label states the total, a tasting set whose total is its name's multiplied
+    pack, and a cigar whose label weighs a sweet and not the pack.
+    """
+    assert weighed(label=label, name=name, price=price, fallback=fallback) == grams
+
+
+@pytest.mark.parametrize(
+    ("label", "name", "price"),
+    [
+        ("1 kg", "BLACK STAR Indonésie Frinsa 250 g (espreso)", 379.0),
+        ("1 kg", "BLACK STAR Indonésie Frinsa 500 g (espreso)", 699.0),
+        ("1 kg", "KAVA.CZ Guatemala SHB Teresita 500 g (espreso)", 399.0),
+        ("1 kg", "CAFÉ SATI Heure Exquise 500 g", 349.0),
+        ("250 g", "AROMANIAC Kolumbie Patio Bonito 200 g (filtr)", 479.0),
+        (
+            "500 g (zrnková káva) [Pozn.: upraveno z původního 50 g pro sjednocení s vaší řadou]",
+            "Aromaniac Cibetková káva Gayo Highlands Kopi Luwak zrnková 50 g",
+            859.0,
+        ),
+        ("250g", "Coffee Veronia Jamaica Blue Mountain zrnková káva 150g", 28.2),
+    ],
+)
+def test_a_label_heavier_than_the_only_size_the_name_states_is_refused(
+    label: str,
+    name: str,
+    price: float,
+) -> None:
+    """Rows where a page's label and its own name disagree, with no option to settle it.
+
+    kava.cz repeats one "Velikost balení" value across its 250 g, 500 g and 1 kg
+    pages; nejkafe's label says the pack was edited from 50 g to 500 g; the
+    coffeeveronia label says 250 g on a 150 g pack. Their prices do not settle
+    the weight, so no weight is stored.
+    """
+    assert weighed(label=label, name=name, price=price) is None
+
+
+def test_a_second_size_in_the_name_is_never_the_conflict() -> None:
+    """The name "Sada 250 g + 1 kg" states two articles, so its 250 g is not the bag weighed."""
+    assert weighed(label="1 kg", name="Sada 250 g + 1 kg") == 1000
+
+
+@pytest.mark.parametrize(
+    ("name", "variants", "price", "grams"),
+    [
+        (
+            "ORO Caffe Cremoso 250 g | Zrnková káva",
+            [variant(125, 129.0), variant(250, 229.0)],
+            129.0,
+            125,
+        ),
+        (
+            "Bezkofeinová káva - Decaf Honduras 250g",
+            [variant(100, 160.0), variant(250, 360.0), variant(500, 608.0), variant(1000, 1120.0)],
+            160.0,
+            100,
+        ),
+    ],
+)
+def test_an_option_at_the_headline_price_settles_a_name_that_disagrees(
+    name: str,
+    variants: list[Variant],
+    price: float,
+    grams: int,
+) -> None:
+    """orocaffe and port76 print a 250 g name over a headline price that buys the smaller option.
+
+    The option table is the page stating what that price buys, so the name is
+    the disagreement and the option is the weight.
+    """
+    assert weighed(name=name, variants=variants, price=price) == grams
 
 
 @pytest.mark.parametrize(

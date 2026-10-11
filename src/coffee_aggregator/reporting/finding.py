@@ -72,6 +72,14 @@ KIND_NOTES: Final[dict[str, str]] = {
         "read the pack size on the page before changing the stored weight: the name is "
         "sometimes the stale half."
     ),
+    "refused-weight": (
+        "A live row stores no weight, though its name states one pack. The shop's own "
+        "weight label contradicts the name, and the page does not say which of the two "
+        "is the bag, so no price per kilogram is published for the row. Open the URL in "
+        "the detail and read the size the page prints in its title and in its weight "
+        "parameter. A parameter copied across a family of sizes is the case on record "
+        "(kava.cz), and the row stays unpriced per kilogram until the page is clear."
+    ),
     "coverage-drop": (
         "Catalogue-wide: the share of products carrying a field fell. One large shop "
         "can move this number on its own, so read the per-shop numbers before "
