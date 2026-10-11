@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Final, Protocol
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Mapping, Sequence
 
 #: The four audiences one report has: the systemd journal, a chat window with an
 #: assistant in it, a browser, and whatever else reads JSON.
@@ -78,12 +78,6 @@ KIND_NOTES: Final[dict[str, str]] = {
         "changing anything shared."
     ),
 }
-
-#: Prefixes and suffixes that mark a detail key as the day-before twin of
-#: another one. ``written`` beside ``previous_written`` is what lets the page
-#: print a figure and the arrow next to it without the detection half having to
-#: agree on a second shape first.
-PREVIOUS_FORMS: Final[tuple[str, ...]] = ("previous_{key}", "prev_{key}", "{key}_before")
 
 
 class FindingLike(Protocol):
@@ -227,41 +221,3 @@ def items(value: object) -> str:
     if not isinstance(value, list | tuple):
         return ""
     return f" ({len(value)} item{'' if len(value) == 1 else 's'})"
-
-
-def previous_of(detail: Mapping[str, Any], key: str) -> Any | None:  # noqa: ANN401
-    """Find the day-before twin of a detail key, when there is one.
-
-    Args:
-        detail: The figures behind one finding.
-        key: The key whose earlier value is wanted.
-
-    Returns:
-        The earlier value, or None when the detail carries no twin.
-    """
-    for form in PREVIOUS_FORMS:
-        twin = form.format(key=key)
-        if twin in detail and is_scalar(detail[twin]):
-            return detail[twin]
-    return None
-
-
-def first_of(row: Mapping[str, Any], keys: Iterable[str]) -> Any | None:  # noqa: ANN401
-    """Return the first of several candidate keys that the mapping carries.
-
-    The contract fixes the five fields of a finding but says nothing about the
-    keys inside ``detail``, so the page reads the names it knows and falls back
-    to showing the raw detail for everything else.
-
-    Args:
-        row: A mapping out of a finding's detail.
-        keys: Candidate key names, best first.
-
-    Returns:
-        The first value found, or None.
-    """
-    for key in keys:
-        value = row.get(key)
-        if value is not None:
-            return value
-    return None
