@@ -10,6 +10,15 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.1.4 (2026-10-11)
+
+Nothing a crawl or an operator has to do. The crawler is unchanged.
+
+CI only. A release tag is now `vX.Y.Z`, and its image is named without the `v`: `v0.1.4`
+publishes `0.1.4` and `latest`. The date form `YYYY.MM.DD` is refused, and so is any other
+tag, so a tag in the wrong shape fails the image job instead of publishing nothing. Pushes
+to `main` and pull requests publish as before.
+
 ## 0.1.3 (2026-10-11)
 
 Nothing in the crawler or the database changes, and the next crawl writes the same rows.
