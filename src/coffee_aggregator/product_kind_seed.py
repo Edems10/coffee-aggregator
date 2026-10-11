@@ -66,6 +66,10 @@ def read_seed(path: Path) -> list[SeedRow]:
 
     Every problem is collected before raising, so one run names all of them.
 
+    A record with too few or too many fields is refused by name rather than by a crash. Without
+    that check a missing value would reach ``.strip()`` as None, or a column would shift into the
+    wrong field.
+
     Args:
         path: The labelling pass's CSV, read as UTF-8.
 
@@ -87,8 +91,6 @@ def read_seed(path: Path) -> list[SeedRow]:
         seen: set[tuple[str, str]] = set()
         for record in reader:
             line = reader.line_num
-            # A short or long record would otherwise reach .strip() as None, or shift
-            # a column into the wrong field; either is refused by name, not by crash.
             if None in record or None in record.values():
                 problems.append(f"line {line}: does not have exactly {len(SEED_COLUMNS)} fields")
                 continue

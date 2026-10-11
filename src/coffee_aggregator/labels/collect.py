@@ -366,6 +366,9 @@ class Labels:
     def add(self, label: str | None, value: str | None, label_map: dict[str, str]) -> None:
         """Record one ``label: value`` pair.
 
+        A grind selector that offers brewing methods is a brewing statement. Its answers are what
+        the coffee is ground for, so they are filed under ``brewing_methods`` rather than grind.
+
         Args:
             label: The label as the shop wrote it.
             value: The value as the shop wrote it.
@@ -379,8 +382,6 @@ class Labels:
         mapped = map_label(normalize.fold(cleaned), label_map)
         if not mapped:
             return
-        # A grind selector that offers brewing methods is a brewing statement: its
-        # answers are what the coffee is ground for, so they stay in brewing_methods.
         if mapped == F_GRIND and _names_brewing_method(text):
             mapped = F_BREWING
         self.stated.setdefault(mapped, []).append(text)

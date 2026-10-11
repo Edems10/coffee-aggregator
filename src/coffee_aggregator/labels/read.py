@@ -216,6 +216,12 @@ def bar(labels: Labels, field_name: str) -> int | None:
 def parse_taste(labels: Labels, summary: str | None) -> Taste:
     """Build the sensory part of the model.
 
+    Flavor notes come from the flavor row, or from the summary when that row gives
+    none, and both go through ``notes_from_text``, which is the same guard for each: a
+    shop that writes a whole sentence into its "Chuťový profil" row states tasting
+    text, not a list of notes, and a one-sentence bucket would poison every cross-shop
+    grouping.
+
     Args:
         labels: Every labelled value on the page.
         summary: The short description, used when no label names the notes.
@@ -223,9 +229,6 @@ def parse_taste(labels: Labels, summary: str | None) -> Taste:
     Returns:
         The taste block.
     """
-    # Both sources go through the same guard: a shop that writes a whole
-    # sentence into its "Chuťový profil" row states tasting_text, not a list of
-    # notes, and a one-sentence bucket would poison every cross-shop grouping.
     notes = notes_from_text(labels.get(F_FLAVOR)) or notes_from_text(summary)
     return Taste(
         body=bar(labels, F_BODY),
@@ -339,6 +342,11 @@ def blend_verdict(
     gift box is judged only by its name and species row, because a blend word about
     one of its members says nothing about the set.
 
+    A meta text, or one country named by the name or an origin row, says single origin only
+    weakly: prose describes a blend's components as single origins, and a page can name a
+    country it does not sell. A species row at 100 % says nothing about where the coffee grew:
+    Caffè Borbone's "100% Arabica" is a blend.
+
     Args:
         labels: Every labelled value on the page, with every value each field got.
         name: The product name.
@@ -352,8 +360,6 @@ def blend_verdict(
     species_rows = labels.stated.get(F_SPECIES, [])
     text_says = normalize.detect_blend(" ".join([name, *species_rows]), arabica, robusta)
     if _is_a_set(name):
-        # A set names several coffees, so a blend word about one of them says
-        # nothing about the set; only the name and the species row can speak.
         kinds: list[str] = []
         origins: list[str] = []
         page_text = ""
@@ -370,10 +376,6 @@ def blend_verdict(
         return None
     if blend:
         return True
-    # One species at 100 % says nothing about where the coffee grew: Caffè Borbone's
-    # "100% Arabica" is a blend. A meta text or one country named by the name or an
-    # origin row say so only weakly, because prose describes a blend's components
-    # as single origins, and a page can name a country it does not sell.
     if single_kind or meta is False or _names_one_origin(name, origins):
         return False
     return None
@@ -624,6 +626,10 @@ def stated_weight(text: str | None) -> int | None:
     shop's size axis rendered into one cell, and reading its first entry is how
     ``ripit.sk`` reported 1000 g against a price for 250 g.
 
+    A text that splits into no weight is read whole instead. ``"0,25 kg"`` splits into pieces
+    that state no weight once the comma is read as a list separator, and the undivided text
+    still states a size.
+
     Args:
         text: The value of a weight label, or a product name.
 
@@ -642,8 +648,6 @@ def stated_weight(text: str | None) -> int | None:
         return weights.pop()
     if weights:
         return None
-    # Nothing survived the split, which is what "0,25 kg" looks like once the
-    # comma is read as a list separator; the undivided text still states a size.
     whole = normalize.parse_weight_grams(text)
     return whole if plausible_weight(whole) else None
 
@@ -733,6 +737,13 @@ def headline_weight(
     7. the smallest weight any variant states, when no variant is priced;
     8. a caller-supplied last resort, such as Shoptet's parcel weight.
 
+    A count the name states, such as ``"36 ks"`` in ``"Illy Intenso 36 ks"``, multiplies the
+    single-package weight last. That name is thirty-six tins, and the page states the size of
+    one of them, never of the case. Three spellings across two shops agree once the count is
+    applied (``36 ks``, ``12 ks`` and ``"250g 12ks"`` all land within 30 CZK/kg of each
+    other) and disagree wildly without it. A count that produces a pack no shop sells is not
+    applied.
+
     Args:
         labels: Every labelled value the page states.
         name: The product name.
@@ -745,15 +756,10 @@ def headline_weight(
         The weight in grams, or None.
     """
     one = _one_package(labels, name, variants, price=price, fallback=fallback)
-    # "Illy Intenso 36 ks" is thirty-six tins and the page states the size of
-    # one of them, never of the case. Three spellings across two shops agree
-    # once the count is applied — 36 ks, 12 ks and "250g 12ks" all land within
-    # 30 CZK/kg of each other — and disagree wildly without it.
     count = normalize.parse_pack_count(name)
     if one is None or count is None:
         return one
     whole = one * count
-    # A count that produces something no shop sells was not a count.
     return whole if plausible_pack(whole) else one
 
 
@@ -767,6 +773,17 @@ def _one_package(
 ) -> int | None:
     """Return the weight of a single package, before any count is applied.
 
+    A pack the name spells out wins over the weight label when it is larger than the label,
+    because the name states the pack and the price buys the pack, while the label names one
+    bag inside it. kava.cz sells the same coffee as 1 kg, 6 kg and 24 kg on three pages that
+    all carry a 1 kg label; believing the label made the 24 kg carton 24 times too dear.
+
+    A multiplier the name spells out outranks the weight of the option whose price is the
+    headline price, because a multiplier is the one thing an option cannot say.
+    lighthousecoffee sells "degustačný balíček 4x75 g" as a single "4x75 gramov" option, and
+    that option's weight is one of the four bags the price buys. Reading it would publish a
+    per-kilogram price four times too high. That is the case #30 and #52 measured and fixed.
+
     Args:
         labels: Every labelled value the page states.
         name: The product name.
@@ -778,16 +795,7 @@ def _one_package(
         The weight in grams, or None.
     """
     from_label = stated_weight(labels.get(F_WEIGHT))
-    # A name that states more than the weight label is naming the pack while the
-    # label names one bag inside it, and the price buys the pack. kava.cz sells
-    # the same coffee as 1 kg, 6 kg and 24 kg on three pages that all carry a
-    # 1 kg label; believing the label made the 24 kg carton 24 times too dear.
     from_pack = _pack_the_name_states(name, from_label)
-    # A multiplier the name spells out is the one thing an option cannot say.
-    # lighthousecoffee sells "degustačný balíček 4x75 g" as a single
-    # "4x75 gramov" option, and that option's weight is one of the four bags
-    # the price buys; reading it would publish a per-kilogram price four times
-    # too high, which is what #30 and #52 measured and fixed.
     if from_pack is not None and from_pack != stated_weight(name):
         return from_pack
     named_by_price = _weight_priced_exactly(variants, price)
