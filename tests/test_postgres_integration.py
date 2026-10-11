@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import secrets
 from datetime import date
@@ -12,13 +13,14 @@ import pytest
 from psycopg import sql
 from psycopg.errors import InsufficientPrivilege, NotNullViolation
 
-from coffee_aggregator import publish
+from coffee_aggregator import normalize, product_kind, publish
 from coffee_aggregator.db import migrate, report
 from coffee_aggregator.db.connect import connect
 from coffee_aggregator.fx.rates import FxRate
 from coffee_aggregator.fx.stores import PostgresFxStore
-from coffee_aggregator.models import ProcessMethod, Variant
+from coffee_aggregator.models import ProcessMethod, Species, Variant
 from coffee_aggregator.pipeline import derive
+from coffee_aggregator.sinks import outbox
 from coffee_aggregator.sinks.postgres import (
     COLUMNS,
     MANAGED_COLUMNS,
@@ -29,6 +31,8 @@ from conftest import make_coffee
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
+
+    from coffee_aggregator.models import Coffee
 
 FRIDAY = date(2026, 9, 11)
 SATURDAY = date(2026, 9, 12)
@@ -814,3 +818,70 @@ def test_a_table_a_later_migration_adds_is_readable_without_a_new_grant(
         with sink.connection.cursor() as cursor:
             cursor.execute("DROP TABLE later_migration")
         sink.connection.commit()
+
+
+def _seed_kind(sink: PostgresSink, coffee: Coffee) -> None:
+    """Write a seed's kind onto the stored row, as ``seed-kinds`` does."""
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE coffee SET product_kind = %s, product_kind_source = %s, "
+            "product_kind_name_hash = %s WHERE site = %s AND external_id = %s",
+            (
+                "beans",
+                product_kind.SEED_SOURCE,
+                normalize.product_name_hash(coffee.name),
+                coffee.site,
+                coffee.external_id,
+            ),
+        )
+    sink.connection.commit()
+
+
+def test_the_crawl_event_matches_the_republish_of_the_row_it_wrote(sink: PostgresSink) -> None:
+    """Two builders, one contract: a field one path fills and the other leaves empty is #142.
+
+    The values are ones a float holds exactly in a numeric column, so the crawl's
+    parsed numbers and the republish's stored numbers must be equal, not merely close.
+    """
+    coffee = make_coffee(
+        site="demo",
+        external_id="1",
+        roaster="Demo Roastery",
+        decaf=True,
+        species=Species(arabica_pct=80, robusta_pct=20, is_blend=True),
+        price_per_kg_eur=49.95,
+    )
+    sink.upsert([coffee])
+    _seed_kind(sink, coffee)
+    sink.upsert([coffee])
+
+    crawled = _outbox(sink)[-1][3]
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT {outbox.STATE_SELECT} FROM coffee WHERE site = %s AND external_id = %s",  # noqa: S608  (a module constant)
+            (coffee.site, coffee.external_id),
+        )
+        republished = outbox.event_rows_from_db(cursor.fetchall())
+    sink.connection.commit()
+
+    assert (crawled["decaf"], crawled["arabica_pct"], crawled["robusta_pct"]) == (True, 80, 20)
+    assert crawled["product_kind"] == "beans"
+    assert crawled["first_seen_at"] is not None
+    assert json.loads(republished[0][2]) == crawled
+
+
+def test_a_later_crawl_keeps_first_seen_at_and_the_kind_it_did_not_decide(
+    sink: PostgresSink,
+) -> None:
+    coffee = make_coffee(site="demo", external_id="1")
+    sink.upsert([coffee])
+    with sink.connection.cursor() as cursor:
+        cursor.execute("UPDATE coffee SET first_seen_at = '2026-09-01T08:00:00+00'")
+    sink.connection.commit()
+    _seed_kind(sink, coffee)
+
+    sink.upsert([coffee])
+
+    payload = _outbox(sink)[-1][3]
+    assert payload["first_seen_at"] == "2026-09-01T08:00:00+00:00"
+    assert payload["product_kind"] == "beans"

@@ -660,6 +660,12 @@ transaction, because a delisting that never reaches the stream makes the coffee
 immortal in every consumer — nothing crawls it again, so nothing ever
 contradicts the last state they were sent.
 
+A crawl's event takes its values from the parsed coffee, except three that only
+the database holds: `first_seen_at` is stamped by the insert, and `product_kind`
+and `product_kind_source` are written by the kind rules or a labelled seed.
+`_write_chunk` reads those three back inside its transaction, after the upsert
+and the kind decisions, so a crawl publishes the kind a seed already set.
+
 `coffee-aggregator publish` is a separate process that drains the table:
 
 ```

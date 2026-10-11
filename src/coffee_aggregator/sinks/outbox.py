@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from coffee_contracts import COFFEE_STATE, CoffeeState, SubjectError, catalogue, to_json
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
+    from datetime import datetime
+
+    import psycopg
 
     from coffee_aggregator.models import Coffee
 
@@ -50,8 +53,31 @@ _FLOAT_FIELDS = frozenset({"price", "price_per_kg_eur", "sca_score"})
 #: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing.
 _LIST_FIELDS = frozenset({"variety", "flavor_notes"})
 
+#: The three fields of an event that no parsed coffee carries: the INSERT stamps
+#: ``first_seen_at`` and its conflict branch keeps it, and the kind columns are
+#: written by the kind decider and the seed loader, never by the upsert.
+STORED_FIELDS_SQL: str = (
+    "SELECT c.site, c.external_id, c.first_seen_at, c.product_kind, c.product_kind_source "
+    "FROM coffee c JOIN unnest(%s::text[], %s::text[]) AS k(site, external_id) "
+    "USING (site, external_id)"
+)
 
-def state_for(coffee: Coffee) -> CoffeeState:
+
+class StoredFields(NamedTuple):
+    """The database-held values of the fields a crawl cannot supply, once its write is in.
+
+    Attributes:
+        first_seen_at: When the catalogue first stored the coffee.
+        product_kind: The decided kind, or None while undecided.
+        product_kind_source: How ``product_kind`` was decided, or None.
+    """
+
+    first_seen_at: datetime
+    product_kind: str | None
+    product_kind_source: str | None
+
+
+def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
     """Build the event a freshly crawled coffee is published as.
 
     The event carries the subset of the row a consumer can act on — what the
@@ -59,8 +85,16 @@ def state_for(coffee: Coffee) -> CoffeeState:
     provenance columns, the raw attributes or the per-shop prices, which are the
     catalogue's own bookkeeping.
 
+    Every value comes from the parsed coffee, except ``first_seen_at``,
+    ``product_kind`` and ``product_kind_source``, which come from ``stored``: only
+    the database can give those. The rest is not read back, because a float written
+    to a ``numeric`` column comes back with fifteen significant digits, and a read-back
+    would move any field the parse left unrounded, where this change moves three.
+
     Args:
         coffee: The coffee the crawl just parsed.
+        stored: What the database holds for it after the upsert and the kind
+            decisions; see :func:`read_stored_fields`.
 
     Returns:
         Its current state, with ``delisted_at`` unset: a crawl only ever sees
@@ -88,6 +122,12 @@ def state_for(coffee: Coffee) -> CoffeeState:
         currency=coffee.currency,
         price_per_kg_eur=coffee.price_per_kg_eur,
         available=coffee.available,
+        decaf=coffee.decaf,
+        arabica_pct=coffee.species.arabica_pct,
+        robusta_pct=coffee.species.robusta_pct,
+        first_seen_at=stored.first_seen_at,
+        product_kind=stored.product_kind,
+        product_kind_source=stored.product_kind_source,
     )
 
 
@@ -147,16 +187,50 @@ def event_rows(states: Iterable[CoffeeState]) -> list[tuple[str, str, str]]:
     return rows
 
 
-def event_rows_for(coffees: Iterable[Coffee]) -> list[tuple[str, str, str]]:
+def read_stored_fields(
+    cursor: psycopg.Cursor[Any], chunk: Sequence[Coffee]
+) -> dict[tuple[str, str], StoredFields]:
+    """Read back the database-owned fields of a chunk, inside its transaction.
+
+    Call it after the upsert and the kind decisions, so each value is the one the
+    row holds once the write is in, and ``first_seen_at`` is the stamp the INSERT wrote.
+
+    Args:
+        cursor: The cursor of the open transaction.
+        chunk: The coffees the chunk wrote.
+
+    Returns:
+        The stored fields of each coffee, keyed by ``(site, external_id)``.
+    """
+    keys = [(coffee.site, coffee.external_id) for coffee in chunk]
+    cursor.execute(
+        STORED_FIELDS_SQL, ([site for site, _ in keys], [external for _, external in keys])
+    )
+    return {
+        (str(site), str(external)): StoredFields(first_seen_at, product_kind, source)
+        for site, external, first_seen_at, product_kind, source in cursor.fetchall()
+    }
+
+
+def event_rows_for(
+    coffees: Iterable[Coffee], stored: Mapping[tuple[str, str], StoredFields]
+) -> list[tuple[str, str, str]]:
     """Turn crawled coffees into outbox rows.
 
     Args:
         coffees: The chunk being written.
+        stored: What :func:`read_stored_fields` read back for the chunk.
 
     Returns:
         One row per coffee that has a subject; see :func:`event_rows`.
+
+    Raises:
+        KeyError: A coffee of the chunk was not read back. The read runs in the
+            same transaction as the upsert, so this means the write did not land.
     """
-    return event_rows(state_for(coffee) for coffee in coffees)
+    return event_rows(
+        state_for(coffee, stored[(coffee.site, coffee.external_id)]) for coffee in coffees
+    )
 
 
 def event_rows_from_db(rows: Iterable[Sequence[Any]]) -> list[tuple[str, str, str]]:
