@@ -20,7 +20,6 @@ CNB_URL: Final = "https://api.cnb.cz/cnbapi/exrates/daily"
 SOURCE: Final = "cnb"
 
 _DATE_FORMAT: Final = "%Y-%m-%d"
-_CODE_LENGTH: Final = 3
 
 
 def url_for(day: date | None = None) -> str:
