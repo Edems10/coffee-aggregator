@@ -10,6 +10,14 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.1.3 (2026-10-11)
+
+Nothing in the crawler or the database changes, and the next crawl writes the same rows.
+
+CI only. A pull request now fails unless it moves `version` in `pyproject.toml`, adds its
+entry here, or makes the version smaller than the one on `main`. Versions compare as
+numbers, so `0.10.0` is after `0.9.0`.
+
 ## 0.1.2 (2026-10-11)
 
 ### Changed

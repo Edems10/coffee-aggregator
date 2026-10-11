@@ -292,3 +292,18 @@ jobs:
               if name in buckets:
                   print(f"- **{name}**: " + ", ".join(sorted(buckets[name])))
           PY
+
+  version:
+    name: version moved and changelog entry
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The pull request's own head, not the merge commit, so the version read is the branch's.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # origin/main must exist in the checkout to compare against it.
+          fetch-depth: 0
+      - name: read the version on origin/main
+        run: git show origin/main:pyproject.toml > "$RUNNER_TEMP/base-pyproject.toml"
+      - run: python3 .github/scripts/check_version.py "$RUNNER_TEMP/base-pyproject.toml"
