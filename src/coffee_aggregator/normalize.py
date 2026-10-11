@@ -94,7 +94,12 @@ def _first_match(folded: str, table: tuple[tuple[str, str], ...]) -> str | None:
 
 
 def _to_float(raw: str) -> float | None:
-    """Turn a localised number such as ``1 249,50`` into a float."""
+    """Turn a localised number such as ``1 249,50`` into a float.
+
+    A value of a few hundred digits, such as a mangled EAN or a leaked blob, overflows to
+    infinity and is returned as None. Every ``round()`` downstream would raise
+    ``OverflowError`` on that one product.
+    """
     cleaned = raw.replace(" ", "").replace(" ", "").strip(".,")
     if not cleaned:
         return None
@@ -114,8 +119,6 @@ def _to_float(raw: str) -> float | None:
         value = float(f"{digits or '0'}.{fraction or '0'}")
     except ValueError:  # pragma: no cover - defensive, regex guarantees digits
         return None
-    # A few hundred digits — a mangled EAN, a leaked blob — overflow to inf, and
-    # every round() downstream then raises OverflowError on that one product.
     return value if math.isfinite(value) else None
 
 
@@ -426,6 +429,9 @@ def _altitude_value(raw: str) -> int | None:
 def parse_altitude(text: str | None) -> tuple[int | None, int | None]:
     """Parse an altitude statement into a metre range.
 
+    A number carrying a metre marker wins over a bare one. ``"zber 2024, 1800 m n.m."`` states
+    a harvest year first, and a year is a plausible altitude.
+
     Args:
         text: Text such as ``"1500 - 1700 m n. m."`` or ``"1 200 m.n.m."``.
 
@@ -442,8 +448,6 @@ def parse_altitude(text: str | None) -> tuple[int | None, int | None]:
         high = _altitude_value(ranged.group(2))
         if low is not None and high is not None:
             return (min(low, high), max(low, high))
-    # A number carrying a metre marker wins over a bare one: "zber 2024, 1800 m
-    # n.m." states a harvest year first, and a year is a plausible altitude.
     for candidate in (_ALTITUDE_UNIT_RE, _ALTITUDE_SINGLE_RE):
         for match in candidate.finditer(folded):
             value = _altitude_value(match.group(1))
@@ -522,6 +526,12 @@ def parse_processing(text: str | None) -> Processing:
     method is kept, and ``method`` becomes :attr:`ProcessMethod.MIXED` when there
     is more than one.
 
+    An enumeration names methods, as in ``"Washed · Natural"``, and a description names the
+    stages of one: ``"mokré, sušené na slnku"`` is a washed coffee that was sun dried. Only a
+    bare name is read as a separate method, so a longer item is skipped. Text that names no
+    method keeps the single-value verdict: OTHER for text that says something, UNKNOWN for
+    text that says nothing at all.
+
     Args:
         text: Text such as ``"Washed · Natural"`` or ``"natural / ruční sběr"``.
 
@@ -530,9 +540,6 @@ def parse_processing(text: str | None) -> Processing:
     """
     methods: list[ProcessMethod] = []
     for item in split_list(text):
-        # An enumeration names methods ("Washed · Natural"); a description names
-        # the stages of one ("mokré, sušené na slnku" is a washed coffee that was
-        # sun dried). Only a bare name is read as a separate method.
         if len(item.split()) > _MAX_METHOD_WORDS:
             continue
         method = normalize_process(item)
@@ -543,8 +550,6 @@ def parse_processing(text: str | None) -> Processing:
         return Processing(method=methods[0], raw=text, methods=methods)
     if len(methods) > 1:
         return Processing(method=ProcessMethod.MIXED, raw=text, methods=methods)
-    # Nothing recognised: keep the single-value verdict, which is OTHER for text
-    # that says *something* and UNKNOWN for text that says nothing at all.
     return Processing(method=normalize_process(text), raw=text, methods=[])
 
 
@@ -615,6 +620,11 @@ _MAX_ROAST_WORDS = 3
 def _roast_colour_is_real(folded: str, needle: str) -> bool:
     """Decide whether a colour word names the roast or describes the cup.
 
+    A colour word followed by a cup-note noun belongs to that noun, so ``"tmavé ovoce"`` and
+    ``"dark chocolate"`` describe the cup and name no roast. In text that reads as prose, being
+    long or naming a cup note, a colour word counts only when the text also states roasting
+    context.
+
     Args:
         folded: The folded text the needle matched in.
         needle: The matched colour needle, such as ``"tmav"``.
@@ -630,7 +640,6 @@ def _roast_colour_is_real(folded: str, needle: str) -> bool:
         if needle not in word:
             continue
         following = words[index + 1] if index + 1 < len(words) else ""
-        # "tmavé ovoce", "dark chocolate": the colour belongs to the noun.
         if following.startswith(_CUP_NOTE_NOUNS):
             continue
         if roasting or not prose:
@@ -998,6 +1007,9 @@ def parse_intensity(text: str | None) -> int | None:
     sweetness in words; putting both on one scale is what makes the two
     comparable across shops.
 
+    Words match whole, so ``"príjemná"`` (pleasant) does not match ``"jemná"`` (weak), which
+    it contains.
+
     Args:
         text: Text such as ``"vysok\u00e1"``, ``"st\u0159edn\u00ed"`` or ``"3"``.
 
@@ -1007,7 +1019,6 @@ def parse_intensity(text: str | None) -> int | None:
     folded = fold(text)
     if not folded:
         return None
-    # Whole words only: "príjemná" contains "jemná" and means pleasant, not weak.
     words = _WORD_RE.findall(folded)
     for needle, value in _INTENSITY_TABLE:
         wanted = needle.split()
