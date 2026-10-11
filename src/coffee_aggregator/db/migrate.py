@@ -60,6 +60,10 @@ _ADD_COLUMN_RE = re.compile(
 )
 #: Lines inside a ``CREATE TABLE`` body that declare a constraint, not a column.
 _CONSTRAINT_PREFIXES = ("--", "PRIMARY KEY", "UNIQUE", "CONSTRAINT", "FOREIGN KEY", "CHECK")
+#: ``0001_initial``: the original zero-padded name, before versions named the files.
+_PADDED_VERSION_RE = re.compile(r"([0-9]{4})_")
+#: ``0.8.2_widen_price``: a migration named for the version that ships it.
+_VERSION_RE = re.compile(r"([0-9]+)\.([0-9]+)\.([0-9]+)_")
 
 
 class Cursor(Protocol):
@@ -122,12 +126,46 @@ class Migration:
         return hashlib.sha256(self.sql.encode("utf-8")).hexdigest()
 
 
+def _order(version: str) -> tuple[int, tuple[int, ...], str]:
+    """Return the key that puts a migration in the order it is applied.
+
+    Two shapes of name are in use. ``0001_initial`` is the original zero-padded
+    form. Every such name sorts before every version-named one, in the order the
+    names already sort in, which is the order they were applied in. A
+    version-named migration, ``0.8.2_widen_price``, is ordered by its parsed
+    ``(major, minor, patch)``, not by its text: as text ``0.10.0`` sorts before
+    ``0.8.0``, so a runner that sorted the text would apply the newest migration
+    first, succeed, and leave the schema wrong. Two migrations in one version are
+    ordered by their full names.
+
+    Args:
+        version: The file name without its ``.sql`` suffix.
+
+    Returns:
+        The key. Its first element is the shape, so the padded names come first;
+        its second is the parsed numbers; its third is the name, which breaks ties.
+
+    Raises:
+        ValueError: When the name is in neither shape. A guessed place for it
+            would apply it out of order without saying so.
+    """
+    if match := _PADDED_VERSION_RE.match(version):
+        return (0, (int(match.group(1)),), version)
+    if match := _VERSION_RE.match(version):
+        return (1, tuple(int(part) for part in match.groups()), version)
+    message = f"migration {version!r} is named neither NNNN_name nor X.Y.Z_name"
+    raise ValueError(message)
+
+
 def load_migrations() -> list[Migration]:
     """Read every packaged migration, in the order they must be applied.
 
     Returns:
-        The migrations sorted by version, which is their file name without the
-        ``.sql`` suffix — zero-padded, so lexical order is numeric order.
+        The migrations sorted by :func:`_order`: the zero-padded ``NNNN_`` names
+        first, in their existing order, then the version-named ones by version.
+
+    Raises:
+        ValueError: When a ``.sql`` file is named in neither shape.
     """
     directory = resources.files(MIGRATIONS_PACKAGE).joinpath(MIGRATIONS_DIRECTORY)
     migrations = [
@@ -135,7 +173,7 @@ def load_migrations() -> list[Migration]:
         for entry in directory.iterdir()
         if entry.is_file() and entry.name.endswith(MIGRATION_SUFFIX)
     ]
-    return sorted(migrations, key=lambda migration: migration.version)
+    return sorted(migrations, key=lambda migration: _order(migration.version))
 
 
 def versions() -> list[str]:

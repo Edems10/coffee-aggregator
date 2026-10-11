@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
 from coffee_aggregator.db import migrate
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _checksum_of(version: str) -> str:
@@ -60,12 +63,78 @@ def _connection(recorded: dict[str, str | None] | None = None) -> Any:  # noqa: 
     return cast("Any", FakeConnection(recorded))
 
 
-def test_every_packaged_migration_is_listed_in_lexical_order() -> None:
+def test_every_packaged_migration_is_listed_in_apply_order() -> None:
     # The file names are the order, so they have to sort into it. Pinning the
     # list itself would mean editing this test for every schema change, which
     # is how a test stops meaning anything.
-    assert migrate.versions() == sorted(migrate.versions())
+    assert migrate.versions() == sorted(migrate.versions(), key=migrate._order)
     assert migrate.versions()[0] == "0001_initial"
+
+
+def _packaged(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, *names: str) -> None:
+    # Point the runner at a directory holding one .sql file per name, so the
+    # ordering is tested on the real load path with names the repo does not ship.
+    directory = tmp_path / migrate.MIGRATIONS_DIRECTORY
+    directory.mkdir()
+    for name in names:
+        path = directory / f"{name}{migrate.MIGRATION_SUFFIX}"
+        path.write_text(f"-- {name}\n", encoding="utf-8")
+    monkeypatch.setattr("importlib.resources.files", lambda _package: tmp_path)
+
+
+def test_version_named_migrations_are_ordered_by_number_not_text(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _packaged(
+        monkeypatch,
+        tmp_path,
+        "0.9.0_accounts",
+        "0.10.0_grind",
+        "0.8.2_widen_price",
+        "0.8.0_add_decaf",
+    )
+
+    assert [migration.version for migration in migrate.load_migrations()] == [
+        "0.8.0_add_decaf",
+        "0.8.2_widen_price",
+        "0.9.0_accounts",
+        "0.10.0_grind",
+    ]
+
+
+def test_zero_padded_names_all_come_before_version_named_ones(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # As text, "0.8.0_..." sorts before "0001_...", so this also fails if the
+    # padded names are merely sorted by text rather than placed first.
+    _packaged(
+        monkeypatch,
+        tmp_path,
+        "0.8.0_add_decaf",
+        "0003_outbox",
+        "0001_initial",
+        "0.10.0_grind",
+        "0002_price_history_per_kg",
+        "0.8.0_accounts",
+    )
+
+    assert [migration.version for migration in migrate.load_migrations()] == [
+        "0001_initial",
+        "0002_price_history_per_kg",
+        "0003_outbox",
+        "0.8.0_accounts",
+        "0.8.0_add_decaf",
+        "0.10.0_grind",
+    ]
+
+
+def test_a_name_in_neither_shape_is_refused_not_placed_by_guess(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _packaged(monkeypatch, tmp_path, "0001_initial", "widen_price")
+
+    with pytest.raises(ValueError, match="widen_price"):
+        migrate.load_migrations()
 
 
 def test_an_empty_database_has_every_migration_pending() -> None:
