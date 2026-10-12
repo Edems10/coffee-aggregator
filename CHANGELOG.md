@@ -10,6 +10,16 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.1 (2026-10-12)
+
+Six `kava.cz` rows that stored no country take one on the next crawl that reaches them. No
+stored row changes until then.
+
+### Fixed
+
+- `Indonésie`, the Czech spelling, now resolves to `ID`. Only the Slovak `Indonézia` was in the
+  country table, so a Czech product name with no other country term stored `NULL`.
+
 ## 0.3.0 (2026-10-12)
 
 No stored row carries pictures until the next crawl republishes it. The events were emitted
