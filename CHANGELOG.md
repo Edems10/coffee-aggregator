@@ -10,6 +10,15 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.3 (2026-10-12)
+
+### Fixed
+
+- `deploy/update.sh --crawl` runs as the user that owns the checkout, not as root. Only starting
+  the crawl unit needs root, and it now runs through `sudo -n`, which needs the sudoers line in
+  `deploy/README.md`. Without that line the script exits 1 and prints the command to run by hand,
+  where it used to report a crawl that never started.
+
 ## 0.3.2 (2026-10-12)
 
 The kind rules place three more kinds of non-coffee product. A stored row gets its kind on the

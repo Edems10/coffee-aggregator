@@ -333,9 +333,36 @@ journalctl -u coffee-aggregator.service -f
 ## Updating
 
 ```bash
-sudo /opt/coffee-aggregator/deploy/update.sh            # pull, rebuild, migrate
-sudo /opt/coffee-aggregator/deploy/update.sh --crawl    # …and crawl now
+/opt/coffee-aggregator/deploy/update.sh            # pull, rebuild, migrate
+/opt/coffee-aggregator/deploy/update.sh --crawl    # …and crawl now
 ```
+
+Run it as the user that owns `/opt/coffee-aggregator`, not with `sudo`. The pull
+needs that user's GitHub key, and root has none, so under `sudo` the first pull
+fails. Only starting the crawl needs root, and the script does that one command
+itself with `sudo -n`.
+
+### Starting the crawl without a root deploy
+
+`--crawl` runs `sudo -n systemctl start --no-block coffee-aggregator.service`.
+Give the deploy user that one command and nothing else, once, on the server:
+
+```bash
+sudo tee /etc/sudoers.d/coffee-aggregator >/dev/null <<'SUDO'
+<deploy-user> ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block coffee-aggregator.service
+SUDO
+sudo chmod 440 /etc/sudoers.d/coffee-aggregator
+sudo visudo -cf /etc/sudoers.d/coffee-aggregator
+```
+
+Replace `<deploy-user>` with the login that owns the checkout. `visudo -cf` must
+print `parsed OK` before anything else is done. Then, as that user, check the
+line matches: `sudo -n -l /usr/bin/systemctl start --no-block coffee-aggregator.service`
+should print the command, not a password prompt.
+
+`NOPASSWD: ALL` would make the deploy user root, which is what this line avoids.
+Without the line, `--crawl` deploys everything and then exits 1, printing the
+command to run by hand. It never reports a crawl that did not start.
 
 **A server that predates the table browser's read-only role has no
 `PGWEB_DB_PASSWORD` in its env file, and `update.sh` will abort on its first
