@@ -10,6 +10,20 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.2 (2026-10-12)
+
+The kind rules place three more kinds of non-coffee product. A stored row gets its kind on the
+next crawl that reaches it, and no stored row changes until then.
+
+### Fixed
+
+- The `Kafe BOX` gift boxes, which hold coffee together with brewing equipment, are now `kit`. An
+  empty `Kafe BOX` with a wooden lever is `equipment`.
+- A set of coffees named `set`, such as `SUPER OCKO set` and `MEGA MAMA set`, is now `sampler`.
+- A book about American football, `Manuál amerického fotbalu`, is now `merch`.
+
+The catalogue view hides these only once `coffee-api` reads `product_kind` (coffee-api#69).
+
 ## 0.3.1 (2026-10-12)
 
 Six `kava.cz` rows that stored no country take one on the next crawl that reaches them. No

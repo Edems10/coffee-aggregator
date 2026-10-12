@@ -36,6 +36,13 @@ KIND_CASES = [
     ("Kávové scrub mýdlo Penerini x Naturinka", "8754", "cosmetics", "scrub-or-soap"),
     ("Rooibos espresso 50 g", "366", "other_drink", "rooibos"),
     ("Spirit PLUS", "spirit-plus", "not_a_product", "slug-id"),
+    ("Elephants – Manuál amerického fotbalu", "3280", "merch", "book"),
+    ("Kafe Box střední", "1941", "kit", "kafe-box"),
+    ("Kafe BOX Filtr", "1992", "kit", "kafe-box"),
+    ("Kafe Box Max", "2862", "kit", "kafe-box"),
+    ("Kafe BOX - prázdný dřevěný box s páčidlem", "3017", "equipment", "empty-box"),
+    ("MEGA MAMA set", "915", "sampler", "set"),
+    ("SUPER OCKO set", "914", "sampler", "set"),
 ]
 
 COFFEE_NAMES = [
@@ -64,6 +71,11 @@ COFFEE_NAMES = [
     ("Brazil Cerrado Dulce NY17/18 Fine Cup, zrnková káva", "390"),
     ("Mexico Emmanuel Rincon Finca La Esperanza Cup Of Excellence Farm", "5426"),
     ("Lily Ethiopia Filter 200g, FiftyBeans", "5377"),
+    ("Dárkový box Kávy Oliver - 1", "820"),
+    ("Krabička kávy, která pomáhá", "2474"),
+    ("Caffe Costadoro Settanta zrnková káva 1000g", "27255"),
+    ("Výhodná sada nejsilnější zrnkové kávy na světě vhodné jako dárek - 100% Robusta 3kg", "140"),
+    ("KPZ – Kávička poslední záchrany", "2067"),
     ("DARČEKOVÉ BALENIE, pražená káva, 100% ARABIKA, 2x250g", "4509"),
 ]
 
