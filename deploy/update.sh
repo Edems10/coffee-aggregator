@@ -5,6 +5,11 @@
 # The rebuild is the step that is easy to forget and silent when forgotten: the
 # containers run an image that was built once, so `git pull` on its own changes
 # nothing at all and the crawl keeps running yesterday's code.
+#
+# This script is not a root job. The pull needs the GitHub key of the user that
+# owns the checkout, and root has none, so under sudo the first pull fails. The
+# one step that needs root is starting the crawl unit, and that alone runs under
+# `sudo -n`, which the sudoers line in deploy/README.md allows and nothing else.
 set -euo pipefail
 
 REPO="${REPO:-/opt/coffee-aggregator}"
@@ -32,6 +37,24 @@ while [[ $# -gt 0 ]]; do
 done
 
 compose() { docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
+
+# Starts the crawl unit, as root if this is root, otherwise through `sudo -n`.
+# `-n` is what stops this hanging: without it sudo waits for a password on a
+# captured stdout that nobody can answer, and the run looks clean. A refusal, or
+# a failed start, exits 1 and prints the command to run by hand, because a crawl
+# that did not start must never be reported as one that did.
+start_crawl() {
+    local unit=coffee-aggregator.service
+    if [[ $EUID -eq 0 ]]; then
+        systemctl start --no-block "$unit" && return 0
+    elif sudo -n systemctl start --no-block "$unit"; then
+        return 0
+    fi
+    echo "update: the crawl did not start: sudo -n was refused or systemctl failed" >&2
+    echo "update: the sudoers line is in deploy/README.md; to start it by hand, run:" >&2
+    echo "update:   sudo systemctl start --no-block ${unit}" >&2
+    exit 1
+}
 
 # A server that was edited by hand is a server whose next pull conflicts, and
 # the middle of a deployment is the worst moment to find that out.
@@ -70,7 +93,7 @@ compose run --rm crawler init-db
 
 if [[ "$crawl" == yes ]]; then
     echo "update: starting a crawl in the background"
-    systemctl start --no-block coffee-aggregator.service
+    start_crawl
     echo "update: follow it with  journalctl -u coffee-aggregator.service -f"
 else
     echo "update: done; the 05:00 timer will pick this up"
