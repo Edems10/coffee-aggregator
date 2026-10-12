@@ -69,6 +69,7 @@ _RULES: Final[tuple[_Rule, ...]] = (
     _rule("merch", "clothing", r"\btricko\b|\btriko\b|\bt[ -]?shirt\b|\bksiltovk\w*|\bsnapback\b"),
     _rule("merch", "sticker", r"\bnalep\w*|\bsticker"),
     _rule("merch", "bag", r"\btaska\b"),
+    _rule("merch", "book", r"\bmanual\b.*\bfotbal\w*|\bkniha\b|\bbook\b"),
     _rule("merch", "voucher", r"\bpoukaz|\bvoucher\b"),
     _rule("merch", "subscription", r"\bpredplatn\w*|\bsubscription\b"),
     _rule("food", "chocolate-covered", r"\bv (\w+ )?cokolad\w*"),
@@ -83,6 +84,9 @@ _RULES: Final[tuple[_Rule, ...]] = (
     ),
     _rule("cosmetics", "scrub-or-soap", r"\bmydl\w*|\bpeeling\w*|\bscrub\b"),
     _rule("other_drink", "rooibos", r"\brooibos\b"),
+    _rule("equipment", "empty-box", r"\bprazdn\w*.*\bbox\b"),
+    _rule("kit", "kafe-box", r"\bkafe box\b"),
+    _rule("sampler", "set", r"\bset\b"),
 )
 
 
