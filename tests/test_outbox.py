@@ -185,6 +185,48 @@ def test_the_decimal_guard_is_load_bearing() -> None:
         to_json(straight)
 
 
+PICTURES = [
+    "https://example.sk/img/1.jpg",
+    "https://example.sk/img/3.jpg",
+    "https://example.sk/img/2.jpg",
+]
+
+
+def test_the_pictures_are_published_in_page_order() -> None:
+    payload = _payload(_rows(make_coffee(images=PICTURES), stored=DECIDED)[0])
+
+    assert payload["images"] == PICTURES
+
+
+def test_a_coffee_with_no_pictures_publishes_an_empty_list_not_null() -> None:
+    payload = _payload(_rows(make_coffee(images=[]), stored=DECIDED)[0])
+
+    assert payload["images"] == []
+
+
+def test_the_pictures_survive_a_row_read_back_out_of_the_table() -> None:
+    state = outbox.state_from_row(delisted_row(images=PICTURES))
+
+    assert state.images == PICTURES
+    assert (
+        _payload(outbox.event_rows_from_db([delisted_row(images=PICTURES)])[0])["images"]
+        == PICTURES
+    )
+
+
+def test_a_null_images_column_becomes_an_empty_list() -> None:
+    """A row the crawl wrote before the column was filled holds NULL, not []."""
+    assert outbox.state_from_row(delisted_row(images=None)).images == []
+
+
+def test_an_event_written_before_pictures_reads_back_as_empty() -> None:
+    """Payloads published before 0.3.0 have no ``images`` key and must still parse."""
+    payload = _payload(_rows(make_coffee(), stored=DECIDED)[0])
+    del payload["images"]
+
+    assert coffee_from_json(json.dumps(payload)).images == []
+
+
 def test_the_upsert_queues_one_event_per_coffee_in_the_same_transaction() -> None:
     connection = FakeConnection()
     sink = PostgresSink("postgresql://fake/db", chunk_size=10)

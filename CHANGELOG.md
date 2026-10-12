@@ -10,6 +10,20 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.0 (2026-10-12)
+
+No stored row carries pictures until the next crawl republishes it. The events were emitted
+without the field and the stream is compacted per subject, so consumers see pictures after the
+next crawl, not at deploy. A coffee that no crawl reaches keeps its earlier event until
+`republish --all`, which publishes the pictures from the row.
+
+### Added
+
+- The `coffee.state` event carries `images`: the shop's own picture URLs, in the order the page
+  lists them, from the `images` column the crawl already fills. A coffee whose page had none
+  publishes `[]`, not `null`. The URLs are passed through, not downloaded or re-hosted. The
+  pin moves to `coffee-contracts` `v2.5.0`, which defines the field.
+
 ## 0.2.1 (2026-10-11)
 
 The six fields reach the stream on the next crawl that reaches a coffee. A coffee that no
