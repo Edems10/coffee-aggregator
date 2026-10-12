@@ -17,6 +17,7 @@ KIND_CASES = [
     ("Dárkový poukaz Pražírna Ignác", "1377", "merch", "voucher"),
     ("Předplatné na 6 měsíců", "848", "merch", "subscription"),
     ("Kávová zrna v hořké čokoládě a kakau", "19342", "food", "chocolate-covered"),
+    ("Cuba Serrano v mléčné čokoládě 150 g", "3047", "food", "chocolate-covered"),
     ("Porcovaný cukr 4 kg", "2990", "food", "sugar"),
     ("Zlaté Zrnko – Linda pistáciová – kokosové tyčinky s pistáciami 40g", "142817", "food", "bar"),
     ("Výběrová instantní káva BLÆK NØ.1 – Blonde Roast (60 g)", "17244", "instant", "instant"),
@@ -87,6 +88,17 @@ def test_a_non_coffee_name_is_decided(name: str, external_id: str, kind: str, ru
     assert decision.kind == kind
     assert decision.source == f"rule:{rule}"
     assert decision.kind in product_kind.PRODUCT_KINDS
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Káva pro maminku + kávové zrno v hořké čokoládě",
+        "Bundle Brasil Doce Samba + Zrno v mléčné čokoládě",
+    ],
+)
+def test_a_chocolate_bean_sold_beside_a_coffee_is_undecided(name: str) -> None:
+    assert product_kind_rules.decide(name, "1") is None
 
 
 @pytest.mark.parametrize(("name", "external_id"), COFFEE_NAMES)

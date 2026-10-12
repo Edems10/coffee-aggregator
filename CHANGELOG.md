@@ -10,6 +10,21 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.4 (2026-10-12)
+
+The chocolate-covered rule stops filing a coffee that comes with a chocolate bean as `food`.
+
+### Fixed
+
+- `Káva pro maminku + kávové zrno v hořké čokoládě` is a coffee sold beside a chocolate-covered
+  bean, not one, so it is no longer `food`. It stays undecided, as `beans` from its label.
+- `Bundle Brasil Doce Samba + Zrno v mléčné čokoládě` is a bundle, and its chocolate bean comes
+  after the `+`, so it is no longer `food`. Its stored `sampler` label is unchanged.
+
+The chocolate rule still files chocolate-covered beans and bars as `food`, such as `Kávová zrna v
+hořké čokoládě a kakau` and `Cuba Serrano v mléčné čokoládě`. No stored row changes until a crawl
+reaches it.
+
 ## 0.3.3 (2026-10-12)
 
 ### Fixed
