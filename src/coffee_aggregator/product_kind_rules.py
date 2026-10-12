@@ -9,6 +9,8 @@
 # The words that also name coffee are therefore absent: "filter", "cup", "cold brew",
 # "chocolate", "sugar" and "nitro" each appear in real blend or origin names. "ml"
 # counts only after a drink word, and a piece count only in brackets, for the same reason.
+# The chocolate-covered marker counts only before a "+", which joins a second item in a bundle:
+# "Káva pro maminku + kávové zrno v hořké čokoládě" is a coffee sold with a chocolate bean.
 
 from __future__ import annotations
 
@@ -72,7 +74,7 @@ _RULES: Final[tuple[_Rule, ...]] = (
     _rule("merch", "book", r"\bmanual\b.*\bfotbal\w*|\bkniha\b|\bbook\b"),
     _rule("merch", "voucher", r"\bpoukaz|\bvoucher\b"),
     _rule("merch", "subscription", r"\bpredplatn\w*|\bsubscription\b"),
-    _rule("food", "chocolate-covered", r"\bv (\w+ )?cokolad\w*"),
+    _rule("food", "chocolate-covered", r"^[^+]*\bv (\w+ )?cokolad\w*"),
     _rule("food", "sugar", r"\bcukr\w*"),
     _rule("food", "bar", r"\btycink\w*"),
     _rule("service", "course", r"\bkurz(y|u|e)?\b"),
