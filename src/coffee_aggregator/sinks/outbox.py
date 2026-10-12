@@ -51,7 +51,7 @@ STATE_SELECT: str = ", ".join(STATE_EXPRESSIONS)
 #: encoder refuses outright rather than guess a representation for.
 _FLOAT_FIELDS = frozenset({"price", "price_per_kg_eur", "sca_score"})
 #: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing.
-_LIST_FIELDS = frozenset({"variety", "flavor_notes"})
+_LIST_FIELDS = frozenset({"variety", "flavor_notes", "images"})
 
 #: The three fields of an event that no parsed coffee carries: the INSERT stamps
 #: ``first_seen_at`` and its conflict branch keeps it, and the kind columns are
@@ -125,6 +125,7 @@ def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
         decaf=coffee.decaf,
         arabica_pct=coffee.species.arabica_pct,
         robusta_pct=coffee.species.robusta_pct,
+        images=list(coffee.images),
         first_seen_at=stored.first_seen_at,
         product_kind=stored.product_kind,
         product_kind_source=stored.product_kind_source,
