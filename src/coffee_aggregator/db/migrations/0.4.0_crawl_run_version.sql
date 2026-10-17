@@ -1,0 +1,21 @@
+-- The aggregator version that produced a run, as `coffee-aggregator --version`
+-- prints it and as the User-Agent sends it.
+--
+-- `command` already records the argv a run was started with; this is the other
+-- half of the same "what produced this" record, and it is the half that tells a
+-- field collapsing across many shops at once apart from a shop changing its
+-- pages. Without it the two look identical in the database: #97 moved grind
+-- words out of `brewing_methods` and three shops lost most of that field on the
+-- next crawl, which nothing stored distinguishes from the two shops that lost
+-- it because their own markup moved.
+--
+-- Nullable, with no default: every row already in the table was written by a
+-- version nobody recorded, and NULL says that where '' would assert a version.
+-- The stamp starts with the next crawl; nothing backfills.
+--
+-- Not on `crawl_finding`, deliberately. `report --day <past date>` is a separate
+-- invocation that can be re-run later, so stamping a finding would record the
+-- version that summarised the run rather than the one that performed it — the
+-- exact lie this column exists to prevent. A finding is derived; the run is the
+-- row that knows.
+ALTER TABLE crawl_run ADD COLUMN IF NOT EXISTS version text;
