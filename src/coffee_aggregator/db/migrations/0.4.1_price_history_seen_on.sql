@@ -1,0 +1,38 @@
+-- The day column the table is keyed by, and the only one no index started with.
+--
+-- `report._PRICES_SQL` is the single reader of `price_history` in this
+-- repository and it asks for a window of days: `seen_on >= %s AND seen_on <= %s`,
+-- two days wide every night. None of the five indexes the table had could serve
+-- that. Three lead with `site`, the primary key is on `id`, and the BRIN is on
+-- `seen_at` — a different column from the generated `seen_on`, so the planner
+-- cannot use it for this predicate either. The nightly report therefore read the
+-- whole table: measured on Postgres 16 over 1 241 000 rows, a two-day window
+-- cost 18 126 buffers (~142 MB) and 33 ms to return 6 800 rows, and the read
+-- grows with every night of history. With this index the same window reads 210
+-- buffers in 11 ms, of which 69 are the `LEFT JOIN coffee` — a small table read
+-- whole, and a separate matter.
+--
+-- That 210 is the figure for a heap in the order the crawl writes it: a night's
+-- 3 400 rows appended together, so one day is a contiguous run of pages. The
+-- same index over a heap clustered the other way, by product, reads 3 512
+-- buffers for the same window — still well inside the target, but a reminder
+-- that the win shrinks as the heap fragments.
+--
+-- `site` and `external_id` follow `seen_on` so the window is answered from the
+-- index for the two columns the report orders by, and the sort that remains is
+-- over two days of rows rather than a year of them.
+--
+-- Not CONCURRENTLY: `apply_migrations` runs each file inside a transaction and
+-- commits it with the row that records it, and CREATE INDEX CONCURRENTLY cannot
+-- run in one. The plain form takes a SHARE lock, which blocks writes to
+-- `price_history` for as long as the build takes — seconds at this size, and the
+-- crawl is the only writer, so the migration is run outside the nightly window.
+--
+-- A warning for whoever next reads `pg_stat_user_indexes` here: `price_history_day_idx`
+-- shows `idx_scan = 0` and must not be dropped on that reading. It is the
+-- arbiter of the daily upsert's `ON CONFLICT (site, external_id, seen_on)`, and
+-- an arbiter does not increment `idx_scan`. `EXPLAIN` on the upsert prints
+-- `Conflict Arbiter Indexes: price_history_day_idx`; that is the reading that
+-- counts.
+CREATE INDEX IF NOT EXISTS price_history_seen_on_idx
+    ON price_history USING btree (seen_on, site, external_id);

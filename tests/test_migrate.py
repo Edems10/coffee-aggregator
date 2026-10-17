@@ -160,7 +160,7 @@ def test_each_migration_commits_together_with_its_version_row() -> None:
     for index in inserts:
         assert any(
             keyword in statements[index - 1]
-            for keyword in ("CREATE TABLE", "ALTER TABLE", "DELETE")
+            for keyword in ("CREATE TABLE", "ALTER TABLE", "CREATE INDEX", "DELETE")
         )
     # one commit for the bookkeeping table, then one per migration
     assert connection.commits == len(migrate.versions()) + 1
