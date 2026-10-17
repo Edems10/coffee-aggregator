@@ -10,6 +10,33 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.4.1 (2026-10-17)
+
+The nightly report no longer reads a year of prices to find two days of them
+(migration `0.4.1_price_history_seen_on`).
+
+### Changed
+
+- `price_history` gains an index on `(seen_on, site, external_id)`. The report
+  is the only thing in the repository that reads the table, and it asks for a
+  window of days — but of the five indexes the table had since `0001`, three
+  led with `site`, the primary key was on `id`, and the BRIN was on `seen_at`,
+  which is a different column from the generated `seen_on`. So every night's
+  two-day window scanned all 1 241 000 rows. Measured on Postgres 16 over a
+  generated year of crawling at the real shape: 18 126 buffers (~142 MB) and
+  33 ms before, 210 buffers and 11 ms after. The index is 48 MB, and the read
+  it replaces grew with every night of history — 139 MB at one year. The 210 is
+  for a heap in the order the crawl writes it, a night's rows together; over a
+  heap clustered by product instead it is 3 512, still well under the 6 000 the
+  issue asked for.
+- Nothing is dropped. `price_history_day_idx` reports `idx_scan = 0` and is
+  still the arbiter of the daily upsert's `ON CONFLICT (site, external_id,
+  seen_on)`, which does not increment that counter; #175, which proposes
+  dropping two other indexes, is deliberately not part of this.
+- The index does not exist until the migration runs on the server, and the
+  report keeps scanning until it does — see
+  `deploy/notes/174-the-seen-on-index-is-built-at-deploy.md`.
+
 ## 0.4.0 (2026-10-17)
 
 Every `crawl_run` row now records the aggregator version that produced it
