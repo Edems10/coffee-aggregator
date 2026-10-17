@@ -10,6 +10,15 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.3.5 (2026-10-17)
+
+The session-start hook and its learnings now come with the repository, so an agent working in its own git worktree gets the team's trail notes too.
+
+### Changed
+
+- `.trail/` (the hook, its README and its ignore file) and `.claude/settings.json` are tracked. Before, they were untracked, and a worktree checkout contains only tracked files, so every worktree agent started without them.
+- The `.gitignore` rule for `.claude/` now ignores only `.claude/settings.local.json` and `.claude/worktrees/`, so a worktree stays out of `git status`.
+
 ## 0.3.4 (2026-10-12)
 
 The chocolate-covered rule stops filing a coffee that comes with a chocolate bean as `food`.

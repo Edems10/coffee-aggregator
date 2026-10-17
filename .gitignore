@@ -174,7 +174,8 @@ cython_debug/
 .pypirc
 
 # Agent scratch: Claude Code worktrees and session state, never project source.
-.claude/
+.claude/settings.local.json
+.claude/worktrees/
 
 # macOS: Finder writes one of these into every directory it opens, so they turn
 # up anywhere in the tree — including inside the shipped package — and none of
