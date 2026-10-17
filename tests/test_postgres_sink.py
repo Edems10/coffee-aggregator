@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import json
 import re
 from datetime import UTC, datetime
@@ -32,6 +33,11 @@ from conftest import delisted_row, make_coffee
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from types import TracebackType
+
+#: ``0001_initial``: the zero-padded name every migration carried before #145.
+_PADDED_NAME_RE = re.compile(r"([0-9]{4})_")
+#: ``0.4.0_crawl_run_version``: a migration named for the version that ships it.
+_VERSION_NAME_RE = re.compile(r"([0-9]+)\.([0-9]+)\.([0-9]+)_")
 
 
 def _checksum_of(version: str) -> str:
@@ -295,12 +301,29 @@ def test_the_first_migration_describes_the_whole_base_schema() -> None:
 
 
 def test_every_migration_is_numbered_once_and_in_order() -> None:
-    """Append-only means the order is the file names and nothing else."""
+    """Append-only means the order is the file names and nothing else.
+
+    Two shapes of name are packaged, so this cannot be a lexical sort: as text
+    ``0.10.0`` sorts before ``0.8.0``, and ``.`` sorts before a digit, so a
+    plain sort would both reorder the version-named files and put them ahead of
+    the padded ones. What is asserted instead is what ``migrate._order`` claims
+    the list already is — the padded names first, numbered 1..n with no gap and
+    no repeat, then the version-named ones strictly ascending by version. A file
+    dropped in out of order breaks one of those three.
+    """
     versions = migrate.versions()
 
-    assert versions == sorted(versions)
     assert len(set(versions)) == len(versions)
-    assert all(version[:4].isdigit() for version in versions)
+    padded = [int(match.group(1)) for v in versions if (match := _PADDED_NAME_RE.match(v))]
+    semantic = [
+        tuple(int(part) for part in match.groups())
+        for v in versions
+        if (match := _VERSION_NAME_RE.match(v))
+    ]
+    assert len(padded) + len(semantic) == len(versions)
+    assert versions[: len(padded)] == [v for v in versions if _PADDED_NAME_RE.match(v)]
+    assert padded == list(range(1, len(padded) + 1))
+    assert all(earlier < later for earlier, later in itertools.pairwise(semantic))
 
 
 def test_price_history_columns_match_every_migration() -> None:

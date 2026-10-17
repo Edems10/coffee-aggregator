@@ -10,6 +10,36 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.4.0 (2026-10-17)
+
+Every `crawl_run` row now records the aggregator version that produced it
+(migration `0.4.0_crawl_run_version`), so a field that collapses overnight can
+be attributed.
+
+### Added
+
+- `crawl_run.version` holds what `coffee-aggregator --version` prints, beside
+  the `command` that was already stored. Between the 30 September and
+  17 October crawls five shops lost most of a field; three of those five were
+  our own deploy — #97 moved grind words out of `brewing_methods` at
+  `grinders`, `bartcoffee` and `kavaoliver` — and the other two were shops
+  changing their pages. Nothing stored told them apart. Two distinct versions
+  over a window of runs now say a deploy sat between the two nights.
+- The column is nullable and nothing backfills it: rows written before this
+  release keep `NULL`, which is honest about a version nobody recorded, and
+  the stamp starts with the next crawl. `crawl_finding` is deliberately not
+  stamped — `report --day <past date>` is a separate invocation and would
+  record the version that summarised a run rather than the one that performed
+  it.
+
+### Fixed
+
+- `test_every_migration_is_numbered_once_and_in_order` was still asserting the
+  pre-#145 invariant, a plain lexical sort and a four-digit prefix. Both fail
+  on any version-named migration, and this is the first one, so it now checks
+  what is actually true: the padded names come first and are numbered 1..n
+  without a gap, then the version-named ones ascend by parsed version.
+
 ## 0.3.5 (2026-10-17)
 
 The session-start hook and its learnings now come with the repository, so an agent working in its own git worktree gets the team's trail notes too.

@@ -61,7 +61,7 @@ def test_the_columns_are_exactly_what_the_migration_creates() -> None:
 
 
 def test_every_column_maps_to_a_run_report_field() -> None:
-    fields = set(RunReport.__dataclass_fields__) | {"site", "command"}
+    fields = set(RunReport.__dataclass_fields__) | {"site", "command", "version"}
     assert set(COLUMNS) <= fields | {"site_id"}
 
 

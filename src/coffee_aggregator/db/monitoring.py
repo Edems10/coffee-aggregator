@@ -4,6 +4,7 @@ import logging
 import threading
 from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
 
+from coffee_aggregator import __version__
 from coffee_aggregator.db.connect import (
     DEFAULT_CONNECT_TIMEOUT_S,
     DEFAULT_STATEMENT_TIMEOUT_MS,
@@ -21,7 +22,9 @@ TABLE = "crawl_run"
 
 #: Every column the pipeline fills, in the order :meth:`PostgresMonitor.record`
 #: binds them. The migration is the other half of this pair; the integration
-#: test asserts the two agree.
+#: test asserts the two agree. ``command`` and ``version`` describe the process
+#: rather than the run's outcome, so neither is a
+#: :class:`~coffee_aggregator.pipeline.RunReport` field.
 COLUMNS: Final[tuple[str, ...]] = (
     "site",
     "started_at",
@@ -40,6 +43,7 @@ COLUMNS: Final[tuple[str, ...]] = (
     "deadline_reached",
     "errors",
     "command",
+    "version",
 )
 
 _INSERT_SQL = (
@@ -228,6 +232,11 @@ class PostgresMonitor:
     def _record_locked(self, report: RunReport) -> None:
         """Insert one row with the connection held.
 
+        The row is stamped with :data:`coffee_aggregator.__version__`, the
+        aggregator that performed the crawl. It is what tells a field collapsing
+        across many shops on one night apart from a shop changing its pages: two
+        distinct versions over a window mean a deploy sat between the nights.
+
         Args:
             report: What the crawl of one shop did.
         """
@@ -255,6 +264,7 @@ class PostgresMonitor:
                     report.deadline_reached,
                     Jsonb(report.errors),
                     self.command,
+                    __version__,
                 ),
             )
         connection.commit()
