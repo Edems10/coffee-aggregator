@@ -15,6 +15,7 @@ from coffee_aggregator.labels import (
     F_ROAST,
     Labels,
     blend_verdict,
+    brewing_methods,
     headline_weight,
     is_decaf,
     parse_origin,
@@ -320,8 +321,9 @@ def _parse_taste(soup: BeautifulSoup, brewing: str | None) -> Taste:
         dom.text(span) for span in soup.select("div.recommended_preparation span")
     )
     taste.tasting_text = dom.text(soup.select_one("div#coffee_taste"))
-    taste.brewing_methods = normalize.split_list(brewing) or dom.unique(
-        dom.text(span) for span in soup.select("div.recipes div.recipe span")
+    taste.brewing_methods = brewing_methods(
+        normalize.split_list(brewing)
+        or dom.unique(dom.text(span) for span in soup.select("div.recipes div.recipe span"))
     )
     return taste
 
