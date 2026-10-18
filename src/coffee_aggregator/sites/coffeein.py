@@ -503,6 +503,7 @@ class CoffeeinSite(SiteAdapter):
 
     site_id = "coffeein"
     name = "Coffeein"
+    roaster = "Coffeein"
     country = "SK"
     base_url = BASE_URL
     kind = "bespoke"
@@ -648,6 +649,7 @@ class CoffeeinSite(SiteAdapter):
             url=ref.url,
             name=name,
             site_country=self.country,
+            roaster=self.roaster,
             price=price,
             currency=currency,
             weight_g=headline_weight(facts.labels, name, variants, price=price),

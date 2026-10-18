@@ -1,6 +1,6 @@
 [project]
 name = "coffee-aggregator"
-version = "0.4.1"
+version = "0.5.0"
 description = "Polite multi-site collector of Czech and Slovak coffee bean data."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -59,8 +59,18 @@ ignore = [
     "D104",   # house rule: files never start with a docstring
 ]
 
-# Dashes and the no-break space are load-bearing data in normalize.py, not typos.
-allowed-confusables = ["\u2010", "\u2011", "\u2012", "\u2013", "\u2212", "\u00a0", "\u202f"]
+# Dashes, the no-break space and the typographic apostrophe are load-bearing data
+# in normalize.py and in the roaster names the shops publish, not typos.
+allowed-confusables = [
+    "\u2010",
+    "\u2011",
+    "\u2012",
+    "\u2013",
+    "\u2019",
+    "\u2212",
+    "\u00a0",
+    "\u202f",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [

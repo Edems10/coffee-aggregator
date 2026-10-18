@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
+from coffee_aggregator import normalize
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.models import ProcessMethod, RoastLevel, RoastProfile
 from coffee_aggregator.sites import get as get_site
 from coffee_aggregator.sites.base import ProductRef
 from coffee_aggregator.sites.nordbeans import NordbeansSite, external_id_of, split_notes
+from conftest import published_brand
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
@@ -282,3 +284,19 @@ def test_dash_separated_cup_notes_are_split() -> None:
     assert split_notes("jablko - karamel, kakao") == ["jablko", "karamel", "kakao"]
     assert split_notes(None) == []
     assert split_notes("dark-roasted cocoa") == ["dark-roasted cocoa"]
+
+
+# --------------------------------------------------------------------------- roastery
+
+
+def test_the_shop_is_its_own_roastery(house_blend: Coffee) -> None:
+    assert house_blend.roaster == "Nordbeans"
+    assert house_blend.roaster_key == normalize.fold("Nordbeans")
+
+
+def test_the_declared_roaster_is_what_the_page_publishes(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    assert NordbeansSite.roaster == published_brand(
+        fixture_html("nordbeans", "detail_19_house_blend.html")
+    )
