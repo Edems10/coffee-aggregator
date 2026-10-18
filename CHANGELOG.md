@@ -10,6 +10,33 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.5.0 (2026-10-18)
+
+The three bespoke shops now say which roastery their coffee is from, so 172
+rows that carried `roaster = NULL` get a name on the next crawl.
+
+### Added
+
+- `SiteAdapter.roaster` says the roastery every row of a shop is from, and is
+  `None` for a shop that sells more than one. `coffeein`, `fathers` and
+  `nordbeans` are each a single roastery and declare it: `Coffeein`,
+  `Father’s Coffee Roastery` and `Nordbeans`. The strings are the ones the
+  shops' own pages publish — `fathers` and `nordbeans` carry them in their
+  JSON-LD `Brand` node, which a test now checks the declaration against, and
+  `coffeein` publishes no brand node at all, so its value is declared rather
+  than confirmed. The apostrophe in `Father’s` is U+2019, as the shop writes
+  it; `normalize.fold` does not fold it to an ASCII `'`, so the spelling
+  decides `roaster_key`.
+- 172 rows at those three shops are what this fills, by the 17 October crawl's
+  count. No migration and no backfill: `roaster` and `roaster_key` are both
+  updatable, so the rows change when the next crawl rewrites them, and a row
+  the crawl never reaches again keeps `NULL`.
+- The 864 WooCommerce rows stay `NULL` on purpose (#181). A WooCommerce shop's
+  name is the shop's, not a roastery's, and many of those shops resell other
+  people's coffee — filling the column from a shop name would turn 864
+  missing values into 864 wrong ones, and a wrong `roaster_key` merges coffees
+  that are unrelated and splits ones that are not.
+
 ## 0.4.1 (2026-10-17)
 
 The nightly report no longer reads a year of prices to find two days of them

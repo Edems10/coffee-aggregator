@@ -217,6 +217,7 @@ class FathersSite(SiteAdapter):
 
     site_id = "fathers"
     name = "Father's Coffee Roastery"
+    roaster = "Father’s Coffee Roastery"
     country = "CZ"
     base_url = BASE_URL
     kind = "roaster"
@@ -567,6 +568,7 @@ class FathersSite(SiteAdapter):
             url=self.product_url(slug, product) or ref.url,
             name=name,
             site_country=self.country,
+            roaster=self.roaster,
             price=first.price if first.price is not None else ref.price,
             currency=currency,
             weight_g=first.weight_g,

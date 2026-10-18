@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
+from coffee_aggregator import normalize
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.models import ProcessMethod, RoastLevel, RoastProfile
 from coffee_aggregator.pipeline import run
@@ -516,3 +517,11 @@ def test_is_ignored_folds_diacritics_through_the_base_class(site: CoffeeinSite) 
     """The adapter no longer overrides it; SiteAdapter folds for every shop."""
     assert CoffeeinSite.is_ignored is SiteAdapter.is_ignored
     assert site.is_ignored("Vrátená (nechcená) káva 200g") is True
+
+
+# --------------------------------------------------------------------------- roastery
+
+
+def test_the_shop_is_its_own_roastery(cuba: Coffee) -> None:
+    assert cuba.roaster == "Coffeein"
+    assert cuba.roaster_key == normalize.fold("Coffeein")

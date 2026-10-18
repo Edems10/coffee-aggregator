@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -28,6 +30,34 @@ from coffee_aggregator.models import (
 )
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
+
+_NO_BRAND = "the fixture publishes no brand"
+
+
+def published_brand(html: str) -> str:
+    """Return the ``Brand`` name the fixture's own JSON-LD publishes.
+
+    Args:
+        html: One saved detail page.
+
+    Returns:
+        The ``brand.name`` of the first JSON-LD node that carries one.
+
+    Raises:
+        AssertionError: When the page publishes no brand node.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    for script in soup.select('script[type="application/ld+json"]'):
+        for node in _nodes(json.loads(script.string or "{}")):
+            brand = node.get("brand")
+            if isinstance(brand, dict) and brand.get("name"):
+                return str(brand["name"])
+    raise AssertionError(_NO_BRAND)
+
+
+def _nodes(data: object) -> list[dict[str, object]]:
+    items = data if isinstance(data, list) else [data]
+    return [item for item in items if isinstance(item, dict)]
 
 
 @pytest.fixture

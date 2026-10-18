@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
+from coffee_aggregator import normalize
 from coffee_aggregator.http import FetchResult
 from coffee_aggregator.models import ProcessMethod, RoastProfile
 from coffee_aggregator.sinks.records import coffee_record
 from coffee_aggregator.sites import get as get_site
 from coffee_aggregator.sites.base import ProductRef
 from coffee_aggregator.sites.fathers import FathersSite, parse_props
+from conftest import published_brand
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
@@ -319,3 +321,17 @@ def test_a_url_inside_the_description_is_not_read_as_a_label(site: FathersSite) 
     assert list(coffee.raw_attributes) == ["ZEMĚ"]
     assert coffee.description is not None
     assert "https://fathers.cz/blog/x" in coffee.description
+
+
+# --------------------------------------------------------------------------- roastery
+
+
+def test_the_shop_is_its_own_roastery(chapata: Coffee) -> None:
+    assert chapata.roaster == "Father’s Coffee Roastery"
+    assert chapata.roaster_key == normalize.fold("Father’s Coffee Roastery")
+
+
+def test_the_declared_roaster_is_what_the_page_publishes(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    assert FathersSite.roaster == published_brand(fixture_html("fathers", "detail_chapata.html"))

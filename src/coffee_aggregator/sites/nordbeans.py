@@ -297,6 +297,7 @@ class NordbeansSite(SiteAdapter):
 
     site_id = "nordbeans"
     name = "Nordbeans"
+    roaster = "Nordbeans"
     country = "CZ"
     base_url = BASE_URL
     kind = "roaster"
@@ -423,6 +424,7 @@ class NordbeansSite(SiteAdapter):
             url=ref.url,
             name=name,
             site_country=self.country,
+            roaster=self.roaster,
             price=price,
             currency=DEFAULT_CURRENCY if price is not None else None,
             weight_g=headline_weight(facts.labels, name, variants, price=price),

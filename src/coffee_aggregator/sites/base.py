@@ -112,6 +112,10 @@ class SiteAdapter(ABC):
     Subclasses must be constructible with no arguments so the registry can
     instantiate them, and :meth:`parse_product` must stay pure — the pipeline
     owns every HTTP request.
+
+    Attributes:
+        roaster: The roastery every row of this shop is from; None when the shop
+            sells more than one.
     """
 
     site_id: str = ""
@@ -119,6 +123,7 @@ class SiteAdapter(ABC):
     country: Literal["CZ", "SK"] = "SK"
     base_url: str = ""
     kind: str = "bespoke"
+    roaster: str | None = None
     max_pages: int = 100
 
     @abstractmethod
