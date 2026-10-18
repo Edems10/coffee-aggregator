@@ -10,6 +10,26 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.7.0 (2026-10-18)
+
+### Added
+
+- `update.sh` prints the deploy notes before it builds. The folder's rule has
+  always been that a pull request needing a step on the server leaves a note
+  beside the deploy script and the script reads them out; this one never did,
+  so `164-crawl-start-needs-a-sudoers-line`,
+  `174-the-seen-on-index-is-built-at-deploy` and `179-coverage-starts-empty`
+  are all still pending on the live server and had to be read aloud from the
+  repository by hand tonight. Which notes are new is decided by the commit the
+  last successful run recorded in `/var/lib/coffee-aggregator/deployed`, not by
+  the range this script pulled: `coffee-observability` pulls the checkout
+  before it calls this script, so that range is empty every time. A server with
+  no recorded deployment is shown every note, and so is one whose state
+  directory it cannot write — that case warns on stderr and continues, because
+  the step that prints the notes must never be the step that stops a deploy.
+  Needs `/var/lib/coffee-aggregator` on the server (deploy note
+  `168-deploy-notes-need-a-state-directory`).
+
 ## 0.6.0 (2026-10-18)
 
 The crawl now records what each shop published, so a field that stops being

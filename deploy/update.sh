@@ -15,6 +15,7 @@ set -euo pipefail
 REPO="${REPO:-/opt/coffee-aggregator}"
 ENV_FILE="${ENV_FILE:-/etc/coffee-aggregator/env}"
 COMPOSE_FILE="${COMPOSE_FILE:-${REPO}/deploy/compose.yml}"
+DATA="${DATA:-/var/lib/coffee-aggregator}"
 crawl=no
 
 usage() {
@@ -78,6 +79,39 @@ else
     git -C "$REPO" log --oneline --no-decorate "${before}..${target}"
 fi
 
+# A deploy note is an instruction to a person, so every note this deployment
+# brings is printed before anything is built. Which ones those are is decided by
+# the commit the last successful run finished with, kept in ${DATA}/deployed and
+# not by the range this script just pulled: upgrade-all.sh pulls the checkout
+# before it calls this script, so that range is routinely empty. A server with
+# no recorded deployment has never been shown any of them, so it is shown all of
+# them. An unusable ${DATA} says so and prints all of them too, because a step
+# whose only job is printing text must never be the step that stops a deploy.
+state="${DATA}/deployed"
+if ! { [[ -d "$DATA" ]] || mkdir -p "$DATA" 2>/dev/null; } || [[ ! -w "$DATA" ]]; then
+    echo "update: ${DATA} cannot be created or written by $(id -un); nothing will be recorded" >&2
+    echo "update: create it as root, e.g. sudo install -d -o $(id -un) ${DATA}, or set DATA" >&2
+    state=""
+fi
+
+if [[ -n "$state" && -f "$state" ]] && git -C "$REPO" cat-file -e "$(cat "$state")^{commit}" 2>/dev/null; then
+    echo "update: deploy notes added since the last successful deployment:"
+    listed="$(git -C "$REPO" diff --name-only --diff-filter=AM "$(cat "$state")" HEAD -- deploy/notes/)"
+else
+    echo "update: deploy notes (no successful deployment is recorded, so all of them):"
+    listed="$(git -C "$REPO" ls-files deploy/notes/)"
+fi
+notes=0
+while IFS= read -r note; do
+    [[ "$note" == *.md ]] || continue
+    notes=$((notes + 1))
+    echo "update:   ${note}"
+    sed 's/^/    | /' "${REPO}/${note}"
+done < <(printf '%s\n' "$listed" | sort)
+if [[ "$notes" -eq 0 ]]; then
+    echo "update:   none"
+fi
+
 # Unconditional: when nothing was pulled this is a few cached seconds, and when
 # something was it is the whole point. The database and the table browser come
 # up too, so a change to compose.yml itself takes effect.
@@ -97,4 +131,13 @@ if [[ "$crawl" == yes ]]; then
     echo "update: follow it with  journalctl -u coffee-aggregator.service -f"
 else
     echo "update: done; the 05:00 timer will pick this up"
+fi
+
+# Here and nowhere earlier: a run that failed halfway records nothing, so the
+# next one prints its notes again rather than skipping past a step nobody did.
+# The rename is what makes it atomic; a half-written state file would name no
+# commit this checkout has and silently print everything.
+if [[ -n "$state" ]]; then
+    printf '%s\n' "$(git -C "$REPO" rev-parse HEAD)" > "${state}.next"
+    mv -f "${state}.next" "$state"
 fi
