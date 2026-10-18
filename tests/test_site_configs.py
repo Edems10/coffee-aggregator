@@ -251,3 +251,22 @@ def test_no_two_live_configs_crawl_one_shop() -> None:
     shared = {host: shops for host, shops in seen.items() if len(shops) > 1}
 
     assert not shared, f"one shop, several live configs: {shared}"
+
+
+@pytest.mark.parametrize("path", CONFIGS, ids=ids)
+def test_switched_off_agrees_with_the_file(path: Path) -> None:
+    """``retire`` is gated on this answer, so it must match what the TOML says."""
+    reason = sites.switched_off(path.stem)
+    assert bool(reason) is bool(load(path).get("disabled"))
+    if reason:
+        assert reason == str(load(path)["disabled"]).strip()
+
+
+def test_a_shop_with_no_config_of_its_own_is_never_switched_off() -> None:
+    """A bespoke adapter is a module, and a mistyped id is nothing at all.
+
+    Both answer "live", which is what makes ``retire`` refuse them: it delists
+    only a shop whose config records that somebody switched it off.
+    """
+    assert sites.switched_off("coffeein") == ""
+    assert sites.switched_off("no-such-shop") == ""

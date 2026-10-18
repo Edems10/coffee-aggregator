@@ -16,9 +16,11 @@ from coffee_aggregator.sinks.postgres import (
     DELIST_SQL,
     JSON_COLUMNS,
     KIND_COLUMNS,
+    LISTED_SQL,
     MANAGED_COLUMNS,
     PRICE_HISTORY_COLUMNS,
     PRICE_HISTORY_SQL,
+    RETIRE_SQL,
     UPSERT_SQL,
     VARIANT_COLUMNS,
     VARIANT_PRUNE_SQL,
@@ -52,11 +54,13 @@ class FakeCursor:
         calls: list[tuple[str, str, Any]],
         applied: set[str] | None = None,
         delisted: Sequence[tuple[Any, ...]] = (),
+        listed: Sequence[tuple[Any, ...]] = (),
     ) -> None:
         self.calls = calls
         self.rowcount = 7
         self.applied = migrate.versions() if applied is None else sorted(applied)
         self.delisted = delisted
+        self.listed = listed
         self._rows: Sequence[tuple[Any, ...]] = []
 
     def __enter__(self) -> Self:
@@ -76,8 +80,10 @@ class FakeCursor:
         self._rows = []
         if sql == migrate._SELECT_VERSIONS_SQL:
             self._rows = [(version, _checksum_of(version)) for version in self.applied]
-        elif sql == DELIST_SQL:
+        elif sql in (DELIST_SQL, RETIRE_SQL):
             self._rows = self.delisted
+        elif sql == LISTED_SQL:
+            self._rows = self.listed
         elif sql == STORED_FIELDS_SQL and params is not None:
             sites, externals = params
             stamped = datetime(2026, 9, 1, 8, 0, tzinfo=UTC)
@@ -106,9 +112,10 @@ class FakeConnection:
         self.rollbacks = 0
         self.applied = applied
         self.delisted: Sequence[tuple[Any, ...]] = ()
+        self.listed: Sequence[tuple[Any, ...]] = ()
 
     def cursor(self) -> FakeCursor:
-        return FakeCursor(self.calls, self.applied, self.delisted)
+        return FakeCursor(self.calls, self.applied, self.delisted, self.listed)
 
     def commit(self) -> None:
         self.commits += 1
@@ -264,8 +271,65 @@ def test_delisting_nothing_queues_nothing(sink: tuple[PostgresSink, FakeConnecti
     assert all(call[1] != OUTBOX_SQL for call in connection.calls)
 
 
+def test_retiring_a_shop_stamps_every_listed_row(
+    sink: tuple[PostgresSink, FakeConnection],
+) -> None:
+    """The statement spares nothing: a retired shop keeps no coffee on sale."""
+    postgres, connection = sink
+    connection.delisted = (delisted_row(external_id="9"), delisted_row(external_id="10"))
+    count = postgres.retire("demo")
+
+    assert count == 2
+    update = next(call for call in connection.calls if call[1] == RETIRE_SQL)
+    assert update[0] == "execute"
+    assert update[2] == ("demo",)
+    assert "delisted_at IS NULL" in RETIRE_SQL
+    assert "external_id" not in RETIRE_SQL.split("RETURNING")[0]
+
+
+def test_retiring_a_shop_queues_one_event_per_stamped_row(
+    sink: tuple[PostgresSink, FakeConnection],
+) -> None:
+    """The whole point of the command: a plain UPDATE would publish nothing."""
+    postgres, connection = sink
+    connection.delisted = (delisted_row(external_id="9"), delisted_row(external_id="10"))
+    postgres.retire("demo")
+
+    events = next(call for call in connection.calls if call[1] == OUTBOX_SQL)
+    assert events[0] == "executemany"
+    assert [row[0] for row in events[2]] == [
+        "coffee.v1.catalogue.demo.9",
+        "coffee.v1.catalogue.demo.10",
+    ]
+    for row in events[2]:
+        assert json.loads(row[2])["delisted_at"] == "2026-10-03T05:00:00+00:00"
+    assert connection.commits == 1
+
+
+def test_retiring_an_already_empty_shop_queues_nothing(
+    sink: tuple[PostgresSink, FakeConnection],
+) -> None:
+    postgres, connection = sink
+    assert postgres.retire("demo") == 0
+    assert all(call[1] != OUTBOX_SQL for call in connection.calls)
+
+
+def test_still_listed_reads_the_rows_a_retire_would_stamp(
+    sink: tuple[PostgresSink, FakeConnection],
+) -> None:
+    postgres, connection = sink
+    connection.listed = (("9", "Brazil Doce Diamantina", "https://example.sk/9"),)
+
+    assert postgres.still_listed("demo") == [
+        ("9", "Brazil Doce Diamantina", "https://example.sk/9")
+    ]
+    read = next(call for call in connection.calls if call[1] == LISTED_SQL)
+    assert read[2] == ("demo",)
+    assert "delisted_at IS NULL" in LISTED_SQL
+
+
 def test_every_value_is_a_bound_parameter() -> None:
-    for statement in (UPSERT_SQL, PRICE_HISTORY_SQL, DELIST_SQL):
+    for statement in (UPSERT_SQL, PRICE_HISTORY_SQL, DELIST_SQL, RETIRE_SQL, LISTED_SQL):
         assert "'" not in statement
         assert re.search(r"%\(", statement) is None
 
@@ -449,6 +513,24 @@ def test_init_schema_spares_the_first_write_its_check() -> None:
     assert not [
         call for call in connection.calls[before:] if call[1] == migrate._SELECT_VERSIONS_SQL
     ]
+
+
+def test_a_failed_retire_raises_rather_than_reporting_nothing_to_do() -> None:
+    """A crawl swallows a delisting failure; one command a person typed must not.
+
+    Returning 0 here would print "delisted 0 coffee(s)" after a dry run had just
+    listed three, and nothing would say the database had refused.
+    """
+    connection = ExplodingConnection()
+    postgres = PostgresSink("postgresql://fake/db")
+    postgres._connection = connection  # type: ignore[assignment]
+    postgres._schema_checked = True
+
+    with pytest.raises(RuntimeError, match="server closed the connection"):
+        postgres.retire("demo")
+
+    assert connection.rollbacks == 1
+    assert connection.commits == 0
 
 
 def test_a_failed_delisting_rolls_back_and_returns_zero(

@@ -7,6 +7,7 @@ from coffee_aggregator.sites.loader import (
     get,
     load_all,
     load_errors,
+    switched_off,
 )
 from coffee_aggregator.sites.registry import DuplicateSiteError, UnknownSiteError, register
 
@@ -26,4 +27,5 @@ __all__ = [
     "load_all",
     "load_errors",
     "register",
+    "switched_off",
 ]
