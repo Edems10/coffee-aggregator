@@ -5,6 +5,7 @@ import tomllib
 from typing import TYPE_CHECKING, Final, cast
 
 import pytest
+from bs4 import BeautifulSoup
 
 from coffee_aggregator import platforms, sites
 from coffee_aggregator.http import FetchDisallowed, FetchResult, parse_robots
@@ -14,6 +15,7 @@ from coffee_aggregator.platforms.common import PlatformConfigError
 from coffee_aggregator.platforms.woocommerce import (
     DEFAULT_LABEL_MAP,
     WooSite,
+    _own_price,
     minor_amount,
 )
 from coffee_aggregator.sites import CONFIG_DIR
@@ -596,6 +598,58 @@ def test_html_detail_page_prices_every_weight(ebenica: WooSite) -> None:
     assert coffee.variants[-1].available is False
 
 
+def test_a_related_card_inside_the_wrapper_never_supplies_the_price(
+    ebenica: WooSite,
+) -> None:
+    """The theme renders the related grid inside div.product, so .price is ambiguous."""
+    body = (FIXTURE_ROOT / EBENICA / "detail_kava-guatemala-huehuetenango.html").read_text("utf-8")
+    ref = ProductRef(
+        site_id="ebenica",
+        external_id="171257",
+        url="https://ebenica.sk/kava-guatemala-huehuetenango/",
+        price=4.49,
+        currency="EUR",
+    )
+
+    coffee = ebenica.parse_product(body, ref)
+
+    assert coffee is not None
+    assert (coffee.price, coffee.currency, coffee.weight_g) == (11.9, "EUR", 220)
+    assert [(v.weight_g, v.price) for v in coffee.variants] == [(220, 11.9)]
+
+
+def test_the_rejected_card_is_the_one_the_page_renders_first(ebenica: WooSite) -> None:
+    """Without the fix the first .price under the wrapper is a neighbour's range."""
+    body = (FIXTURE_ROOT / EBENICA / "detail_kava-guatemala-huehuetenango.html").read_text("utf-8")
+    soup = BeautifulSoup(body, "lxml")
+    root = soup.select_one("div.product.type-product, .summary")
+
+    assert root is not None
+    assert root.get("id") == "product-3212"
+    first = root.select_one(".price bdi, .price .amount, .price")
+    assert first is not None
+    assert first.get_text(" ", strip=True).startswith("4,49 € – 35,90 €")
+    assert _own_price(root) is None
+
+
+def test_a_wrapper_without_a_related_grid_still_yields_its_own_price(
+    ebenica: WooSite,
+) -> None:
+    """The exclusion must not blind the ordinary page, which has no nested card."""
+    body = (
+        '<html><body><div class="product type-product post-9 product-type-simple">'
+        '<h1 class="product_title">Kenya AA</h1>'
+        '<p class="price"><span class="woocommerce-Price-amount amount">'
+        "<bdi>12,50 &euro;</bdi></span></p></div></body></html>"
+    )
+    ref = ProductRef(site_id="ebenica", external_id="9", url="https://ebenica.sk/kenya-aa/")
+
+    coffee = ebenica.parse_product(body, ref)
+
+    assert coffee is not None
+    assert (coffee.price, coffee.currency) == (12.5, "EUR")
+
+
 # --- robots.txt gates the API exactly like a page -----------------------------
 
 
@@ -697,22 +751,31 @@ def test_every_shipped_config_is_registered(site_id: str) -> None:
     assert site_id in registered
 
 
+#: Saved pages that publish no attribute table, so the only keys ``raw_attributes``
+#: can hold are the ``OG_*`` and ``META_*`` furniture ``dom.page_meta`` reads off
+#: every e-shop template. ``ebenica/171257`` renders its price and its detail
+#: block from JavaScript and serves no ``table.woocommerce-product-attributes``
+#: at all, verified on the untrimmed 583 KB page the fixture was cut from.
+NO_ATTRIBUTE_TABLE: Final[frozenset[str]] = frozenset({"detail_kava-guatemala-huehuetenango.html"})
+
+
 @pytest.mark.parametrize("site_id", WITH_FIXTURES)
 def test_every_saved_page_still_parses(site_id: str) -> None:
     site = cast("WooSite", adapter_for(site_id))
     directory = FIXTURE_ROOT / f"woo_{site_id}"
 
-    coffees = [
-        parse_api(site, item) for item in (_items(site_id) if site.config.mode == "api" else [])[:3]
+    coffees: list[tuple[Coffee, bool]] = [
+        (parse_api(site, item), True)
+        for item in (_items(site_id) if site.config.mode == "api" else [])[:3]
     ]
     for path in sorted(directory.glob("detail_*.html")):
         ref = ProductRef(site_id=site_id, external_id="1", url=f"{site.base_url}p/")
         coffee = site.parse_product(path.read_text("utf-8"), ref)
         assert coffee is not None, path
-        coffees.append(coffee)
+        coffees.append((coffee, path.name not in NO_ATTRIBUTE_TABLE))
 
     assert coffees, f"{site_id} parsed nothing"
-    for coffee in coffees:
+    for coffee, states_attributes in coffees:
         assert coffee.name
         assert coffee.price is not None
         assert coffee.currency in {"CZK", "EUR"}
@@ -722,6 +785,8 @@ def test_every_saved_page_still_parses(site_id: str) -> None:
         assert coffee.processing.method in set(ProcessMethod)
         assert coffee.roast.level in set(RoastLevel)
         assert coffee.roast.profile in set(RoastProfile)
+        if not states_attributes:
+            continue
         assert len(coffee.raw_attributes) >= 4, coffee.raw_attributes
 
 
