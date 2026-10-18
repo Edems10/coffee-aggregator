@@ -46,6 +46,12 @@ sudo sed -i "s|^PGWEB_DB_PASSWORD=.*|PGWEB_DB_PASSWORD=$(openssl rand -hex 24)|"
 sudo nano /etc/coffee-aggregator/env          # set COFFEE_AGG_CONTACT, RCLONE_REMOTE and NATS_URL
 
 sudo install -d -m 700 /var/backups/coffee-aggregator
+
+# where update.sh records the commit it last deployed, so it can print only the
+# deploy notes added since. Owned by the deploy user, not root: update.sh does
+# not run under sudo. Replace <deploy-user> with the login that owns the
+# checkout.
+sudo install -d -o <deploy-user> -m 755 /var/lib/coffee-aggregator
 ```
 
 `NATS_URL` is set in the editor step above, because nothing can generate it. It
@@ -341,6 +347,15 @@ Run it as the user that owns `/opt/coffee-aggregator`, not with `sudo`. The pull
 needs that user's GitHub key, and root has none, so under `sudo` the first pull
 fails. Only starting the crawl needs root, and the script does that one command
 itself with `sudo -n`.
+
+Before it builds anything it prints the deploy notes — the instructions a pull
+request left for whoever deploys it — and which ones are new is decided by the
+commit it recorded at the end of the last successful run, in
+`/var/lib/coffee-aggregator/deployed`. A run that fails halfway records nothing,
+so its notes are printed again next time. If that directory is missing or not
+writable the script says so on stderr, prints every note in the checkout and
+carries on: printing text must never be what stops a deploy. `DATA` overrides
+the location.
 
 ### Starting the crawl without a root deploy
 
