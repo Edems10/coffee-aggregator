@@ -10,6 +10,25 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.7.1 (2026-10-18)
+
+### Fixed
+
+- A `brewing_methods` item now has to carry a letter and run to at most four
+  words, so a sentence a roastery wrote about the drink is no longer stored
+  beside `Espresso` as if it named a way of making the coffee (#211). Over the
+  184 products the fixture corpus parses, three stored values go: a 13-word
+  recommendation at `birdsong`, a 7-word one at `viemcoffee` and a 5-word one
+  at `valasska`. Two of those three products keep the real methods that stood
+  beside the sentence (`valasska` keeps `pákový kávovar`, `frenchpress` and
+  `turek`), one is emptied because the sentence was all it had, and no real
+  method is lost: the longest surviving item in the corpus is
+  `mletá na zalévanou kávu`, exactly four words. 45 of the 152 live shops have
+  fixtures, so this is what was measured on those; the junk is a per-shop
+  idiom and the corpus does not support a projection onto the live catalogue.
+  `roast_profile` is untouched — the filter runs where the list is built, not
+  in `plausible`, which `parse_roast` also reads.
+
 ## 0.7.0 (2026-10-18)
 
 ### Added

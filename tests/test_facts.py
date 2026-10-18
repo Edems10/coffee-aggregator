@@ -15,8 +15,10 @@ from coffee_aggregator.labels import (
     F_ROAST,
     F_SPECIES,
     F_WEIGHT,
+    MAX_BREWING_METHOD_WORDS,
     Labels,
     bare_label,
+    brewing_methods,
     build_map,
     headline_weight,
     is_decaf,
@@ -121,6 +123,55 @@ def test_plausible_gates_the_fields_with_an_obvious_shape(
     expected: bool,
 ) -> None:
     assert plausible(field_name, value) is expected
+
+
+# --- brewing_methods ----------------------------------------------------------
+
+#: Every one a value the fixture corpus holds. The kept rows are what an
+#: allowlist or a character threshold would have deleted; the dropped rows are
+#: the three sentences #211 is about, and ``01``, a numbered preparation step.
+BREWING_ITEMS = [
+    ("Filter (chemex/V60)", True),
+    ("Moka (koťogo)", True),
+    ("French press", True),
+    ("Zalievanie", True),
+    ("Jezva", True),
+    ("Turek", True),
+    ("Automatický kávovar", True),
+    ("Frenchpress", True),
+    ("Cold Brew", True),
+    ("Koťogo", True),
+    ("cappuccino", True),
+    ("V60", True),
+    ("mletá na zalévanou kávu", True),
+    ("automatické kávovary a koťogo", True),
+    ("Vhodné pre pákové kávovary", True),
+    ("V60)", True),
+    ("Filter (chemex", True),
+    ("espresso - ideální do pákových kávovarů či pro domácí přípravu v moka konvičce", False),
+    ("Najviac jej svedči pákový alebo automatický kávovar", False),
+    ("Kávu lze použít na espresso", False),
+    ("01", False),
+]
+
+
+@pytest.mark.parametrize(("value", "expected"), BREWING_ITEMS, ids=[v for v, _ in BREWING_ITEMS])
+def test_a_sentence_is_not_a_brewing_method(value: str, *, expected: bool) -> None:
+    assert (brewing_methods([value]) == [value]) is expected
+
+
+def test_the_margin_between_a_method_and_a_sentence_is_one_word() -> None:
+    """Four words is the longest genuine item in the corpus and five the shortest sentence."""
+    assert MAX_BREWING_METHOD_WORDS == 4
+    assert brewing_methods(["mletá na zalévanou kávu"]) == ["mletá na zalévanou kávu"]
+    assert brewing_methods(["Kávu lze použít na espresso"]) == []
+
+
+def test_a_brewing_list_keeps_the_methods_beside_the_sentence_it_drops() -> None:
+    """valasska prints a sentence first and three real methods after it."""
+    assert brewing_methods(
+        ["Kávu lze použít na espresso", "pákový kávovar", "frenchpress", "turek"]
+    ) == ["pákový kávovar", "frenchpress", "turek"]
 
 
 def test_an_implausible_roast_stays_out_of_the_typed_field() -> None:

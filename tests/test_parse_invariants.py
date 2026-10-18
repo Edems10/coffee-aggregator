@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from coffee_aggregator import normalize
-from coffee_aggregator.labels import Labels, is_decaf, plausible_weight, stated_weight
+from coffee_aggregator.labels import (
+    MAX_BREWING_METHOD_WORDS,
+    Labels,
+    is_decaf,
+    plausible_weight,
+    stated_weight,
+)
 from coffee_aggregator.models import RoastLevel
 from coffee_aggregator.sites import load_all
 from coffee_aggregator.sites.base import ProductRef
@@ -184,6 +190,13 @@ def test_flavour_notes_are_a_clean_list(shop: list[tuple[str, Coffee]]) -> None:
         notes = coffee.taste.flavor_notes
         assert all(note.strip() for note in notes), f"{label}: {notes}"
         assert len(set(notes)) == len(notes), f"{label}: {notes}"
+
+
+def test_a_brewing_method_is_never_a_sentence(shop: list[tuple[str, Coffee]]) -> None:
+    for name, coffee in shop:
+        for method in coffee.taste.brewing_methods:
+            assert any(character.isalpha() for character in method), f"{name}: {method!r}"
+            assert len(method.split()) <= MAX_BREWING_METHOD_WORDS, f"{name}: {method!r}"
 
 
 def test_a_variety_is_never_the_species(shop: list[tuple[str, Coffee]]) -> None:

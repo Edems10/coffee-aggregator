@@ -43,14 +43,16 @@ from coffee_aggregator.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from coffee_aggregator.labels.collect import Answer, Labels
     from coffee_aggregator.models import Variant
 
 __all__ = [
+    "MAX_BREWING_METHOD_WORDS",
     "bar",
     "blend_verdict",
+    "brewing_methods",
     "headline_weight",
     "is_decaf",
     "named_pack",
@@ -157,6 +159,42 @@ def option_list(text: str | None) -> list[str]:
     return [item for item in cleaned if item]
 
 
+#: The most words a stated brewing method runs to. Measured over every fixture the
+#: repository holds: the longest genuine item is four words ("mletá na zalévanou
+#: kávu", "automatické kávovary a koťogo", "Vhodné pre pákové kávovary") and the
+#: shortest sentence that is not a brewing method is five ("Kávu lze použít na
+#: espresso"). The margin is one word.
+MAX_BREWING_METHOD_WORDS: Final = 4
+
+
+def brewing_methods(values: Iterable[str]) -> list[str]:
+    """Keep the items that can name a way of making the coffee.
+
+    An item qualifies when it carries at least one letter, so that a bare option
+    id such as ``01`` is never one, and when it runs to at most
+    ``MAX_BREWING_METHOD_WORDS`` words, which is what tells a method from a
+    sentence a roastery wrote about the drink.
+
+    The filter takes an already-split list and belongs at every point one is
+    built, not in ``plausible``: ``Labels.add`` sees the shop's whole
+    enumeration before it is split, where no threshold separates a genuine
+    option list from prose, and ``parse_roast`` reads that same unsplit value,
+    so a rule there would delete roast profiles that are right.
+
+    Args:
+        values: The items a stated brewing list was split into.
+
+    Returns:
+        The items that can be a brewing method, in the order given.
+    """
+    return [
+        value
+        for value in values
+        if any(character.isalpha() for character in value)
+        and len(value.split()) <= MAX_BREWING_METHOD_WORDS
+    ]
+
+
 def notes_from_text(text: str | None) -> list[str]:
     """Read flavour notes from a value that is really a list of them.
 
@@ -238,7 +276,7 @@ def parse_taste(labels: Labels, summary: str | None) -> Taste:
         scale_max=DEFAULT_TASTE_SCALE_MAX,
         flavor_notes=notes,
         tasting_text=labels.get(F_FLAVOR),
-        brewing_methods=option_list(labels.get(F_BREWING)),
+        brewing_methods=brewing_methods(option_list(labels.get(F_BREWING))),
         sca_score=score(labels),
     )
 

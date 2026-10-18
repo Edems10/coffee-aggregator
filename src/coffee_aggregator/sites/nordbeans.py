@@ -20,6 +20,7 @@ from coffee_aggregator.labels import (
     F_SWEETNESS,
     bar,
     blend_verdict,
+    brewing_methods,
     headline_weight,
     is_decaf,
     map_label,
@@ -505,7 +506,7 @@ class NordbeansSite(SiteAdapter):
         taste = Taste(
             flavor_notes=split_notes(facts.pick(_LABEL_NOTES)),
             tasting_text=facts.pick(_LABEL_TASTE),
-            brewing_methods=normalize.split_list(facts.get(F_BREWING)),
+            brewing_methods=brewing_methods(normalize.split_list(facts.get(F_BREWING))),
             sca_score=score(facts.labels),
         )
         for field_name, attribute in _BARS:
