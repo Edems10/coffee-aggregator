@@ -564,6 +564,49 @@ def _ld_offer(node: dict[str, Any] | None) -> dict[str, Any]:
     return next(iter(kit.records(offers)), {})
 
 
+def _own_price(root: Tag) -> Tag | None:
+    """Return the product's own rendered price node.
+
+    WooCommerce themes render the related-products grid *inside* the
+    ``div.product.type-product`` wrapper, so a descendant search for ``.price``
+    reaches a neighbouring coffee before the product's own — on
+    ``ebenica.sk/kava-guatemala-huehuetenango/`` the first match is the range of
+    ``Colombia Felice Medellin``. A card is rejected on being an ``li.product``,
+    which is the element every loop template emits and the one shape the
+    product's own price block never has; the wrapper's class list is not a test,
+    because the wrapper itself carries ``product``.
+
+    Args:
+        root: The product wrapper.
+
+    Returns:
+        The first ``.price`` match outside every nested card, or None when the
+        theme renders the price from JavaScript alone.
+    """
+    for node in root.select(".price bdi, .price .amount, .price"):
+        parent = node.parent
+        while parent is not None and parent is not root:
+            if parent.name == "li" and "product" in (parent.get("class") or []):
+                break
+            parent = parent.parent
+        else:
+            return node
+    return None
+
+
+def _cheapest_variant_price(variants: list[Variant]) -> float | None:
+    """Return the lowest price any of the variants states.
+
+    Args:
+        variants: The variants the variation form prices.
+
+    Returns:
+        The lowest price, or None when no variant states one.
+    """
+    priced = [variant.price for variant in variants if variant.price is not None]
+    return min(priced) if priced else None
+
+
 def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
     """Build variants from the variation form's ``data-product_variations``.
 
@@ -1095,8 +1138,9 @@ class WooSite(ConfiguredSite[WooConfig]):
         kit.keep(labels.raw, dom.page_meta(soup))
         offer = _ld_offer(node)
         availability = str(offer.get("availability") or "")
-        price, currency = self._html_price(root, offer, ref)
+        currency = self._html_currency(root, offer, ref)
         variants = _html_variants(soup, ref, currency)
+        price = self._html_price(root, offer, ref, variants)
         categories = _categories_of(soup, root)
         species = parse_species(labels, name)
         summary = dom.text(soup.select_one(".woocommerce-product-details__short-description"))
@@ -1129,13 +1173,8 @@ class WooSite(ConfiguredSite[WooConfig]):
             raw_attributes=labels.raw,
         )
 
-    def _html_price(
-        self,
-        root: Tag,
-        offer: dict[str, Any],
-        ref: ProductRef,
-    ) -> tuple[float | None, str | None]:
-        """Read the detail page's headline price.
+    def _html_currency(self, root: Tag, offer: dict[str, Any], ref: ProductRef) -> str | None:
+        """Read the currency the detail page prices in.
 
         Args:
             root: The product wrapper.
@@ -1143,18 +1182,46 @@ class WooSite(ConfiguredSite[WooConfig]):
             ref: The product reference being parsed.
 
         Returns:
-            A ``(price, currency)`` tuple.
+            The ISO code, falling back to the listing card's and then the
+            shop's configured one, or None when none of them names one.
+        """
+        stated = str(offer.get("priceCurrency") or "")
+        detected = normalize.parse_price(dom.text(_own_price(root)))[1]
+        return stated or detected or ref.currency or self.config.currency
+
+    def _html_price(
+        self,
+        root: Tag,
+        offer: dict[str, Any],
+        ref: ProductRef,
+        variants: list[Variant],
+    ) -> float | None:
+        """Read the detail page's headline price.
+
+        The JSON-LD offer answers first. The rendered price answers next, and is
+        taken from the product's own ``.price`` block rather than from a related
+        card nested inside the wrapper — see :func:`_own_price`. A theme that
+        prices the product from JavaScript alone renders no own ``.price`` node
+        at all, so the cheapest variant the variation form states answers third;
+        that is the headline a variable product already gets on the Store API
+        path and in the Shopify adapter. The listing card's price remains the
+        last resort.
+
+        Args:
+            root: The product wrapper.
+            offer: The JSON-LD offer, when the page publishes one.
+            ref: The product reference being parsed.
+            variants: The variants the variation form prices.
+
+        Returns:
+            The price, or None when neither the page nor the reference states one.
         """
         price = normalize.parse_amount(str(offer.get("price") or ""))
-        currency = str(offer.get("priceCurrency") or "") or None
         if price is None:
-            rendered = dom.text(root.select_one(".price bdi, .price .amount, .price"))
-            price, detected = normalize.parse_price(rendered)
-            currency = currency or detected
-        return (
-            price if price is not None else ref.price,
-            currency or ref.currency or self.config.currency,
-        )
+            price = normalize.parse_price(dom.text(_own_price(root)))[0]
+        if price is None:
+            price = _cheapest_variant_price(variants)
+        return price if price is not None else ref.price
 
 
 def _original_price(prices: dict[str, Any], minor_unit: int, price: float | None) -> float | None:

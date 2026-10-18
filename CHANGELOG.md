@@ -10,6 +10,25 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.7.2 (2026-10-18)
+
+### Fixed
+
+- A WooCommerce detail page's headline price was read from the first `.price`
+  element below the product wrapper, and this theme renders the
+  related-products carousel *inside* that wrapper — so the number stored was a
+  neighbouring coffee's. `ebenica` is the only shop on `mode = "html"` today,
+  and `Guatemala Huehuetenango` was stored at `4.49 €`, the low end of
+  `Colombia Felice Medellin`'s range, for a coffee whose single purchasable
+  option is 220 g at `11.90 €`. The price is now taken from the first `.price`
+  outside every nested `li.product` card; where the theme renders no price of
+  its own at all — which is this page — the cheapest option the variation form
+  states answers instead, the same headline a variable product already gets on
+  the Store API path. That matters beyond one shop: `mode = "html"` is the
+  fallback the other 46 WooCommerce shops drop to when `/wp-json/` stops
+  answering, and a fallback that quietly reports a neighbour's price is worse
+  than one that fails (#173).
+
 ## 0.7.1 (2026-10-18)
 
 ### Fixed
