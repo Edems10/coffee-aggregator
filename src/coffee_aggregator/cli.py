@@ -118,6 +118,31 @@ def _add_outbox_parsers(
     republish.add_argument("--dsn", help="PostgreSQL DSN; overrides DATABASE_URL")
 
 
+def _add_retire_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+    common: argparse.ArgumentParser,
+) -> None:
+    """Add the sub-command that delists a shop which has stopped selling.
+
+    Args:
+        subparsers: The parser's sub-command group.
+        common: The parent carrying the options every sub-command shares.
+    """
+    retire = subparsers.add_parser(
+        "retire",
+        help="delist everything one shop that has stopped selling still has in the catalogue",
+        parents=[common],
+    )
+    retire.add_argument("--site", required=True, help="the shop to retire")
+    retire.add_argument(
+        "--yes",
+        action="store_true",
+        help="stamp the rows; without it nothing is written and the command only prints "
+        "what it would delist",
+    )
+    retire.add_argument("--dsn", help="PostgreSQL DSN; overrides DATABASE_URL")
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Assemble the argument parser.
 
@@ -215,6 +240,7 @@ def build_parser() -> argparse.ArgumentParser:
     seed_kinds.add_argument("--file", required=True, type=Path, help="the labelling pass's CSV")
     seed_kinds.add_argument("--dsn", help="PostgreSQL DSN; overrides DATABASE_URL")
 
+    _add_retire_parser(subparsers, common)
     _add_outbox_parsers(subparsers, common)
 
     crawl = subparsers.add_parser("crawl", help="crawl one shop or every shop", parents=[common])
@@ -556,6 +582,68 @@ def cmd_seed_kinds(settings: Settings, args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_retire(settings: Settings, args: argparse.Namespace) -> int:
+    """Delist everything a shop that has stopped selling still has in the catalogue.
+
+    The crawl cannot do this and must not learn how: discovery failing is not
+    evidence that a shop's products are gone, so a run that sees nothing delists
+    nothing. That leaves the rows of a shop that really has closed stuck in the
+    catalogue, and this is the door for them — one shop, named, run by a person.
+
+    Two things stand between it and a healthy shop. It refuses any shop whose
+    config does not carry a ``disabled`` reason, so switching the shop off in a
+    pull request is the first half of retiring it and a mistyped id reaches
+    nothing; and it writes only when ``--yes`` is given, so the first run prints
+    the rows and changes nothing.
+
+    Args:
+        settings: Environment-derived settings.
+        args: Parsed command line arguments.
+
+    Returns:
+        The process exit code.
+    """
+    from coffee_aggregator.sinks.postgres import PostgresSink  # noqa: PLC0415  (optional path)
+
+    reason = sites.switched_off(args.site)
+    if not reason:
+        logger.error(
+            "refusing to retire %s: %s/%s.toml does not say it is disabled. Switch the shop "
+            "off there first, in its own pull request, so what was retired and why is on the "
+            "record — and so a mistyped shop id cannot delist a shop that is still selling.",
+            args.site,
+            sites.CONFIG_DIR,
+            args.site,
+        )
+        return EXIT_CONFIG_ERROR
+    sink = PostgresSink(settings.require_database_url(args.dsn))
+    try:
+        listed = sink.still_listed(args.site)
+        for external_id, name, url in listed:
+            logger.info("%s\t%s\t%s", external_id, name, url)
+        if not args.yes:
+            logger.info(
+                "%s is disabled (%s) and has %d listed coffee(s); %s",
+                args.site,
+                reason,
+                len(listed),
+                "re-run with --yes to delist them" if listed else "nothing to delist",
+            )
+            return EXIT_OK
+        stamped = sink.retire(args.site)
+    finally:
+        sink.close()
+    if not stamped:
+        logger.info("%s had nothing left to delist", args.site)
+        return EXIT_OK
+    logger.info(
+        "delisted %d coffee(s) of %s and queued one event each; run publish to send them",
+        stamped,
+        args.site,
+    )
+    return EXIT_OK
+
+
 def cmd_publish(settings: Settings, args: argparse.Namespace) -> int:
     """Drain the outbox into the broker.
 
@@ -824,6 +912,7 @@ def _dispatch(settings: Settings, args: argparse.Namespace, command: str) -> int
         "report": lambda: cmd_report(settings, args),
         "fx": lambda: cmd_fx(settings, args),
         "seed-kinds": lambda: cmd_seed_kinds(settings, args),
+        "retire": lambda: cmd_retire(settings, args),
         "publish": lambda: cmd_publish(settings, args),
         "republish": lambda: cmd_republish(settings, args),
         "crawl": lambda: cmd_crawl(settings, args, command),

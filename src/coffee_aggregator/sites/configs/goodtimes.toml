@@ -1,5 +1,11 @@
 # Good Times Coffee Roasters — no "kava" slug exists at all; the whole
 # coffee offer lives in category 47 premium. Origin from description lines.
+# Retired, not deleted: the file is what says the shop was switched off on
+# purpose and what the crawl used to ask it for, so re-adding it next year is a
+# decision somebody takes rather than one they stumble into. `coffee-aggregator
+# retire --site goodtimes` reads this line and refuses a shop that lacks it.
+disabled = "the WordPress install is gone; the roastery is now Rooster's Corner, B2B only, 2026-10-18 (#214)"
+
 platform = "woocommerce"
 site_id = "goodtimes"
 name = "Good Times Coffee Roasters"

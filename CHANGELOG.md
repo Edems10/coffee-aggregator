@@ -10,6 +10,36 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.9.0 (2026-10-18)
+
+### Added
+
+- `coffee-aggregator retire --site <shop>` delists everything a shop that has
+  stopped selling still has in the catalogue, and queues one `coffee.v1` event
+  per row in the same transaction as the stamp (#214). The crawl cannot do this
+  and is not being taught how: a run that discovers nothing delists nothing,
+  because a 404 on a category page is not evidence that the products are gone.
+  Two things stand between the command and a healthy shop — it refuses any shop
+  whose config does not carry a `disabled` reason, so switching the shop off in
+  a pull request is the first half of retiring it and a mistyped id reaches
+  nothing; and without `--yes` it prints the rows it would delist and writes
+  nothing. Nothing is deleted: `delisted_at` is a stamp, and the upsert clears
+  it again, so a shop that comes back is restored by crawling it.
+
+### Changed
+
+- `goodtimes` is switched off rather than deleted. `goodtimes.coffee` still
+  answers but its WordPress install is gone — no Store API, no sitemap, no
+  category page — and what it serves is a notice that the roastery is now
+  Rooster's Corner at `roosterscorner.coffee`, selling to businesses on enquiry
+  with no prices and no cart (#214). The config file stays so that what was
+  retired and why is on the record and re-adding it next year is a decision
+  rather than an accident, and its saved pages go on regressing the WooCommerce
+  parser. Its three stale rows, last seen on 2026-10-14, are **not** delisted by
+  this release: the version moves no stored row, and
+  `deploy/notes/214-goodtimes-is-retired-by-hand.md` says what to run. The
+  roastery's new site is a separate question, ticketed against #209.
+
 ## 0.8.0 (2026-10-18)
 
 ### Added

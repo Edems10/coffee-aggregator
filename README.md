@@ -95,6 +95,7 @@ coffee-aggregator parse --site <id> --file page.html [--url URL]
 coffee-aggregator publish [--dsn URL] [--nats-url URL] [--batch-size 500] [--once]
 coffee-aggregator republish --all [--dsn URL]
 coffee-aggregator seed-kinds --file catalogue-labels.csv [--dsn URL]
+coffee-aggregator retire --site <id> [--yes] [--dsn URL]
 ```
 
 * `-v` switches logging to DEBUG, and is accepted before *or* after the
@@ -145,6 +146,8 @@ coffee-aggregator seed-kinds --file catalogue-labels.csv [--dsn URL]
 * `republish --all` queues every coffee still on sale for publication again.
   `--all` is the only scope there is and has to be typed, because a bare
   `republish` must not re-send tens of thousands of events by accident.
+* `retire --site <id>` delists everything a shop that has stopped selling still
+  has in the catalogue. See [Retiring a shop](#retiring-a-shop).
 ### Exit codes
 
 | code | meaning |
@@ -327,6 +330,37 @@ nightly exit code into an alarm nobody reads.
 The value is the reason, not a boolean. A shop is only ever switched off for
 something that will have to be re-read later, and deleting the file instead
 would take the label map and ignore list with it.
+
+### Retiring a shop
+
+Switching a shop off stops the crawl visiting it. It does not touch what the
+shop already put in the catalogue, and the crawl cannot: a run that discovers
+nothing delists nothing, because a 404 on a category page is not evidence that
+the products are gone. So a shop that really has closed leaves its coffees on
+sale indefinitely, and `retire` is the door for them:
+
+```bash
+coffee-aggregator retire --site goodtimes          # prints what it would delist
+coffee-aggregator retire --site goodtimes --yes    # stamps delisted_at, queues the events
+```
+
+It takes the same path a crawl's delisting takes, so each stamped row is
+announced on the outbox **in the transaction that stamped it** — a plain
+`UPDATE` would leave the catalogue saying the coffees are gone while every
+consumer went on serving them.
+
+Two things stand between it and a shop that is still selling:
+
+* **It refuses any shop whose config does not carry a `disabled` reason.**
+  Switching the shop off, in its own pull request, is the first half of
+  retiring it — so a mistyped id reaches nothing, and what was retired and why
+  is on the record. It also fixes the order: switch off, deploy, then retire.
+* **Without `--yes` it writes nothing**, and prints the rows it would stamp
+  instead. Run it that way first and read the count.
+
+Nothing is deleted. `delisted_at` is a stamp, and the upsert clears it again,
+so a shop that comes back is restored by removing the `disabled` line and
+crawling it.
 
 ### (b) A shop on a supported platform — one TOML file
 

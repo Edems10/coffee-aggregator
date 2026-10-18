@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import logging
 import pkgutil
+import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -29,7 +30,15 @@ _loaded = False
 #: but it must not disappear either: ``list-sites`` prints these and exits 2.
 load_errors: list[str] = []
 
-__all__ = ["CONFIG_DIR", "all_sites", "get", "load_all", "load_errors", "reset"]
+__all__ = [
+    "CONFIG_DIR",
+    "all_sites",
+    "get",
+    "load_all",
+    "load_errors",
+    "reset",
+    "switched_off",
+]
 
 
 def _import_submodules(package: ModuleType) -> None:
@@ -106,6 +115,34 @@ def _disabled_reason(config: dict[str, Any]) -> str:
     if value is True:
         return "no reason given"
     return str(value).strip() if isinstance(value, str) else ""
+
+
+def switched_off(site_id: str) -> str:
+    """Return why a configured shop is switched off, or an empty string.
+
+    The registry cannot answer this: a switched-off shop is skipped by discovery
+    and so is simply absent from it, which is indistinguishable from a shop that
+    was never configured. The config file is where the decision is recorded, and
+    reading it is what lets ``retire`` tell a shop somebody retired on purpose
+    from one that is merely mistyped.
+
+    Args:
+        site_id: The config's file name without its suffix.
+
+    Returns:
+        The ``disabled`` reason, stripped. Empty when the shop is live, when it
+        has no config of its own — a bespoke adapter is a module and is never
+        switched off — or when the config cannot be read.
+    """
+    path = CONFIG_DIR / f"{site_id}.toml"
+    if not path.is_file():
+        return ""
+    try:
+        config = tomllib.loads(path.read_text("utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        logger.warning("could not read %s: %s", path, exc)
+        return ""
+    return _disabled_reason(config)
 
 
 def _record(problem: str) -> None:

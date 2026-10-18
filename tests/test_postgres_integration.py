@@ -242,6 +242,71 @@ def test_delisting_on_an_empty_set_is_refused(sink: PostgresSink) -> None:
     assert _scalar(sink, "SELECT count(*) FROM coffee WHERE delisted_at IS NOT NULL") == 0
 
 
+def test_retiring_a_shop_stamps_every_row_and_announces_each_one(sink: PostgresSink) -> None:
+    """The whole of #214, against a real server: stamped, announced, nothing deleted.
+
+    A plain ``UPDATE coffee SET delisted_at = now()`` would do the first half and
+    silently skip the second, leaving the catalogue saying the coffees are gone
+    while every consumer went on serving them.
+    """
+    for external_id in ("1", "2", "3"):
+        sink.upsert([make_coffee(site="goodtimes", external_id=external_id)])
+    sink.upsert([make_coffee(site="other", external_id="1")])
+    with sink.connection.cursor() as cursor:
+        cursor.execute("DELETE FROM outbox")
+    sink.connection.commit()
+
+    assert sink.still_listed("goodtimes") == [
+        ("1", "Kuba Serrano Superior", "https://example.sk/detail/1"),
+        ("2", "Kuba Serrano Superior", "https://example.sk/detail/2"),
+        ("3", "Kuba Serrano Superior", "https://example.sk/detail/3"),
+    ]
+
+    assert sink.retire("goodtimes") == 3
+
+    stamped = _scalar(
+        sink, "SELECT count(*) FROM coffee WHERE site = 'goodtimes' AND delisted_at IS NOT NULL"
+    )
+    assert stamped == 3
+    announced = [row for row in _outbox(sink) if row[1].startswith("coffee.v1.catalogue.goodtimes")]
+    assert len(announced) == 3
+    assert sorted(row[1] for row in announced) == [
+        "coffee.v1.catalogue.goodtimes.1",
+        "coffee.v1.catalogue.goodtimes.2",
+        "coffee.v1.catalogue.goodtimes.3",
+    ]
+    assert all(row[3]["delisted_at"] is not None for row in announced)
+    assert all(row[4] is None for row in announced)
+    # Nothing is deleted: delisted_at is a stamp, and every row is still there.
+    assert _scalar(sink, "SELECT count(*) FROM coffee WHERE site = 'goodtimes'") == 3
+    assert sink.still_listed("goodtimes") == []
+    # And the shop next to it is untouched.
+    assert (
+        _scalar(sink, "SELECT count(*) FROM coffee WHERE site = 'other' AND delisted_at IS NULL")
+        == 1
+    )
+
+
+def test_retiring_a_shop_twice_stamps_and_announces_nothing_the_second_time(
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="goodtimes", external_id="1")])
+    assert sink.retire("goodtimes") == 1
+    before = len(_outbox(sink))
+
+    assert sink.retire("goodtimes") == 0
+    assert len(_outbox(sink)) == before
+
+
+def test_a_retired_shop_that_comes_back_is_restored_by_a_crawl(sink: PostgresSink) -> None:
+    """Reversible in principle: the stamp is cleared by the upsert, not by a repair."""
+    sink.upsert([make_coffee(site="goodtimes", external_id="1")])
+    assert sink.retire("goodtimes") == 1
+
+    sink.upsert([make_coffee(site="goodtimes", external_id="1")])
+    assert _scalar(sink, "SELECT delisted_at FROM coffee WHERE site = 'goodtimes'") is None
+
+
 def test_process_methods_round_trips(sink: PostgresSink) -> None:
     coffee = make_coffee(external_id="1")
     coffee.processing.methods = [ProcessMethod.WASHED, ProcessMethod.NATURAL]

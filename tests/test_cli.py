@@ -245,6 +245,40 @@ def test_republish_refuses_without_all(caplog: pytest.LogCaptureFixture) -> None
     assert "--all" in caplog.text
 
 
+def test_retire_refuses_a_shop_that_is_not_switched_off(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The guard that stops a typo delisting a healthy five-hundred-coffee shop."""
+    with caplog.at_level("ERROR", logger="coffee_aggregator"):
+        assert cli.main(["retire", "--site", "botacoffee", "--yes"]) == cli.EXIT_CONFIG_ERROR
+    assert "does not say it is disabled" in caplog.text
+
+
+def test_retire_refuses_a_shop_that_does_not_exist(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("ERROR", logger="coffee_aggregator"):
+        assert cli.main(["retire", "--site", "botacofee", "--yes"]) == cli.EXIT_CONFIG_ERROR
+    assert "does not say it is disabled" in caplog.text
+
+
+def test_retire_refuses_before_it_needs_a_dsn(caplog: pytest.LogCaptureFixture) -> None:
+    """The guard runs first, so a wrong shop never reaches the database at all."""
+    with caplog.at_level("ERROR", logger="coffee_aggregator"):
+        assert cli.main(["retire", "--site", "botacoffee", "--yes"]) == cli.EXIT_CONFIG_ERROR
+    assert "DATABASE_URL" not in caplog.text
+
+
+def test_retire_of_a_switched_off_shop_still_needs_a_dsn() -> None:
+    """Past the guard, it is an ordinary database command and asks for one."""
+    assert sites.switched_off("goodtimes")
+    assert cli.main(["retire", "--site", "goodtimes"]) == cli.EXIT_CONFIG_ERROR
+
+
+def test_retire_writes_nothing_without_yes() -> None:
+    parsed = cli.build_parser().parse_args(["retire", "--site", "goodtimes"])
+    assert parsed.yes is False
+    assert cli.build_parser().parse_args(["retire", "--site", "x", "--yes"]).yes is True
+
+
 def test_publish_falls_back_to_the_configured_broker() -> None:
     parsed = cli.build_parser().parse_args(["publish"])
     assert parsed.nats_url is None

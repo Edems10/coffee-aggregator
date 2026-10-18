@@ -228,6 +228,24 @@ DELIST_SQL = (
     f"RETURNING {outbox.STATE_SELECT}"
 )
 
+#: What :meth:`PostgresSink.retire` stamps: everything of one shop that is still
+#: listed, with no set of seen ids to spare any of it. Spelled out rather than
+#: reached by handing :data:`DELIST_SQL` an empty array, so that the statement a
+#: whole shop is delisted by is readable on its own and cannot be arrived at by
+#: accident from the crawl's side.
+RETIRE_SQL = (
+    "UPDATE coffee SET delisted_at = now() "  # noqa: S608  (a module constant)
+    "WHERE site = %s AND delisted_at IS NULL "
+    f"RETURNING {outbox.STATE_SELECT}"
+)
+
+#: What :meth:`PostgresSink.still_listed` reads: enough of a shop's live rows to
+#: print before and after a retire.
+LISTED_SQL = (
+    "SELECT external_id, name, url FROM coffee "
+    "WHERE site = %s AND delisted_at IS NULL ORDER BY external_id"
+)
+
 
 def row_for(coffee: Coffee) -> tuple[Any, ...]:
     """Turn one coffee into the positional parameters of :data:`UPSERT_SQL`.
@@ -584,32 +602,94 @@ class PostgresSink:
             self.ensure_schema()
             return self._delist_locked(site_id, seen_external_ids)
 
-    def _delist_locked(self, site_id: str, seen_external_ids: set[str]) -> int:
-        """Stamp the rows, and announce each one, with the connection held.
+    def retire(self, site_id: str) -> int:
+        """Stamp ``delisted_at`` on everything one shop still has listed.
 
-        The events are written from the rows the UPDATE returned and inside its
-        transaction, so a delisting is announced exactly when it is recorded.
+        For a shop that has stopped selling, where the crawl cannot do it: a run
+        that discovers nothing never reaches :meth:`mark_delisted`, and
+        :meth:`mark_delisted` refuses an empty set of seen ids anyway. It takes
+        the same path a delisting takes, so the outbox is written in the same
+        transaction as the stamp and the consumers hear about every row.
+
+        Nothing is deleted. ``delisted_at`` is a stamp, and the upsert clears it
+        again, so a shop that comes back is restored by crawling it.
+
+        Args:
+            site_id: The shop to retire.
+
+        Returns:
+            How many rows were stamped.
+
+        Raises:
+            Exception: Whatever the database raised, after the transaction has
+                been rolled back. A crawl swallows this so one shop cannot abort
+                a ``--site all`` run; a person running one command has to be told.
+        """
+        with self._lock:
+            self.ensure_schema()
+            try:
+                return self._stamp_locked(RETIRE_SQL, (site_id,))
+            except Exception:
+                self._rollback()
+                raise
+
+    def still_listed(self, site_id: str) -> list[tuple[str, str, str]]:
+        """Read what a shop currently has in the catalogue, newest stamp aside.
+
+        Args:
+            site_id: The shop to read.
+
+        Returns:
+            One ``(external_id, name, url)`` per row that is not yet delisted,
+            ordered by id.
+        """
+        with self._lock:
+            self.ensure_schema()
+            connection = self.connection
+            with connection.cursor() as cursor:
+                cursor.execute(LISTED_SQL, (site_id,))
+                rows = cursor.fetchall()
+            connection.commit()
+        return [(str(external_id), str(name), str(url)) for external_id, name, url in rows]
+
+    def _delist_locked(self, site_id: str, seen_external_ids: set[str]) -> int:
+        """Stamp the rows a run did not see, swallowing a failure.
 
         Args:
             site_id: The site whose catalogue was fully walked.
             seen_external_ids: Every id the run did see.
 
         Returns:
-            How many rows were stamped.
+            How many rows were stamped, and zero when the statement failed.
         """
-        connection = self.connection
         try:
-            with connection.cursor() as cursor:
-                cursor.execute(DELIST_SQL, (site_id, list(seen_external_ids)))
-                stamped = cursor.fetchall()
-                events = outbox.event_rows_from_db(stamped)
-                if events:
-                    cursor.executemany(outbox.OUTBOX_SQL, events)
-            connection.commit()
+            return self._stamp_locked(DELIST_SQL, (site_id, list(seen_external_ids)))
         except Exception:  # one shop's failure never aborts a --site all run
             logger.exception("delisting for %s failed", site_id)
             self._rollback()
             return 0
+
+    def _stamp_locked(self, statement: str, parameters: tuple[Any, ...]) -> int:
+        """Run a delisting UPDATE, and announce each row it stamped.
+
+        The events are written from the rows the UPDATE returned and inside its
+        transaction, so a delisting is announced exactly when it is recorded.
+
+        Args:
+            statement: :data:`DELIST_SQL` or :data:`RETIRE_SQL`.
+            parameters: Its positional parameters.
+
+        Returns:
+            How many rows were stamped.
+        """
+        connection = self.connection
+        with connection.cursor() as cursor:
+            cursor.execute(statement, parameters)
+            stamped = cursor.fetchall()
+            events = outbox.event_rows_from_db(stamped)
+            if events:
+                cursor.executemany(outbox.OUTBOX_SQL, events)
+        connection.commit()
         return len(stamped)
 
     def close(self) -> None:
