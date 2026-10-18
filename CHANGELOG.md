@@ -10,6 +10,23 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.8.0 (2026-10-18)
+
+### Added
+
+- BONTÉ COFFEE (`praziarenbonte.sk`), a Nové Zámky roastery and café, is
+  crawled through the WooCommerce Store API (#206). It brings 38 roasted
+  coffees, every one sold as a 125 g bag at 7.90 EUR, so the whole shop stores
+  one price and one weight. 24 of the 38 name their country (7 Brazil, 3
+  Guatemala, 2 Colombia, 2 Ethiopia and ten more one apiece) and 2 are
+  recognised as decaf. What is *not* recovered is the species split and the
+  roast: all 38 products state an arabica/robusta ratio and 35 sit in the
+  shop's light-roast category, and the parser stores neither, because it reads
+  species only from an attribute and roast only from a label. Those are parser
+  gaps shared with every other shop, not this config's to close. Only the
+  coffee category (id 71) is crawled: the café's cakes, teas and gift
+  boxes share the same WooCommerce install.
+
 ## 0.7.2 (2026-10-18)
 
 ### Fixed
