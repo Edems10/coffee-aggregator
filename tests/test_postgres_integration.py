@@ -396,9 +396,17 @@ def test_a_retried_invocation_refreshes_the_day_instead_of_doubling_it(
 
 
 def test_the_price_history_indexes_exist(sink: PostgresSink) -> None:
+    """``price_history_seen_on_idx`` has to lead with ``seen_on``.
+
+    The nightly report's only predicate on this table is a window of days, and
+    an index that merely contains ``seen_on`` cannot serve it: three of the
+    others hold the column and all three lead with ``site``, which is why the
+    report read the whole table until #174.
+    """
     indexes = {
         "price_history_day_idx": "UNIQUE",
         "price_history_seen_at_brin_idx": "brin",
+        "price_history_seen_on_idx": "(seen_on, site, external_id)",
     }
     for name, expected in indexes.items():
         definition = _scalar(
