@@ -1,0 +1,18 @@
+# BONTÉ COFFEE — a Nové Zámky roastery that is also a café and a cake shop,
+# so cheesecake, chocolate, teas, cups and coffee machines sit in the same
+# WooCommerce install as the beans. The coffee category is pinned for that
+# reason: taken whole, this catalogue is a lunch menu.
+platform = "woocommerce"
+site_id = "bonte"
+name = "BONTÉ COFFEE"
+country = "SK"
+base_url = "https://praziarenbonte.sk/"
+currency = "EUR"
+mode = "api"
+max_pages = 10
+
+# Pinned ids, not slugs: ids survive a re-theme, slugs do not.
+api_category_ids = [71]
+
+# The HTML fallback, used only if /wp-json/ ever stops answering.
+category_urls = ["https://praziarenbonte.sk/kategoria-produktu/kava/"]

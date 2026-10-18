@@ -830,6 +830,17 @@ ONBOARDED: Final[dict[str, dict[str, object]]] = {
         "farm": "Finca La Bolsa",
         "process": ProcessMethod.OTHER,
     },
+    "bonte": {
+        "id": 6600,
+        "name": "Brazília Santos Exclusive 100%",
+        "price": 7.9,
+        "currency": "EUR",
+        "weight_g": 125,
+        "country": "BR",
+        "altitude_min_m": 1000,
+        "process": ProcessMethod.NATURAL,
+        "sca_score": 82.0,
+    },
     "bozinroastery": {
         "id": 16430,
         "name": "Brazilian Honey Propolis – Pražená zrnková káva",

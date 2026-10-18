@@ -1,0 +1,2408 @@
+[
+ {
+  "id": 6600,
+  "name": "Brazília Santos Exclusive 100%",
+  "permalink": "https://praziarenbonte.sk/kava/brazilia-santos-exclusive-100/",
+  "sku": "",
+  "is_in_stock": true,
+  "prices": {
+   "price": "790",
+   "regular_price": "790",
+   "sale_price": "790",
+   "price_range": {
+    "min_amount": "790",
+    "max_amount": "3990"
+   },
+   "currency_code": "EUR",
+   "currency_symbol": "€",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": "",
+   "currency_prefix": "",
+   "currency_suffix": " €"
+  },
+  "attributes": [
+   {
+    "id": 4,
+    "name": "Balenie",
+    "taxonomy": "pa_balenie",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 64,
+      "name": "125g",
+      "slug": "125g",
+      "default": true
+     },
+     {
+      "id": 57,
+      "name": "250g",
+      "slug": "250g",
+      "default": false
+     },
+     {
+      "id": 54,
+      "name": "500g",
+      "slug": "500g",
+      "default": false
+     },
+     {
+      "id": 58,
+      "name": "1kg",
+      "slug": "1kg",
+      "default": false
+     }
+    ]
+   },
+   {
+    "id": 5,
+    "name": "Hrubosť mletia",
+    "taxonomy": "pa_hrubost-mletia",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 60,
+      "name": "Jemné",
+      "slug": "jemne",
+      "default": false
+     },
+     {
+      "id": 61,
+      "name": "Stredné",
+      "slug": "stredne",
+      "default": false
+     },
+     {
+      "id": 59,
+      "name": "Hrubé",
+      "slug": "hrube",
+      "default": false
+     },
+     {
+      "id": 70,
+      "name": "Zrnková",
+      "slug": "zrnkova",
+      "default": true
+     }
+    ]
+   },
+   {
+    "id": 0,
+    "name": "Nálepka",
+    "taxonomy": null,
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 0,
+      "name": "žiadna",
+      "slug": "žiadna"
+     },
+     {
+      "id": 0,
+      "name": "Babičke",
+      "slug": "Babičke"
+     },
+     {
+      "id": 0,
+      "name": "Dedkovi",
+      "slug": "Dedkovi"
+     },
+     {
+      "id": 0,
+      "name": "Maminke",
+      "slug": "Maminke"
+     },
+     {
+      "id": 0,
+      "name": "Oteckovi",
+      "slug": "Oteckovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej dcérke",
+      "slug": "Najlepšej dcérke"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu synovi",
+      "slug": "Najlepšiemu synovi"
+     },
+     {
+      "id": 0,
+      "name": "Sestričke",
+      "slug": "Sestričke"
+     },
+     {
+      "id": 0,
+      "name": "Bračekovi",
+      "slug": "Bračekovi"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamoške",
+      "slug": "Naj kamoške"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamošovi",
+      "slug": "Naj kamošovi"
+     },
+     {
+      "id": 0,
+      "name": "Milovanej osobe",
+      "slug": "Milovanej osobe"
+     },
+     {
+      "id": 0,
+      "name": "Z lásky",
+      "slug": "Z lásky"
+     },
+     {
+      "id": 0,
+      "name": "Zo srdiečka",
+      "slug": "Zo srdiečka"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnej priateľke",
+      "slug": "Úžasnej priateľke"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnému priateľovi",
+      "slug": "Úžasnému priateľovi"
+     },
+     {
+      "id": 0,
+      "name": "Pre lepšie výkony v posteli",
+      "slug": "Pre lepšie výkony v posteli"
+     },
+     {
+      "id": 0,
+      "name": "Pre budúcu mamičku",
+      "slug": "Pre budúcu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moje dve lásky",
+      "slug": "Pre moje dve lásky"
+     },
+     {
+      "id": 0,
+      "name": "Pre najlepšiu mamičku",
+      "slug": "Pre najlepšiu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moju princeznú",
+      "slug": "Pre moju princeznú"
+     },
+     {
+      "id": 0,
+      "name": "Ľúbim ťa ako kávu",
+      "slug": "Ľúbim ťa ako kávu"
+     },
+     {
+      "id": 0,
+      "name": "K životu potrebujem iba teba a kávu",
+      "slug": "K životu potrebujem iba teba a kávu"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu manželovi",
+      "slug": "Najlepšiemu manželovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej manželke",
+      "slug": "Najlepšej manželke"
+     },
+     {
+      "id": 0,
+      "name": "Pre kávičkára",
+      "slug": "Pre kávičkára"
+     }
+    ]
+   }
+  ],
+  "categories": [
+   {
+    "id": 71,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/"
+   },
+   {
+    "id": 34,
+    "name": "Odrodová 100% Arabika",
+    "slug": "odrodova-100-arabika",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/druh-kavy/odrodova-100-arabika/"
+   },
+   {
+    "id": 40,
+    "name": "Brazília",
+    "slug": "brazilia",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/krajina-povodu/brazilia/"
+   },
+   {
+    "id": 127,
+    "name": "Svetlo pražená káva",
+    "slug": "svetlo-prazena-kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/svetlo-prazena-kava/"
+   }
+  ],
+  "tags": [],
+  "short_description": "<p>100% Arabica</p>\n<p><strong>Brazília Santos</strong>&#8211; Káva z oblasti Santos pripomína vôňou zrelé lieskové oriešky. V chuti je charakteristická sladkými medovými tónmi, ktoré postupne prechádzajú do výraznej čokoládovej dochuti.</p>",
+  "description": "<p><strong>Brazília Santos Exclusive</strong><br />\nBrazília je najväčší producent kávy na svete, pričom podstatnou časťou produkcie je arabika. Brazílska káva je pripravovaná suchým (prírodným procesom), vyznačuje sa mohutným telom a komplexnosťou, má však nižší podiel kyselín.</p>\n<p>Santos vyniká plným vyváženým telom a krásne hustou cremou. Jej výrazná aróma spolu s chuťou vytvárajú dokonale zladenú dvojicu, vďaka ktorej je Brazília Santos najpredávanejšou a najobľúbenejšou kávou na svete.</p>\n<table>\n<tbody>\n<tr>\n<th>FARMA</th>\n<td>Capricornio Coffees</td>\n</tr>\n<tr>\n<th>ODRODA</th>\n<td>Arabica Blend</td>\n</tr>\n<tr>\n<th>ZBER</th>\n<td>2019/Stripping</td>\n</tr>\n<tr>\n<th>SPRACOVANIE</th>\n<td>Natural</td>\n</tr>\n<tr>\n<th>NADMORSKÁ VÝŠKA</th>\n<td>1000 – 1200 m n.m.</td>\n</tr>\n<tr>\n<th>CUPPING SKÓRE</th>\n<td>82 b.</td>\n</tr>\n</tbody>\n</table>",
+  "images": [
+   {
+    "id": 9272,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220309-182136_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220309-182136_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 6528,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/11/BRAZILIA-santos-photo-brown.jpg",
+    "sizes": "(max-width: 1280px) 100vw, 1280px",
+    "name": "BRAZILIA-santos-photo-brown",
+    "alt": ""
+   },
+   {
+    "id": 5824,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20191121_132233-1-scaled.jpg",
+    "sizes": "(max-width: 1211px) 100vw, 1211px",
+    "name": "20191121_132233",
+    "alt": ""
+   },
+   {
+    "id": 6527,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/11/BRAZILIA-santos-photo-black.jpg",
+    "sizes": "(max-width: 1280px) 100vw, 1280px",
+    "name": "BRAZILIA-santos-photo-black",
+    "alt": ""
+   },
+   {
+    "id": 6061,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_183140-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200501_183140",
+    "alt": ""
+   },
+   {
+    "id": 5167,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2019/12/Bez-názvu-1.jpg",
+    "sizes": "(max-width: 1748px) 100vw, 1748px",
+    "name": "Bez názvu-1",
+    "alt": ""
+   },
+   {
+    "id": 5558,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20191209_154723-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20191209_154723",
+    "alt": ""
+   },
+   {
+    "id": 6048,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_181721-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200501_181721",
+    "alt": ""
+   },
+   {
+    "id": 9300,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20210915-160522_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20210915-160522_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9297,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20211106-141645_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20211106-141645_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9295,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20211124-123226_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20211124-123226_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9275,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/SmartSelect_20220225-154404_Facebook.jpg",
+    "sizes": "(max-width: 1074px) 100vw, 1074px",
+    "name": "SmartSelect_20220225-154404_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9251,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220808-135049_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220808-135049_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9241,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/FB_IMG_1665748968632.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "FB_IMG_1665748968632",
+    "alt": ""
+   },
+   {
+    "id": 9249,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/SmartSelect_20220817-172046_Facebook.jpg",
+    "sizes": "(max-width: 1073px) 100vw, 1073px",
+    "name": "SmartSelect_20220817-172046_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9245,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/SmartSelect_20220928_123540_Facebook.jpg",
+    "sizes": "(max-width: 1066px) 100vw, 1066px",
+    "name": "SmartSelect_20220928_123540_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9292,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220111-145407_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220111-145407_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9305,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20210814-124806_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20210814-124806_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9299,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20211006-094949_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20211006-094949_Facebook",
+    "alt": ""
+   }
+  ],
+  "variations": [
+   {
+    "id": 6800,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "500g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": null
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6601,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6602,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6603,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6604,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6605,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6606,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6607,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6608,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6609,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6610,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6611,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 6612,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 9159,
+  "name": "Pepek Blend 20% Arabica + 80% Robusta",
+  "permalink": "https://praziarenbonte.sk/kava/pepek-blend-20-arabica-80-robusta/",
+  "sku": "",
+  "is_in_stock": true,
+  "prices": {
+   "price": "790",
+   "regular_price": "790",
+   "sale_price": "790",
+   "price_range": {
+    "min_amount": "790",
+    "max_amount": "3690"
+   },
+   "currency_code": "EUR",
+   "currency_symbol": "€",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": "",
+   "currency_prefix": "",
+   "currency_suffix": " €"
+  },
+  "attributes": [
+   {
+    "id": 4,
+    "name": "Balenie",
+    "taxonomy": "pa_balenie",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 64,
+      "name": "125g",
+      "slug": "125g",
+      "default": true
+     },
+     {
+      "id": 57,
+      "name": "250g",
+      "slug": "250g",
+      "default": false
+     },
+     {
+      "id": 54,
+      "name": "500g",
+      "slug": "500g",
+      "default": false
+     },
+     {
+      "id": 58,
+      "name": "1kg",
+      "slug": "1kg",
+      "default": false
+     }
+    ]
+   },
+   {
+    "id": 5,
+    "name": "Hrubosť mletia",
+    "taxonomy": "pa_hrubost-mletia",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 60,
+      "name": "Jemné",
+      "slug": "jemne",
+      "default": false
+     },
+     {
+      "id": 61,
+      "name": "Stredné",
+      "slug": "stredne",
+      "default": false
+     },
+     {
+      "id": 59,
+      "name": "Hrubé",
+      "slug": "hrube",
+      "default": false
+     },
+     {
+      "id": 70,
+      "name": "Zrnková",
+      "slug": "zrnkova",
+      "default": true
+     }
+    ]
+   },
+   {
+    "id": 0,
+    "name": "Nálepka",
+    "taxonomy": null,
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 0,
+      "name": "žiadna",
+      "slug": "žiadna"
+     },
+     {
+      "id": 0,
+      "name": "Babičke",
+      "slug": "Babičke"
+     },
+     {
+      "id": 0,
+      "name": "Dedkovi",
+      "slug": "Dedkovi"
+     },
+     {
+      "id": 0,
+      "name": "Maminke",
+      "slug": "Maminke"
+     },
+     {
+      "id": 0,
+      "name": "Oteckovi",
+      "slug": "Oteckovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej dcérke",
+      "slug": "Najlepšej dcérke"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu synovi",
+      "slug": "Najlepšiemu synovi"
+     },
+     {
+      "id": 0,
+      "name": "Sestričke",
+      "slug": "Sestričke"
+     },
+     {
+      "id": 0,
+      "name": "Bračekovi",
+      "slug": "Bračekovi"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamoške",
+      "slug": "Naj kamoške"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamošovi",
+      "slug": "Naj kamošovi"
+     },
+     {
+      "id": 0,
+      "name": "Milovanej osobe",
+      "slug": "Milovanej osobe"
+     },
+     {
+      "id": 0,
+      "name": "Z lásky",
+      "slug": "Z lásky"
+     },
+     {
+      "id": 0,
+      "name": "Zo srdiečka",
+      "slug": "Zo srdiečka"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnej priateľke",
+      "slug": "Úžasnej priateľke"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnému priateľovi",
+      "slug": "Úžasnému priateľovi"
+     },
+     {
+      "id": 0,
+      "name": "Pre lepšie výkony v posteli",
+      "slug": "Pre lepšie výkony v posteli"
+     },
+     {
+      "id": 0,
+      "name": "Pre budúcu mamičku",
+      "slug": "Pre budúcu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moje dve lásky",
+      "slug": "Pre moje dve lásky"
+     },
+     {
+      "id": 0,
+      "name": "Pre najlepšiu mamičku",
+      "slug": "Pre najlepšiu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moju princeznú",
+      "slug": "Pre moju princeznú"
+     },
+     {
+      "id": 0,
+      "name": "Ľúbim ťa ako kávu",
+      "slug": "Ľúbim ťa ako kávu"
+     },
+     {
+      "id": 0,
+      "name": "K životu potrebujem iba teba a kávu",
+      "slug": "K životu potrebujem iba teba a kávu"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu manželovi",
+      "slug": "Najlepšiemu manželovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej manželke",
+      "slug": "Najlepšej manželke"
+     },
+     {
+      "id": 0,
+      "name": "Pre kávičkára",
+      "slug": "Pre kávičkára"
+     }
+    ]
+   }
+  ],
+  "categories": [
+   {
+    "id": 71,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/"
+   },
+   {
+    "id": 36,
+    "name": "Zmes Arabiky a Robusty",
+    "slug": "zmes-arabiky-a-robusty",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/druh-kavy/zmes-arabiky-a-robusty/"
+   },
+   {
+    "id": 40,
+    "name": "Brazília",
+    "slug": "brazilia",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/krajina-povodu/brazilia/"
+   },
+   {
+    "id": 47,
+    "name": "India",
+    "slug": "india",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/krajina-povodu/india/"
+   }
+  ],
+  "tags": [],
+  "short_description": "<p>20% Arabica + 80% Robusta</p>\n<p><strong>Pepek Blend &#8211; </strong>Unikátna kávová zmes vytvorená pre športovcov, ktorý potrebujú vyšší podiel kofeínu pre lepšie športové výsledky.</p>\n<p>V chuti dominuje horká čokoláda s jemnou dochuťou lieskových orechov zjemnená štipkou škorice a slaného karamelu.</p>",
+  "description": "<p><strong>Pepek Blend</strong></p>\n<p>Unikátna kávová zmes vytvorená pre športovcov, ktorý potrebujú vyšší podiel kofeínu pre lepšie športové výsledky.</p>\n<p>V chuti dominuje horká čokoláda s jemnou dochuťou lieskových orechov zjemnená štipkou škorice a slaného karamelu.</p>\n<p>V šálke nášho nového blendu  skvele vyniknú svieže exotické tóny kávových zŕn z Indie a zo strednej Ameriky , ale aj lahodná sladká chuť kávy z Brazílie ktorú dopĺňa jemná robusta z Afriky</p>",
+  "images": [
+   {
+    "id": 9100,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/PEPEK-blend-white.jpg",
+    "sizes": "(max-width: 1280px) 100vw, 1280px",
+    "name": "PEPEK-blend-white",
+    "alt": ""
+   },
+   {
+    "id": 9177,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0022.jpg",
+    "sizes": "(max-width: 768px) 100vw, 768px",
+    "name": "IMG-20221117-WA0022",
+    "alt": ""
+   },
+   {
+    "id": 5842,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/FB_IMG_1580243084572-1.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "FB_IMG_1580243084572",
+    "alt": ""
+   },
+   {
+    "id": 5828,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200119_160129-1-scaled.jpg",
+    "sizes": "(max-width: 1211px) 100vw, 1211px",
+    "name": "20200119_160129",
+    "alt": ""
+   },
+   {
+    "id": 9173,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0025.jpg",
+    "sizes": "(max-width: 768px) 100vw, 768px",
+    "name": "IMG-20221117-WA0025",
+    "alt": ""
+   },
+   {
+    "id": 9178,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0020.jpg",
+    "sizes": "(max-width: 768px) 100vw, 768px",
+    "name": "IMG-20221117-WA0020",
+    "alt": ""
+   },
+   {
+    "id": 5855,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20191118_203152-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20191118_203152",
+    "alt": ""
+   },
+   {
+    "id": 9185,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0011.jpg",
+    "sizes": "(max-width: 1536px) 100vw, 1536px",
+    "name": "IMG-20221117-WA0011",
+    "alt": ""
+   },
+   {
+    "id": 9194,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0002.jpg",
+    "sizes": "(max-width: 1536px) 100vw, 1536px",
+    "name": "IMG-20221117-WA0002",
+    "alt": ""
+   },
+   {
+    "id": 5167,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2019/12/Bez-názvu-1.jpg",
+    "sizes": "(max-width: 1748px) 100vw, 1748px",
+    "name": "Bez názvu-1",
+    "alt": ""
+   },
+   {
+    "id": 9180,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0019.jpg",
+    "sizes": "(max-width: 768px) 100vw, 768px",
+    "name": "IMG-20221117-WA0019",
+    "alt": ""
+   },
+   {
+    "id": 9191,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/IMG-20221117-WA0005.jpg",
+    "sizes": "(max-width: 1536px) 100vw, 1536px",
+    "name": "IMG-20221117-WA0005",
+    "alt": ""
+   }
+  ],
+  "variations": [
+   {
+    "id": 9160,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "500g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": null
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9161,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9162,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9163,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9164,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9165,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9166,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9167,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9168,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9169,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9170,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9171,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 9172,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 4973,
+  "name": "Bonté Bocianik (bezkofeínová) 100%",
+  "permalink": "https://praziarenbonte.sk/kava/bonte-bocianik-bezkofeinova/",
+  "sku": "",
+  "is_in_stock": true,
+  "prices": {
+   "price": "790",
+   "regular_price": "790",
+   "sale_price": "790",
+   "price_range": {
+    "min_amount": "790",
+    "max_amount": "3990"
+   },
+   "currency_code": "EUR",
+   "currency_symbol": "€",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": "",
+   "currency_prefix": "",
+   "currency_suffix": " €"
+  },
+  "attributes": [
+   {
+    "id": 4,
+    "name": "Balenie",
+    "taxonomy": "pa_balenie",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 64,
+      "name": "125g",
+      "slug": "125g",
+      "default": true
+     },
+     {
+      "id": 57,
+      "name": "250g",
+      "slug": "250g",
+      "default": false
+     },
+     {
+      "id": 54,
+      "name": "500g",
+      "slug": "500g",
+      "default": false
+     },
+     {
+      "id": 58,
+      "name": "1kg",
+      "slug": "1kg",
+      "default": false
+     }
+    ]
+   },
+   {
+    "id": 5,
+    "name": "Hrubosť mletia",
+    "taxonomy": "pa_hrubost-mletia",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 60,
+      "name": "Jemné",
+      "slug": "jemne",
+      "default": false
+     },
+     {
+      "id": 61,
+      "name": "Stredné",
+      "slug": "stredne",
+      "default": false
+     },
+     {
+      "id": 59,
+      "name": "Hrubé",
+      "slug": "hrube",
+      "default": false
+     },
+     {
+      "id": 70,
+      "name": "Zrnková",
+      "slug": "zrnkova",
+      "default": true
+     }
+    ]
+   },
+   {
+    "id": 0,
+    "name": "Nálepka",
+    "taxonomy": null,
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 0,
+      "name": "žiadna",
+      "slug": "žiadna"
+     },
+     {
+      "id": 0,
+      "name": "Babičke",
+      "slug": "Babičke"
+     },
+     {
+      "id": 0,
+      "name": "Dedkovi",
+      "slug": "Dedkovi"
+     },
+     {
+      "id": 0,
+      "name": "Maminke",
+      "slug": "Maminke"
+     },
+     {
+      "id": 0,
+      "name": "Oteckovi",
+      "slug": "Oteckovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej dcérke",
+      "slug": "Najlepšej dcérke"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu synovi",
+      "slug": "Najlepšiemu synovi"
+     },
+     {
+      "id": 0,
+      "name": "Sestričke",
+      "slug": "Sestričke"
+     },
+     {
+      "id": 0,
+      "name": "Bračekovi",
+      "slug": "Bračekovi"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamoške",
+      "slug": "Naj kamoške"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamošovi",
+      "slug": "Naj kamošovi"
+     },
+     {
+      "id": 0,
+      "name": "Milovanej osobe",
+      "slug": "Milovanej osobe"
+     },
+     {
+      "id": 0,
+      "name": "Z lásky",
+      "slug": "Z lásky"
+     },
+     {
+      "id": 0,
+      "name": "Zo srdiečka",
+      "slug": "Zo srdiečka"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnej priateľke",
+      "slug": "Úžasnej priateľke"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnému priateľovi",
+      "slug": "Úžasnému priateľovi"
+     },
+     {
+      "id": 0,
+      "name": "Pre lepšie výkony v posteli",
+      "slug": "Pre lepšie výkony v posteli"
+     },
+     {
+      "id": 0,
+      "name": "Pre budúcu mamičku",
+      "slug": "Pre budúcu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moje dve lásky",
+      "slug": "Pre moje dve lásky"
+     },
+     {
+      "id": 0,
+      "name": "Pre najlepšiu mamičku",
+      "slug": "Pre najlepšiu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moju princeznú",
+      "slug": "Pre moju princeznú"
+     },
+     {
+      "id": 0,
+      "name": "Ľúbim ťa ako kávu",
+      "slug": "Ľúbim ťa ako kávu"
+     },
+     {
+      "id": 0,
+      "name": "K životu potrebujem iba teba a kávu",
+      "slug": "K životu potrebujem iba teba a kávu"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu manželovi",
+      "slug": "Najlepšiemu manželovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej manželke",
+      "slug": "Najlepšej manželke"
+     },
+     {
+      "id": 0,
+      "name": "Pre kávičkára",
+      "slug": "Pre kávičkára"
+     }
+    ]
+   }
+  ],
+  "categories": [
+   {
+    "id": 71,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/"
+   },
+   {
+    "id": 88,
+    "name": "Bezkofeínová",
+    "slug": "bezkofeinova",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/druh-kavy/bezkofeinova/"
+   },
+   {
+    "id": 34,
+    "name": "Odrodová 100% Arabika",
+    "slug": "odrodova-100-arabika",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/druh-kavy/odrodova-100-arabika/"
+   },
+   {
+    "id": 101,
+    "name": "Mexico",
+    "slug": "mexico",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/krajina-povodu/mexico/"
+   },
+   {
+    "id": 127,
+    "name": "Svetlo pražená káva",
+    "slug": "svetlo-prazena-kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/svetlo-prazena-kava/"
+   }
+  ],
+  "tags": [],
+  "short_description": "<p>100% Arabica</p>\n<p><strong>Bezkofeínová BIO-káva s výnimočným spracovaním. Mexico Fairtrade Organic.</strong></p>\n<p>&nbsp;</p>",
+  "description": "<p><strong>Káva vhodná pre tehotné, dojčiace ženy a pre ľudí so žalúdočnými problémami.</strong></p>\n<p><strong>SWISS Water Process</strong> (Švajčiarsky vodný proces)</p>\n<p>Využíva prvky vody, teploty a času, aby vytvorili jednu z najzaujímavejších bezkofeínových<br />\nkáv. Táto metóda slúži na nechemické odstránenie kofeínu z kávy. V samotnom procese sa<br />\nnajskôr vylúhujú zelené kávové zrná v nádrži s horúcou vodou.<br />\nKofeín sa spolu s olejmi a rozpustnými látkami uvoľní zo zŕn do vody, takto sa získava<br />\nnasýtený roztok zelenej kávy. Ten sa ďalej filtruje cez uhlíkový filter. Uhlíkový filter<br />\nzachytí len molekuly kofeínu, tým sa získa chutný bezkofeínový koncentrát nasiaknutý<br />\nkávovými zložkami, ktoré sa rozpustili vo vode. Následne sa odoberú zelené zrná ,ktoré sú v<br />\ntomto momente odpad. Do koncentrátu sa pridá nová dávka zelených kávových zŕn,<br />\nnakoľko je koncentrát už nasýtený kávovými zložkami ( chuťovými molekulami a olejmi), z<br />\nnových kávových zŕn sa už nevyplavia žiadne ďalšie oleje či vo vode rozpustné látky, jediné<br />\nmolekuly, ktoré sa zo zŕn vyplavia, sú molekuly kofeínu. Aj tento koncentrát sa filtruje cez<br />\nuhlíkové filtre, na ktorých sa zachytí kofeín. Tento krok sa niekoľkokrát opakuje, aby nám<br />\nvznikla bezkofeínová káva na 99,9%. Celý proces trvá 10 hodín ,kde sa nepretržite<br />\nmonitoruje čas, teplota a hladina procesu a kofeínu v každej dávke zelenej kávy.</p>\n<p>&nbsp;</p>\n<p>&nbsp;</p>",
+  "images": [
+   {
+    "id": 9260,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220624-183717_Facebook-e1746639162195.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220624-183717_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 4986,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/bocianik-nahlad-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "bocianik-nahlad",
+    "alt": ""
+   },
+   {
+    "id": 8035,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165431-scaled.jpg",
+    "sizes": "(max-width: 1441px) 100vw, 1441px",
+    "name": "20211127_165431",
+    "alt": ""
+   },
+   {
+    "id": 5829,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200126_121618-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200126_121618",
+    "alt": ""
+   },
+   {
+    "id": 8032,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165202-scaled.jpg",
+    "sizes": "(max-width: 1920px) 100vw, 1920px",
+    "name": "20211127_165202",
+    "alt": ""
+   },
+   {
+    "id": 5167,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2019/12/Bez-názvu-1.jpg",
+    "sizes": "(max-width: 1748px) 100vw, 1748px",
+    "name": "Bez názvu-1",
+    "alt": ""
+   },
+   {
+    "id": 8033,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165220-scaled.jpg",
+    "sizes": "(max-width: 1441px) 100vw, 1441px",
+    "name": "20211127_165220",
+    "alt": ""
+   },
+   {
+    "id": 5839,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200330_101238-1-scaled.jpg",
+    "sizes": "(max-width: 1211px) 100vw, 1211px",
+    "name": "20200330_101238",
+    "alt": ""
+   },
+   {
+    "id": 5828,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200119_160129-1-scaled.jpg",
+    "sizes": "(max-width: 1211px) 100vw, 1211px",
+    "name": "20200119_160129",
+    "alt": ""
+   },
+   {
+    "id": 8037,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165529-scaled.jpg",
+    "sizes": "(max-width: 1920px) 100vw, 1920px",
+    "name": "20211127_165529",
+    "alt": ""
+   },
+   {
+    "id": 8034,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165317-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20211127_165317",
+    "alt": ""
+   },
+   {
+    "id": 8036,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/11/20211127_165458-scaled.jpg",
+    "sizes": "(max-width: 1920px) 100vw, 1920px",
+    "name": "20211127_165458",
+    "alt": ""
+   },
+   {
+    "id": 9297,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20211106-141645_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20211106-141645_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9298,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20211025-102137_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20211025-102137_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9300,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20210915-160522_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20210915-160522_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9303,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20210830-153837_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20210830-153837_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9305,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20210814-124806_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20210814-124806_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9268,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220322-155739_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220322-155739_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9266,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220404-181438_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220404-181438_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9260,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220624-183717_Facebook-e1746639162195.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220624-183717_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9259,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220627-193303_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220627-193303_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 9242,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/FB_IMG_1666689567845.jpg",
+    "sizes": "(max-width: 490px) 100vw, 490px",
+    "name": "FB_IMG_1666689567845",
+    "alt": ""
+   },
+   {
+    "id": 9244,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/FB_IMG_1668458533576.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "FB_IMG_1668458533576",
+    "alt": ""
+   }
+  ],
+  "variations": [
+   {
+    "id": 6793,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "500g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": null
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4974,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4975,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4976,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4977,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4978,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4979,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4980,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4981,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4982,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4983,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4984,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 4985,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": 8574,
+  "name": "Tanzania Washed Tanga AA 100% Arabica",
+  "permalink": "https://praziarenbonte.sk/kava/tanzania-washed-tanga-aa-100-arabica/",
+  "sku": "",
+  "is_in_stock": true,
+  "prices": {
+   "price": "790",
+   "regular_price": "790",
+   "sale_price": "790",
+   "price_range": {
+    "min_amount": "790",
+    "max_amount": "4990"
+   },
+   "currency_code": "EUR",
+   "currency_symbol": "€",
+   "currency_minor_unit": 2,
+   "currency_decimal_separator": ",",
+   "currency_thousand_separator": "",
+   "currency_prefix": "",
+   "currency_suffix": " €"
+  },
+  "attributes": [
+   {
+    "id": 4,
+    "name": "Balenie",
+    "taxonomy": "pa_balenie",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 64,
+      "name": "125g",
+      "slug": "125g",
+      "default": true
+     },
+     {
+      "id": 57,
+      "name": "250g",
+      "slug": "250g",
+      "default": false
+     },
+     {
+      "id": 54,
+      "name": "500g",
+      "slug": "500g",
+      "default": false
+     },
+     {
+      "id": 58,
+      "name": "1kg",
+      "slug": "1kg",
+      "default": false
+     }
+    ]
+   },
+   {
+    "id": 5,
+    "name": "Hrubosť mletia",
+    "taxonomy": "pa_hrubost-mletia",
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 60,
+      "name": "Jemné",
+      "slug": "jemne",
+      "default": false
+     },
+     {
+      "id": 61,
+      "name": "Stredné",
+      "slug": "stredne",
+      "default": false
+     },
+     {
+      "id": 59,
+      "name": "Hrubé",
+      "slug": "hrube",
+      "default": false
+     },
+     {
+      "id": 70,
+      "name": "Zrnková",
+      "slug": "zrnkova",
+      "default": true
+     }
+    ]
+   },
+   {
+    "id": 0,
+    "name": "Nálepka",
+    "taxonomy": null,
+    "has_variations": true,
+    "terms": [
+     {
+      "id": 0,
+      "name": "žiadna",
+      "slug": "žiadna"
+     },
+     {
+      "id": 0,
+      "name": "Babičke",
+      "slug": "Babičke"
+     },
+     {
+      "id": 0,
+      "name": "Dedkovi",
+      "slug": "Dedkovi"
+     },
+     {
+      "id": 0,
+      "name": "Maminke",
+      "slug": "Maminke"
+     },
+     {
+      "id": 0,
+      "name": "Oteckovi",
+      "slug": "Oteckovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej dcérke",
+      "slug": "Najlepšej dcérke"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu synovi",
+      "slug": "Najlepšiemu synovi"
+     },
+     {
+      "id": 0,
+      "name": "Sestričke",
+      "slug": "Sestričke"
+     },
+     {
+      "id": 0,
+      "name": "Bračekovi",
+      "slug": "Bračekovi"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamoške",
+      "slug": "Naj kamoške"
+     },
+     {
+      "id": 0,
+      "name": "Naj kamošovi",
+      "slug": "Naj kamošovi"
+     },
+     {
+      "id": 0,
+      "name": "Milovanej osobe",
+      "slug": "Milovanej osobe"
+     },
+     {
+      "id": 0,
+      "name": "Z lásky",
+      "slug": "Z lásky"
+     },
+     {
+      "id": 0,
+      "name": "Zo srdiečka",
+      "slug": "Zo srdiečka"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnej priateľke",
+      "slug": "Úžasnej priateľke"
+     },
+     {
+      "id": 0,
+      "name": "Úžasnému priateľovi",
+      "slug": "Úžasnému priateľovi"
+     },
+     {
+      "id": 0,
+      "name": "Pre lepšie výkony v posteli",
+      "slug": "Pre lepšie výkony v posteli"
+     },
+     {
+      "id": 0,
+      "name": "Pre budúcu mamičku",
+      "slug": "Pre budúcu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moje dve lásky",
+      "slug": "Pre moje dve lásky"
+     },
+     {
+      "id": 0,
+      "name": "Pre najlepšiu mamičku",
+      "slug": "Pre najlepšiu mamičku"
+     },
+     {
+      "id": 0,
+      "name": "Pre moju princeznú",
+      "slug": "Pre moju princeznú"
+     },
+     {
+      "id": 0,
+      "name": "Ľúbim ťa ako kávu",
+      "slug": "Ľúbim ťa ako kávu"
+     },
+     {
+      "id": 0,
+      "name": "K životu potrebujem iba teba a kávu",
+      "slug": "K životu potrebujem iba teba a kávu"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšiemu manželovi",
+      "slug": "Najlepšiemu manželovi"
+     },
+     {
+      "id": 0,
+      "name": "Najlepšej manželke",
+      "slug": "Najlepšej manželke"
+     },
+     {
+      "id": 0,
+      "name": "Pre kávičkára",
+      "slug": "Pre kávičkára"
+     }
+    ]
+   }
+  ],
+  "categories": [
+   {
+    "id": 71,
+    "name": "Káva",
+    "slug": "kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/"
+   },
+   {
+    "id": 34,
+    "name": "Odrodová 100% Arabika",
+    "slug": "odrodova-100-arabika",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/druh-kavy/odrodova-100-arabika/"
+   },
+   {
+    "id": 157,
+    "name": "Tanzania",
+    "slug": "tanzania",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/kava/krajina-povodu/tanzania/"
+   },
+   {
+    "id": 127,
+    "name": "Svetlo pražená káva",
+    "slug": "svetlo-prazena-kava",
+    "link": "https://praziarenbonte.sk/kategoria-produktu/svetlo-prazena-kava/"
+   }
+  ],
+  "tags": [],
+  "short_description": "<p>100% Arabica</p>\n<p><strong>Tanzania Washed Tanga AA</strong> &#8211; Tanzania sa vyznačuje sladkou chuťou<br />\ntropického ovocia v dochuti cítiť jemný náznak medu a orieškov.</p>",
+  "description": "<p><strong>Tanzania Washed Tanga AA</strong> &#8211; Kvalitné zrná s označením AA boli vypestované na tienených<br />\nplantážach a následne spracované mokrou metódou. Tanzania sa vyznačuje sladkou chuťou<br />\ntropického ovocia v dochuti cítiť jemný náznak medu a orieškov.</p>",
+  "images": [
+   {
+    "id": 9232,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/SmartSelect_20220922_160035_Facebook.jpg",
+    "sizes": "(max-width: 1070px) 100vw, 1070px",
+    "name": "SmartSelect_20220922_160035_Facebook",
+    "alt": ""
+   },
+   {
+    "id": 8421,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/12/tanzania-washed-tanga-brown.jpg",
+    "sizes": "(max-width: 1280px) 100vw, 1280px",
+    "name": "tanzania-washed-tanga-brown",
+    "alt": ""
+   },
+   {
+    "id": 5834,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200324_115434-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200324_115434",
+    "alt": ""
+   },
+   {
+    "id": 8422,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/12/tanzania-washed-tanga-white.jpg",
+    "sizes": "(max-width: 1280px) 100vw, 1280px",
+    "name": "tanzania-washed-tanga-white",
+    "alt": ""
+   },
+   {
+    "id": 6061,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_183140-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200501_183140",
+    "alt": ""
+   },
+   {
+    "id": 7459,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2021/02/1-1.png",
+    "sizes": "(max-width: 941px) 100vw, 941px",
+    "name": "espresso",
+    "alt": "espresso"
+   },
+   {
+    "id": 5855,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20191118_203152-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20191118_203152",
+    "alt": ""
+   },
+   {
+    "id": 5167,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2019/12/Bez-názvu-1.jpg",
+    "sizes": "(max-width: 1748px) 100vw, 1748px",
+    "name": "Bez názvu-1",
+    "alt": ""
+   },
+   {
+    "id": 6034,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_174813-scaled.jpg",
+    "sizes": "(max-width: 1440px) 100vw, 1440px",
+    "name": "20200501_174813",
+    "alt": ""
+   },
+   {
+    "id": 6050,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_182039-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200501_182039",
+    "alt": ""
+   },
+   {
+    "id": 5840,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20200330_101445-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200330_101445",
+    "alt": ""
+   },
+   {
+    "id": 5827,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/04/20191121_133347-1-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20191121_133347",
+    "alt": ""
+   },
+   {
+    "id": 6031,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2020/05/20200501_174719-scaled.jpg",
+    "sizes": "(max-width: 2560px) 100vw, 2560px",
+    "name": "20200501_174719",
+    "alt": ""
+   },
+   {
+    "id": 9278,
+    "src": "https://praziarenbonte.sk/wp-content/uploads/2022/11/Screenshot_20220217-133504_Facebook.jpg",
+    "sizes": "(max-width: 1080px) 100vw, 1080px",
+    "name": "Screenshot_20220217-133504_Facebook",
+    "alt": ""
+   }
+  ],
+  "variations": [
+   {
+    "id": 8575,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "500g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": null
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8576,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8577,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8578,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8579,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "125g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8580,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8581,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8582,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8583,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "1kg"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8584,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "hrube"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8585,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "jemne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8586,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "stredne"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   },
+   {
+    "id": 8587,
+    "attributes": [
+     {
+      "name": "Balenie",
+      "value": "250g"
+     },
+     {
+      "name": "Hrubosť mletia",
+      "value": "zrnkova"
+     },
+     {
+      "name": "Nálepka",
+      "value": null
+     }
+    ]
+   }
+  ]
+ }
+]
