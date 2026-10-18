@@ -503,6 +503,17 @@ one-line `summary` with the numbers in it, the `detail` behind it, and a
 `src/coffee_aggregator/reporting/` turns that list into one of three formats and
 has no opinion about where the numbers came from.
 
+Nine of the ten kinds read `crawl_run`, `price_history` or the live
+catalogue. `coverage-drop` reads `crawl_coverage`, which every crawl writes one
+row into per shop per field: how many rows it re-read that night, how many of
+them carried the field, and the aggregator version that measured it. It is a
+per-shop finding and names a shop like the rest — a catalogue-wide share cannot
+see it, because a shop losing a field on 10 rows moves a 3 773-row catalogue by
+0.19 points. `src/coffee_aggregator/db/coverage.py` holds the fields measured,
+what counts as known for each (the `'unknown'` and jsonb `'[]'` sentinels mean
+`IS NOT NULL` is not the test), and the 20-point threshold with the measurement
+that chose it.
+
 ```bash
 coffee-aggregator report                                 # today, as text
 coffee-aggregator report --day 2026-10-02 --history-days 14

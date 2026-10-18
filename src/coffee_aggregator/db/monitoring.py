@@ -268,6 +268,40 @@ class PostgresMonitor:
                 ),
             )
         connection.commit()
+        self._record_coverage(report)
+
+    def _record_coverage(self, report: RunReport) -> None:
+        """Measure what the shop published tonight, in a second transaction.
+
+        It runs after the ``crawl_run`` row is committed, and its failure is
+        logged and swallowed on its own: a broken coverage query must never
+        cost the row that says the shop wrote nothing, which is the row worth
+        most on the night the writes are what failed.
+
+        Only a run that is ``complete and discovery_ok`` is measured.
+        ``mark_delisted`` is skipped on a partial or unhealthy run, so a
+        truncated night would record a diluted fill rate and later be used as
+        the baseline a real night is compared against.
+
+        Args:
+            report: What the crawl of one shop did.
+        """
+        from coffee_aggregator.db import coverage  # noqa: PLC0415  (postgres only)
+
+        if not (report.complete and report.discovery_ok) or report.started_at is None:
+            return
+        try:
+            connection = self.connection
+            coverage.record(
+                connection,
+                site=report.site_id,
+                started_at=report.started_at,
+                version=__version__,
+            )
+            connection.commit()
+        except Exception:
+            logger.exception("could not record the coverage of %s", report.site_id)
+            self._rollback()
 
     def recent(self, *, site: str | None = None, limit: int = DEFAULT_RECENT_LIMIT) -> list[Run]:
         """Return the runs that started most recently.

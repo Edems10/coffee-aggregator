@@ -98,17 +98,19 @@ def price(  # noqa: PLR0913  (same)
 
 
 class FakeCursor:
-    """Replays the three lists of tuples, honouring the filters each query applies."""
+    """Replays the four lists of tuples, honouring the filters each query applies."""
 
     def __init__(
         self,
         runs: Sequence[tuple[Any, ...]],
         prices: Sequence[tuple[Any, ...]],
         live: Sequence[tuple[Any, ...]] = (),
+        coverage: Sequence[tuple[Any, ...]] = (),
     ) -> None:
         self.runs = runs
         self.prices = prices
         self.live = live
+        self.coverage = coverage
         self.rows: list[tuple[Any, ...]] = []
         self.queries: list[str] = []
 
@@ -121,7 +123,11 @@ class FakeCursor:
             return
         assert params is not None
         first, last = params
-        if "crawl_run" in query:
+        if "crawl_coverage" in query:
+            # Tested before ``crawl_run``: the two names overlap on neither
+            # side, but a reader adding a fifth query should see the order.
+            self.rows = [row for row in self.coverage if first <= row[0] <= last]
+        elif "crawl_run" in query:
             self.rows = [row for row in self.runs if first <= row[1] < last]
         else:
             self.rows = [row for row in self.prices if first <= row[2] <= last]
@@ -142,27 +148,34 @@ class FakeConnection:
         runs: Sequence[tuple[Any, ...]] = (),
         prices: Sequence[tuple[Any, ...]] = (),
         live: Sequence[tuple[Any, ...]] = (),
+        coverage: Sequence[tuple[Any, ...]] = (),
     ) -> None:
         self.runs = runs
         self.prices = prices
         self.live = live
+        self.coverage = coverage
         self.cursors: list[FakeCursor] = []
 
     def cursor(self) -> FakeCursor:
-        cursor = FakeCursor(self.runs, self.prices, self.live)
+        cursor = FakeCursor(self.runs, self.prices, self.live, self.coverage)
         self.cursors.append(cursor)
         return cursor
 
 
-def report(
+def report(  # noqa: PLR0913  (one keyword per fake table)
     runs: Sequence[tuple[Any, ...]] = (),
     prices: Sequence[tuple[Any, ...]] = (),
     *,
     day: date = DAY,
     history_days: int = 7,
     live: Sequence[tuple[Any, ...]] = (),
+    coverage: Sequence[tuple[Any, ...]] = (),
 ) -> list[Finding]:
-    return findings(FakeConnection(runs, prices, live), day=day, history_days=history_days)
+    return findings(
+        FakeConnection(runs, prices, live, coverage),
+        day=day,
+        history_days=history_days,
+    )
 
 
 def kinds(found: Sequence[Finding]) -> list[str]:
@@ -171,6 +184,18 @@ def kinds(found: Sequence[Finding]) -> list[str]:
 
 def only(found: Sequence[Finding], kind: str) -> list[Finding]:
     return [finding for finding in found if finding.kind == kind]
+
+
+def coverage_row(  # noqa: PLR0913, PLR0917  (one argument per column, as ``run`` does)
+    site: str,
+    field: str,
+    day: date,
+    rows: int,
+    known: int,
+    version: str | None = "0.6.0",
+) -> tuple[Any, ...]:
+    """One crawl_coverage row, in the order the module's SELECT asks for."""
+    return (day, site, field, rows, known, version)
 
 
 def steady(site: str, written: int, days: int = 3) -> list[tuple[Any, ...]]:
@@ -240,14 +265,21 @@ def test_a_catalogue_wide_finding_sorts_above_the_named_shops() -> None:
     assert [finding.site for finding in found] == [""]
 
 
-def test_the_two_queries_read_only_the_window_asked_for() -> None:
-    connection = FakeConnection(steady("alpha", 10, days=9))
+def test_the_three_queries_read_only_the_window_asked_for() -> None:
+    connection = FakeConnection(
+        steady("alpha", 10, days=9),
+        coverage=[
+            coverage_row("alpha", "origin_country", DAY - timedelta(days=offset), 10, 8)
+            for offset in range(9)
+        ],
+    )
 
     findings(connection, day=DAY, history_days=2)
 
-    assert len(connection.cursors) == 2
+    assert len(connection.cursors) == 3
     assert all("SELECT" in cursor.queries[0] for cursor in connection.cursors)
     assert len(connection.cursors[0].rows) == 3
+    assert len(connection.cursors[2].rows) == 3
 
 
 # --- no-products --------------------------------------------------------------
