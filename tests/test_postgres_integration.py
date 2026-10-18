@@ -59,6 +59,7 @@ FINDINGS = (
 #: the database TEST_DATABASE_URL names — never in the development database.
 #: Dropped in this order: the variants reference the products.
 TABLES = (
+    "crawl_coverage",
     "crawl_finding",
     "outbox",
     "coffee_variant",

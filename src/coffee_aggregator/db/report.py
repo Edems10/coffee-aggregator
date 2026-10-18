@@ -170,12 +170,14 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     and :data:`REFUSED_WEIGHT` reads each row that stores no weight against the
     name it still states; none of them needs a past either.
 
-    ``coverage-drop`` is deliberately absent. ``price_history`` carries price,
-    currency, weight and availability and nothing else; ``origin_country``,
-    ``process_method`` and ``flavor_notes`` live on ``coffee``, which is
-    upserted in place, so by the time the report runs yesterday's values are
-    gone. There is no history to compare a shop's coverage against, and a
-    finding computed from today alone would be a finding about shop size.
+    ``coverage-drop`` is the one judgement that reads neither table. ``coffee``
+    is upserted in place, so yesterday's ``origin_country`` is gone by the time
+    the report runs, and ``price_history`` never carried it; the counts are
+    therefore recorded as each shop is crawled, into ``crawl_coverage``, and
+    this reads them back. It is a shop against its own recent median, per
+    field, never a catalogue-wide share --
+    :mod:`coffee_aggregator.db.coverage` holds the fields, the thresholds and
+    the measurement behind each.
 
     Args:
         connection: Something to read from; only ``SELECT`` is issued.
@@ -188,6 +190,10 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
         carry an empty site and sort to the top of their severity. Every
         ``detail`` holds JSON-native values only.
     """
+    # Imported here because coverage.py imports this module at its top, so the
+    # dependency can only run the other way round from inside the call.
+    from coffee_aggregator.db.coverage import coverage_findings  # noqa: PLC0415
+
     earliest = day - timedelta(days=history_days)
     days = _read_days(connection, earliest, day)
     today = {one.site: one for one in days if one.day == day}
@@ -202,6 +208,7 @@ def findings(connection: Connection, *, day: date, history_days: int = 7) -> lis
     found.extend(_contradictions(listings))
     found.extend(_name_weight_contradictions(listings))
     found.extend(_refused_weight_findings(listings))
+    found.extend(coverage_findings(connection, day=day, earliest=earliest))
     return sorted(found, key=_order)
 
 

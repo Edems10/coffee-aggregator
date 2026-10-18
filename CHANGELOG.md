@@ -10,6 +10,65 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.6.0 (2026-10-18)
+
+The crawl now records what each shop published, so a field that stops being
+extracted is reported instead of being silently overwritten (migration
+`0.6.0_crawl_coverage`).
+
+### Added
+
+- `crawl_coverage` stores one row per shop per field per crawl day: how many
+  beans the night re-read, how many of them carried the field, and the
+  aggregator version that measured it. Until now `coffee` was upserted in
+  place with no `COALESCE`, so a rotted selector overwrote yesterday's value
+  and left nothing behind saying it ever held one. On 2026-10-17, over 152
+  shops and 3 773 rows, two shops had lost a field with nothing reporting it:
+  `ajvencoffee` went 70% → 0% on `origin_country` over 11 rows (#176, a
+  tagline that made every coffee a blend) and `ohmybean` 65% → 37% over 27.
+  Row counts were up, prices were right and no page failed, so `no-products`,
+  `write-drop`, `parse-gap` and `new-failures` all stayed silent, correctly.
+- 24 fields are counted, each by its own definition of known. Three of them
+  are the reason the table exists: `roast_level`, `process_method` and
+  `roast_profile` can never be NULL, because `sinks/records.py` writes the
+  string `'unknown'` for a `StrEnum` that knows nothing — 1 988, 1 802 and
+  1 397 rows of the same crawl — and `variety` and its five jsonb siblings
+  land as `'[]'`, 2 098 rows of it. A `count(col)/count(*)` metric reports
+  100% for all of them for ever, so the four fields most likely to rot are the
+  four it cannot see. `raw_attributes` is excluded and documented in the
+  migration: it is a jsonb object, `jsonb_array_length` raises on it, and the
+  write sits inside a handler that swallows everything, so one copied formula
+  would lose a whole night's coverage without a line in the log.
+- `report` emits the `coverage-drop` finding that `db/report.py` had been
+  documenting as impossible since it was written. It is a shop against its own
+  recent median, per field, and never a catalogue-wide share: `ajvencoffee`
+  losing a field on 10 rows moves a 3 773-row catalogue by 0.19 points, under
+  any threshold anybody would set. A fall of 20 percentage points or more
+  reports, which is p99 of the 17-day distribution over 1 538 shop-field pairs
+  (p50 0.0, p90 3.7, p95 8.3, p99 22.2) and finds 5 events over those days; 10
+  points adds twelve single-digit-row wobbles and 30 would miss `ohmybean`'s
+  28. Guards: at least 8 rows, because a fill rate over 8 moves 12.5 points per
+  row, and a baseline the shop actually had — a field it never published is a
+  ceiling, not a drop. A shop losing three or more fields is one finding, not
+  three. Every finding names the aggregator version of tonight's rows and of
+  the baseline, because three of the five falls measured were our own deploy
+  (#97 moving grind words out of `brewing_methods`, at `grinders`,
+  `bartcoffee` and `kavaoliver`) and an alert that cannot tell a release from
+  a rotted selector is muted inside a month.
+
+### Changed
+
+- `coverage-drop` was described as catalogue-wide in `reporting/finding.py`,
+  in the README's list of kinds and in the renderer fixture, all written
+  before the 0.19-point measurement existed. All three now describe the
+  per-shop finding that ships.
+- A row is written only for a run that finished `complete` and `discovery_ok`,
+  and it counts the rows the crawl re-read (`last_seen_at >= started_at`)
+  rather than the rows not delisted. `mark_delisted` is skipped on a partial
+  or unhealthy night, so the alternative would dilute the fill rate with rows
+  nobody re-read and invent a drop belonging to the delisting that did not
+  run.
+
 ## 0.5.0 (2026-10-18)
 
 The three bespoke shops now say which roastery their coffee is from, so 172

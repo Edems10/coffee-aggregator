@@ -80,9 +80,22 @@ WEIGHT_CHANGE = Finding(
 )
 COVERAGE = Finding(
     kind="coverage-drop",
-    site="",
-    summary="roast level is stated on 41% of products, 58% a week ago",
-    detail={"products": 8123, "previous_products": 8340, "with_roast_pct": 41},
+    site="ajvencoffee",
+    summary=(
+        "ajvencoffee / origin_country: stated on 0% of 11 rows, against a median "
+        "of 70% over its last 6 days"
+    ),
+    detail={
+        "field": "origin_country",
+        "rows": 11,
+        "known": 0,
+        "fill_pct": 0.0,
+        "median_fill_pct": 70.0,
+        "drop_points": 70.0,
+        "baseline_days": 6,
+        "version": "0.6.0",
+        "baseline_versions": ["0.6.0"],
+    },
     severity="low",
 )
 BUSY = [NO_PRODUCTS, PRICE_JUMP, WEIGHT_CHANGE, COVERAGE]

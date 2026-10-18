@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from coffee_aggregator.db import migrate, monitoring
+from coffee_aggregator import __version__
+from coffee_aggregator.db import coverage, migrate, monitoring
 from coffee_aggregator.db.monitoring import (
     COLUMNS,
     TABLE,
@@ -19,7 +20,7 @@ from coffee_aggregator.db.monitoring import (
 from coffee_aggregator.pipeline import RunReport
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
     import psycopg
 
@@ -171,7 +172,47 @@ def monitor() -> Iterator[PostgresMonitor]:
 def _empty(connection: psycopg.Connection[Any]) -> None:
     with connection.cursor() as cursor:
         cursor.execute(f"TRUNCATE {TABLE}")
+        cursor.execute(f"TRUNCATE {coverage.TABLE}")
+        cursor.execute("DELETE FROM coffee WHERE site = %s", (_SHOP,))
     connection.commit()
+
+
+#: The shop the coverage tests own, kept out of every other test's rows.
+_SHOP = "coverage-shop"
+
+_COFFEE_SQL = (
+    "INSERT INTO coffee (site, external_id, product_kind, last_seen_at, "
+    "origin_country, roast_level, variety) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+)
+
+
+def _beans(
+    connection: psycopg.Connection[Any],
+    rows: Sequence[tuple[str, str, str | None, str, str]],
+    *,
+    last_seen: datetime,
+) -> None:
+    """Write the shop's catalogue as the crawl would have left it."""
+    with connection.cursor() as cursor:
+        cursor.executemany(
+            _COFFEE_SQL,
+            [
+                (_SHOP, external_id, kind, last_seen, origin, roast, variety)
+                for external_id, kind, origin, roast, variety in rows
+            ],
+        )
+    connection.commit()
+
+
+def _coverage(connection: psycopg.Connection[Any]) -> dict[str, tuple[int, int, str | None]]:
+    """Every coverage row written for the shop, keyed by field."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT field, rows, known, version FROM {coverage.TABLE} "  # noqa: S608  (a constant)
+            "WHERE site = %s",
+            (_SHOP,),
+        )
+        return {row[0]: (row[1], row[2], row[3]) for row in cursor.fetchall()}
 
 
 @pytest.mark.integration
@@ -240,3 +281,91 @@ def test_the_operators_query_finds_the_shops_that_wrote_nothing(monitor: Postgre
         rows = cursor.fetchall()
 
     assert [row[0] for row in rows] == ["broken", "rotted"]
+
+
+@pytest.mark.integration
+@live
+def test_a_clean_run_records_what_the_shop_published(monitor: PostgresMonitor) -> None:
+    """One row per measured field, counted by that field's own sentinel."""
+    started = datetime.now(UTC)
+    _beans(
+        monitor.connection,
+        [
+            ("1", "beans", "Ethiopia", "light", '["Bourbon"]'),
+            ("2", "beans", None, "unknown", "[]"),
+            ("3", "beans", "Brazil", "unknown", "[]"),
+            ("4", "capsules", "Kenya", "medium", '["SL28"]'),
+        ],
+        last_seen=started,
+    )
+
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started))
+
+    written = _coverage(monitor.connection)
+    assert len(written) == len(coverage.FIELDS)
+    assert written["origin_country"] == (3, 2, __version__)
+    # the StrEnum sentinel is the string 'unknown', not NULL, and jsonb '[]'
+    # is not NULL either; neither counts as something the shop published
+    assert written["roast_level"] == (3, 1, __version__)
+    assert written["variety"] == (3, 1, __version__)
+    assert written["sca_score"] == (3, 0, __version__)
+
+
+@pytest.mark.integration
+@live
+def test_a_row_the_crawl_did_not_re_read_is_not_counted(monitor: PostgresMonitor) -> None:
+    started = datetime.now(UTC)
+    _beans(
+        monitor.connection,
+        [("1", "beans", "Ethiopia", "light", '["Bourbon"]')],
+        last_seen=started - timedelta(days=2),
+    )
+    _beans(monitor.connection, [("2", "beans", "Brazil", "light", "[]")], last_seen=started)
+
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started))
+
+    assert _coverage(monitor.connection)["origin_country"] == (1, 1, __version__)
+
+
+@pytest.mark.integration
+@live
+@pytest.mark.parametrize("flaw", [{"complete": False}, {"discovery_ok": False}])
+def test_a_run_that_did_not_finish_cleanly_records_no_coverage(
+    monitor: PostgresMonitor,
+    flaw: dict[str, bool],
+) -> None:
+    """A truncated night would be a diluted baseline a real night is judged against."""
+    started = datetime.now(UTC)
+    _beans(monitor.connection, [("1", "beans", "Ethiopia", "light", "[]")], last_seen=started)
+
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started, **flaw))
+
+    assert _coverage(monitor.connection) == {}
+    assert len(monitor.recent(site=_SHOP)) == 1
+
+
+@pytest.mark.integration
+@live
+def test_re_running_a_night_replaces_its_coverage_rather_than_doubling_it(
+    monitor: PostgresMonitor,
+) -> None:
+    started = datetime.now(UTC)
+    _beans(monitor.connection, [("1", "beans", "Ethiopia", "light", "[]")], last_seen=started)
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started))
+    _beans(monitor.connection, [("2", "beans", None, "light", "[]")], last_seen=started)
+
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started))
+
+    written = _coverage(monitor.connection)
+    assert len(written) == len(coverage.FIELDS)
+    assert written["origin_country"] == (2, 1, __version__)
+
+
+@pytest.mark.integration
+@live
+def test_a_shop_that_re_read_nothing_records_no_coverage(monitor: PostgresMonitor) -> None:
+    started = datetime.now(UTC)
+
+    monitor.record(_report(site_id=_SHOP, started_at=started, finished_at=started))
+
+    assert _coverage(monitor.connection) == {}

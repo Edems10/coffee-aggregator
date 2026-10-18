@@ -81,9 +81,13 @@ KIND_NOTES: Final[dict[str, str]] = {
         "(kava.cz), and the row stays unpriced per kilogram until the page is clear."
     ),
     "coverage-drop": (
-        "Catalogue-wide: the share of products carrying a field fell. One large shop "
-        "can move this number on its own, so read the per-shop numbers before "
-        "changing anything shared."
+        "A field this shop used to publish is stated on far fewer of its products "
+        "than its own recent nights, over rows the crawl re-read. A rotted selector "
+        "looks exactly like a shop that rewrote its pages; the detail names the "
+        "aggregator version that measured tonight and those behind the baseline, and "
+        "the same step at many shops on one night is our deploy rather than theirs. "
+        "Save one product page and run `coffee-aggregator parse --site <shop> --file "
+        "page.html` before changing a selector."
     ),
 }
 
