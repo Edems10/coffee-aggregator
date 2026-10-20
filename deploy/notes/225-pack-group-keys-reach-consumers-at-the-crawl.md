@@ -8,8 +8,8 @@ migration. Run `update.sh` as the user that owns `/opt/coffee-aggregator`,
 
 **Nothing is sent at the deploy.** An event is queued when a crawl writes a row,
 so a row's key travels at its next crawl after this deploy, and not before. A
-delisted row is never crawled again, so it never sends one; it keeps whatever key
-its consumer last stored, which is none.
+delisting is the exception: it is built from the stored row, so it carries the
+row's stored key, or `null` for a row that was never crawled on 0.12.0 or later.
 
 **There is no replay.** `republish --all` does not carry the key. Both consumers
 keep an event only when its `observed_at` is strictly newer than the state they
@@ -53,5 +53,6 @@ and so does a shop whose crawl did not finish.
 
 The code is rolled back by the previous commit checked out in
 `/opt/coffee-aggregator` and rebuilt. The field disappears from new events, and
-consumers keep the last key they stored. The stored column stays, as it did in
-0.12.0, and nothing reads it.
+consumers keep the last key they stored until each row's next crawl after the
+rollback, when an event without the field overwrites it with null. The stored
+column stays, as it did in 0.12.0, and nothing reads it.
