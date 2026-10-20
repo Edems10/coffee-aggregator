@@ -306,6 +306,18 @@ class Coffee:
         return normalize.fold(self.roaster_name) or None
 
     @property
+    def pack_group_key(self) -> str | None:
+        """The key that this coffee shares with its other packs in the same shop.
+
+        Returns:
+            The key of :func:`~coffee_aggregator.pack_group.pack_group_key`, or
+            None when the name and the URL give nothing to build it from.
+        """
+        from coffee_aggregator.pack_group import pack_group_key  # noqa: PLC0415  (import cycle)
+
+        return pack_group_key(self.site, self.name, self.url)
+
+    @property
     def price_basis(self) -> PriceBasis | None:
         """The one offer every per-kilogram number of this product is taken from.
 

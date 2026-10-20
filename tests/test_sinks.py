@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from coffee_aggregator.models import Coffee, Variant
 from coffee_aggregator.sinks.jsonl import JsonlSink
+from coffee_aggregator.sinks.outbox import StoredFields, event_rows, state_for
 from coffee_aggregator.sinks.postgres import COLUMNS, VARIANT_COLUMNS, variant_rows_for
 from coffee_aggregator.sinks.records import coffee_record
 
@@ -258,3 +260,22 @@ def test_two_variants_sharing_one_key_are_written_once() -> None:
     )
     rows = variant_rows_for(coffee)
     assert [row[2] for row in rows] == ["250 g"]
+
+
+def test_the_pack_group_key_and_its_rule_version_are_stored_together() -> None:
+    record = coffee_record(make_coffee(site="kava", name="Pellini Espresso Bar n°4 1 kg"))
+    assert record["pack_group_key"] == "kava/pellini espresso bar n 4"
+    assert record["pack_group_key_source"] == "name:v1"
+
+
+def test_a_coffee_with_nothing_to_build_a_key_from_has_neither_column() -> None:
+    record = coffee_record(make_coffee(name="-", url=None))
+    assert record["pack_group_key"] is None
+    assert record["pack_group_key_source"] is None
+
+
+def test_the_pack_group_key_is_not_in_the_event() -> None:
+    stored = StoredFields(datetime(2026, 9, 1, tzinfo=UTC), "beans", "rules")
+    rows = event_rows([state_for(make_coffee(), stored)])
+    assert len(rows) == 1
+    assert "pack_group" not in rows[0][2]

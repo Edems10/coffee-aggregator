@@ -447,6 +447,94 @@ def test_the_roaster_lands_in_its_own_column(sink: PostgresSink) -> None:
     )
 
 
+KAVA_PELLINI = "Pellini Espresso Bar n°4 Crema Tradizionale"
+FATHERS_URL = "https://fathers.example/kava/{kind}/uganda-zebigi"
+
+
+def _pack_group(sink: PostgresSink, site: str, external_id: str) -> tuple[object, object]:
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT pack_group_key, pack_group_key_source FROM coffee "
+            "WHERE site = %s AND external_id = %s",
+            (site, external_id),
+        )
+        row = cursor.fetchone()
+    sink.connection.commit()
+    assert row is not None
+    return row[0], row[1]
+
+
+def test_two_packs_of_one_coffee_store_one_key_with_its_rule_version(sink: PostgresSink) -> None:
+    sink.upsert(
+        [
+            make_coffee(site="kava", external_id="1", name=f"{KAVA_PELLINI} 1 kg"),
+            make_coffee(site="kava", external_id="2", name=f"{KAVA_PELLINI} 6 kg"),
+        ]
+    )
+
+    first = _pack_group(sink, "kava", "1")
+    assert first == _pack_group(sink, "kava", "2")
+    assert first == ("kava/pellini espresso bar n 4 crema tradizionale", "name:v1")
+
+
+def test_the_url_keeps_an_espresso_and_a_filter_roast_apart(sink: PostgresSink) -> None:
+    sink.upsert(
+        [
+            make_coffee(
+                site="fathers",
+                external_id="1",
+                name="Uganda – Zebigi",
+                url=FATHERS_URL.format(kind="espresso"),
+            ),
+            make_coffee(
+                site="fathers",
+                external_id="2",
+                name="Uganda – Zebigi",
+                url=FATHERS_URL.format(kind="filtr"),
+            ),
+        ]
+    )
+
+    assert _pack_group(sink, "fathers", "1")[0] != _pack_group(sink, "fathers", "2")[0]
+
+
+def test_a_coffee_with_nothing_to_build_a_key_from_stores_null_in_both_columns(
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name="-", url=None)])
+
+    assert _pack_group(sink, "kava", "1") == (None, None)
+
+
+def test_a_renamed_coffee_takes_the_key_of_its_new_name(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g")])
+    assert _pack_group(sink, "kava", "1")[0] == "kava/brazil cerrado"
+
+    sink.upsert([make_coffee(site="kava", external_id="1", name="Colombia Huila 250 g")])
+    assert _pack_group(sink, "kava", "1") == ("kava/colombia huila", "name:v1")
+
+
+def test_a_delisted_coffee_keeps_its_key(sink: PostgresSink) -> None:
+    sink.upsert(
+        [
+            make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g"),
+            make_coffee(site="kava", external_id="2", name="Colombia Huila 250 g"),
+        ]
+    )
+    before = _pack_group(sink, "kava", "2")
+
+    assert sink.mark_delisted("kava", {"1"}) == 1
+
+    assert _scalar(sink, "SELECT delisted_at IS NOT NULL FROM coffee WHERE external_id = '2'")
+    assert _pack_group(sink, "kava", "2") == before
+
+
+def test_the_pack_group_key_is_not_in_the_queued_event(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g")])
+
+    assert "pack_group" not in json.dumps(_outbox(sink)[0][3])
+
+
 def test_a_retried_invocation_refreshes_the_day_instead_of_doubling_it(
     sink: PostgresSink,
 ) -> None:

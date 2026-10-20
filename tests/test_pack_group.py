@@ -9,7 +9,9 @@ KAVA = "Pellini Espresso Bar n°4 Crema Tradizionale"
 
 
 def key(name: str, url: str | None = None, site: str = "s") -> str:
-    return pack_group_key(site, name, url)
+    built = pack_group_key(site, name, url)
+    assert built is not None
+    return built
 
 
 @pytest.mark.parametrize(
@@ -155,7 +157,7 @@ def test_a_roast_only_name_takes_its_key_from_the_slug_without_sizes() -> None:
 @pytest.mark.parametrize("url", [None, "", "https://kmen.example/", "http://[bad/x"])
 def test_a_roast_only_name_without_a_usable_slug_keeps_its_folded_name(url: str | None) -> None:
     assert key("Filtr", url) == "s/filtr"
-    assert key("", url) == "s/"
+    assert pack_group_key("s", "", url) is None
 
 
 def test_the_site_is_part_of_the_key() -> None:
@@ -165,6 +167,19 @@ def test_the_site_is_part_of_the_key() -> None:
 def test_a_name_of_removable_words_does_not_collapse_into_one_group() -> None:
     assert key("Káva 250 g") != key("Zrnková 1 kg")
     assert key("Káva 250 g") != ""
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        pytest.param(None, id="no-url"),
+        pytest.param("https://x.example/kava/espresso/250g", id="url-states-a-roast-only"),
+        pytest.param("http://[bad/espresso", id="malformed-url"),
+    ],
+)
+@pytest.mark.parametrize("name", ["", "  ", "-"])
+def test_a_name_and_url_that_give_nothing_have_no_key(name: str, url: str | None) -> None:
+    assert pack_group_key("s", name, url) is None
 
 
 def test_the_rule_version_is_name_v1() -> None:

@@ -38,6 +38,8 @@ COLUMNS: tuple[str, ...] = (
     "site_country",
     "roaster",
     "roaster_key",
+    "pack_group_key",
+    "pack_group_key_source",
     "price",
     "currency",
     "weight_g",

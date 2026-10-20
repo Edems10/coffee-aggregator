@@ -245,6 +245,8 @@ def test_versions_are_bound_parameters_not_formatted_into_the_sql() -> None:
     [
         ("coffee", "price_per_kg_eur"),
         ("coffee", "roaster_key"),
+        ("coffee", "pack_group_key"),
+        ("coffee", "pack_group_key_source"),
         ("coffee_variant", "price_per_kg_eur"),
         ("price_history", "fx_rate_eur_czk"),
         ("price_history", "seen_on"),

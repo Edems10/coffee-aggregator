@@ -94,7 +94,7 @@ def _url_slug(url: str | None) -> str:
     return _collapse(_strip_sizes(fold(segments[-1]))) if segments else ""
 
 
-def pack_group_key(site: str, name: str, url: str | None) -> str:
+def pack_group_key(site: str, name: str, url: str | None) -> str | None:
     """Build the key that two listings of one coffee in one shop share.
 
     Two listings get the same key exactly when they are the same coffee from
@@ -117,7 +117,8 @@ def pack_group_key(site: str, name: str, url: str | None) -> str:
     A name with nothing left but roast words, or nothing at all, does not say
     which coffee it is (``filtr`` names four coffees at one shop), so the last
     segment of the URL path, folded and stripped of sizes, stands in for it.
-    Without a usable URL the folded name is kept as it is.
+    Without a usable URL the folded name is kept as it is, unless nothing is
+    left of it.
 
     Sizes are removed before the separators are flattened, because a slash
     between digits is part of a blend ratio (``Blend 75/25 250 g``) and
@@ -136,12 +137,17 @@ def pack_group_key(site: str, name: str, url: str | None) -> str:
 
     Returns:
         ``"<site>/<normalised name>"``, followed by ``"~espresso"`` or
-        ``"~filter"`` when the rule adds a roast.
+        ``"~filter"`` when the rule adds a roast. None when nothing is left
+        of the name and the URL gives no slug either: a key with nothing
+        after the slash would put every such listing of the shop in one
+        group.
     """
     folded_name = fold(name)
     normalised = _collapse(_FORM_RE.sub(_SPACE, fold(_strip_sizes(dash_fold(name)))))
     if all(token in _ROAST_KINDS for token in _TOKEN_RE.findall(normalised)):
         normalised = _url_slug(url) or normalised or _collapse(folded_name)
+    if not normalised:
+        return None
     key = f"{site}/{normalised}"
     if _roast_kinds(_TOKEN_RE.findall(normalised)):
         return key
