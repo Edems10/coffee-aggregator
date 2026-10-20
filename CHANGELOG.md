@@ -10,6 +10,22 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.9.1 (2026-10-20)
+
+### Fixed
+
+- A delisting event now carries an `observed_at` the consumers accept. It used
+  to carry the time of the last crawl that saw the coffee — the same
+  `observed_at` as the state it replaced — and `coffee-api` and `coffee-cupper`
+  keep an event only when it is strictly newer than what they hold, so both
+  threw every delisting away without a word, from a crawl and from `retire`
+  alike. A delisting is now stamped with `delisted_at`, the moment the crawl
+  found the coffee gone (#223). A listed coffee's event, crawled or re-seeded,
+  carries exactly the `observed_at` it did before. This changes only delistings
+  from here on: the ones already lost are still listed in both consumers, and
+  `deploy/notes/223-count-the-delistings-consumers-missed.md` says how to count
+  them.
+
 ## 0.9.0 (2026-10-18)
 
 ### Added

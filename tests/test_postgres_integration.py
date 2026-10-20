@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import secrets
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
@@ -604,6 +604,124 @@ def test_delisting_queues_an_event_carrying_the_delisting(sink: PostgresSink) ->
     assert gone[0][3]["delisted_at"] is None
     assert gone[1][3]["delisted_at"] is not None
     assert gone[1][3]["site"] == "demo"
+
+
+class _GuardedConsumer:
+    """The consumers' store, cut down to their guard: an event lands only when strictly newer.
+
+    coffee-api and coffee-cupper both upsert with
+    ``WHERE coffee.observed_at < EXCLUDED.observed_at``, so this is the whole of
+    what decides whether a consumer ever sees an event.
+    """
+
+    def __init__(self) -> None:
+        self.rows: dict[tuple[str, str], dict[str, Any]] = {}
+
+    def apply(self, payload: dict[str, Any]) -> bool:
+        key = (payload["site"], payload["external_id"])
+        held = self.rows.get(key)
+        if held is not None and not _observed(held) < _observed(payload):
+            return False
+        self.rows[key] = payload
+        return True
+
+
+def _observed(payload: dict[str, Any]) -> datetime:
+    return datetime.fromisoformat(payload["observed_at"])
+
+
+def _events_for(sink: PostgresSink, external_id: str) -> list[dict[str, Any]]:
+    return [row[3] for row in _outbox(sink) if row[1].endswith(f".{external_id}")]
+
+
+def test_a_delisting_is_accepted_by_a_consumer_holding_the_last_crawl(
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="demo", external_id="1"), make_coffee(external_id="2")])
+    assert sink.mark_delisted("demo", {"2"}) == 1
+    consumer = _GuardedConsumer()
+
+    crawl, delisting = _events_for(sink, "1")
+
+    assert consumer.apply(crawl)
+    assert consumer.apply(delisting)
+    assert consumer.rows[("demo", "1")]["delisted_at"] is not None
+    assert _observed(delisting) > _observed(crawl)
+
+
+def test_a_delisted_coffee_that_comes_back_ends_relisted_in_a_consumer(
+    sink: PostgresSink,
+) -> None:
+    sink.upsert([make_coffee(site="demo", external_id="1"), make_coffee(external_id="2")])
+    assert sink.mark_delisted("demo", {"2"}) == 1
+    sink.upsert([make_coffee(site="demo", external_id="1", scraped_at=datetime.now(UTC))])
+    consumer = _GuardedConsumer()
+
+    crawl, delisting, relisting = _events_for(sink, "1")
+
+    assert [consumer.apply(event) for event in (crawl, delisting, relisting)] == [True] * 3
+    assert consumer.rows[("demo", "1")]["delisted_at"] is None
+    assert _scalar(sink, "SELECT delisted_at FROM coffee WHERE external_id = '1'") is None
+
+
+def test_a_delisting_replayed_is_refused_the_second_time(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="demo", external_id="1"), make_coffee(external_id="2")])
+    assert sink.mark_delisted("demo", {"2"}) == 1
+    consumer = _GuardedConsumer()
+
+    crawl, delisting = _events_for(sink, "1")
+
+    assert consumer.apply(crawl)
+    assert consumer.apply(delisting)
+    assert not consumer.apply(delisting)
+
+
+def test_every_coffee_a_retire_delists_is_accepted_by_a_consumer(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="goodtimes", external_id=key) for key in ("1", "2", "3")])
+    assert sink.retire("goodtimes") == 3
+    consumer = _GuardedConsumer()
+
+    crawls = [row[3] for row in _outbox(sink)[:3]]
+    retirements = [row[3] for row in _outbox(sink)[3:]]
+
+    assert all(consumer.apply(event) for event in crawls)
+    assert all(consumer.apply(event) for event in retirements)
+    assert len(retirements) == 3
+    assert all(row["delisted_at"] is not None for row in consumer.rows.values())
+
+
+def test_a_never_delisted_coffee_keeps_its_observed_at_on_every_path(
+    sink: PostgresSink,
+) -> None:
+    """A listed coffee's ``observed_at`` is what it always was, read back or freshly crawled."""
+    scraped = datetime(2026, 10, 1, 9, 30, tzinfo=UTC)
+    listed = make_coffee(site="demo", external_id="1")
+    listed.scraped_at = scraped
+    sink.upsert([listed, make_coffee(site="demo", external_id="2")])
+    with sink.connection.cursor() as cursor:
+        cursor.execute("UPDATE coffee SET scraped_at = NULL WHERE external_id = '2'")
+    sink.connection.commit()
+    last_seen = _scalar(sink, "SELECT last_seen_at FROM coffee WHERE external_id = '2'")
+
+    assert _observed(_events_for(sink, "1")[0]) == scraped
+
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT external_id, {outbox.STATE_SELECT} FROM coffee "  # noqa: S608  (module constant)
+            "ORDER BY external_id"
+        )
+        read_back = {row[0]: outbox.state_from_row(row[1:]) for row in cursor.fetchall()}
+    sink.connection.commit()
+    assert read_back["1"].observed_at == scraped
+    assert read_back["2"].observed_at == last_seen
+
+    with sink.connection.cursor() as cursor:
+        cursor.execute("DELETE FROM outbox")
+    sink.connection.commit()
+    assert publish.reseed(sink.connection) == 2
+    reseeded = {row[3]["external_id"]: row[3] for row in _outbox(sink)}
+    assert _observed(reseeded["1"]) == scraped
+    assert _observed(reseeded["2"]) == last_seen
 
 
 def test_republishing_re_seeds_the_outbox_from_the_catalogue(sink: PostgresSink) -> None:

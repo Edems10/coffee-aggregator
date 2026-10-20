@@ -34,12 +34,19 @@ STATE_FIELDS: tuple[str, ...] = tuple(CoffeeState.__dataclass_fields__)
 #: Where a field is read from when a :class:`CoffeeState` is rebuilt out of the
 #: ``coffee`` table rather than out of a freshly parsed product. Everything not
 #: named here is a column of the same name, which a test asserts.
+#:
+#: ``observed_at`` is when the catalogue last saw the coffee: ``scraped_at``, or
+#: ``last_seen_at`` where a row written before that column existed, or by an
+#: adapter that never set it, has none — ``last_seen_at`` is NOT NULL, and "null"
+#: is not an answer a consumer can order by. A delisting is an observation too,
+#: made at ``delisted_at``, which is later than any crawl of the coffee because
+#: the upsert clears it. Every consumer keeps an event only when its
+#: ``observed_at`` is strictly newer than the state it holds, so a delisting
+#: stamped with the last crawl's time is thrown away on arrival (#223);
+#: ``greatest`` takes the stamp when there is one and ignores it, as a NULL,
+#: when there is not, so a listed coffee's event is unchanged.
 _EXPRESSION_FOR: dict[str, str] = {
-    # `scraped_at` is nullable — a row written before the column existed, or by
-    # an adapter that never set it — while `last_seen_at` is NOT NULL. The event
-    # has to say when the catalogue last saw the coffee, and "null" is not an
-    # answer a consumer can order by.
-    "observed_at": "coalesce(scraped_at, last_seen_at)",
+    "observed_at": "greatest(coalesce(scraped_at, last_seen_at), delisted_at)",
 }
 
 #: The ``RETURNING``/``SELECT`` list that produces a row :func:`state_from_row`
