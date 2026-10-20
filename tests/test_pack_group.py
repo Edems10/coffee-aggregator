@@ -38,6 +38,15 @@ def key(name: str, url: str | None = None, site: str = "s") -> str:
         pytest.param("Blend 24/7 (500 g)", "Blend 24/7 (1 kg)", id="ratio-kept-weight-removed"),
         pytest.param("X Whole Bean 1 kg", "X Ground 250 g", id="english-form-words"),
         pytest.param("Brazílie Cerrado", "Brazilie Cerrado", id="diacritics-fold"),
+        pytest.param("Danesi Classic 250g dóza", "Danesi Classic 1kg", id="tin-word-doza"),
+        pytest.param(
+            "Caffe Izzo Gold 1 kg (plechovka)", "Caffe Izzo Gold 6 kg", id="tin-word-plechovka"
+        ),
+        pytest.param(
+            "Emília mletá v plechovke 250g", "Emília zrnková 1 kg", id="tin-word-v-plechovke"
+        ),
+        pytest.param("Blæk NØ.1 Blonde Roast (7 porcí)", "Blæk NØ.1 Blonde Roast", id="portions"),
+        pytest.param("Blend 3 250 g", "Blend 3 1 kg", id="digit-before-a-weight-is-kept"),
         pytest.param("Brazílie  Cerrado!", "brazilie cerrado", id="case-and-punctuation"),
     ],
 )
@@ -62,6 +71,8 @@ def test_the_same_coffee_shares_a_key(first: str, second: str) -> None:
         ),
         pytest.param("Blend 75/25 250 g", "Blend 25/75 250 g", id="ratio-is-not-a-weight"),
         pytest.param(f"{KAVA} 1 kg", "Pellini Espresso Bar n°3 Crema Tradizionale 1 kg", id="n4"),
+        pytest.param("Pellini n°4 250 g", "Pellini n°3 250 g", id="digit-before-a-250-g"),
+        pytest.param("Blend 3 250 g", "Blend 5 250 g", id="blend-3-and-5-250-g"),
     ],
 )
 def test_different_coffees_do_not_share_a_key(first: str, second: str) -> None:
@@ -77,8 +88,25 @@ def test_the_url_tells_espresso_from_filter_when_the_name_does_not() -> None:
     espresso = key("Uganda – Zebigi", FATHERS.format(kind="espresso"))
     filtr = key("Uganda – Zebigi", FATHERS.format(kind="filtr"))
     assert espresso != filtr
-    assert espresso.endswith("#espresso")
-    assert filtr.endswith("#filter")
+    assert espresso.endswith("~espresso")
+    assert filtr.endswith("~filter")
+
+
+@pytest.mark.parametrize(
+    ("path", "suffix"),
+    [
+        pytest.param("espresso", "~espresso", id="espresso"),
+        pytest.param("espreso", "~espresso", id="espreso-is-espresso"),
+        pytest.param("filtr", "~filter", id="filtr"),
+        pytest.param("filter", "~filter", id="filter"),
+    ],
+)
+def test_every_roast_word_in_the_path_maps_to_its_kind(path: str, suffix: str) -> None:
+    assert key("Uganda", f"https://x.example/kava/{path}/uganda") == f"s/uganda{suffix}"
+
+
+def test_the_suffix_survives_a_query_string() -> None:
+    assert "#" not in key("Uganda", "https://x.example/espresso/uganda")
 
 
 def test_a_roast_word_in_the_name_wins_over_the_url() -> None:
@@ -97,6 +125,29 @@ def test_a_roast_word_in_the_name_wins_over_the_url() -> None:
 )
 def test_a_url_that_states_one_roast_kind_only_adds_a_suffix(url: str | None) -> None:
     assert key("Uganda Zebigi", url) == "s/uganda zebigi"
+
+
+def test_a_malformed_url_counts_as_no_url() -> None:
+    assert key("Brazil", "http://[bad/espresso") == "s/brazil"
+    assert key("filtr", "http://[bad/espresso") == "s/filtr"
+
+
+@pytest.mark.parametrize("name", ["filtr", "", "  ", "Filtr 250 g"])
+def test_a_name_without_a_coffee_in_it_is_told_apart_by_the_url_slug(name: str) -> None:
+    first = key(name, "https://kmen.example/product/filtr-uganda-wanale/")
+    second = key(name, "https://kmen.example/product/filtr-tanzanie/")
+    assert first != second
+
+
+def test_a_roast_only_name_takes_its_key_from_the_slug_without_sizes() -> None:
+    url = "https://kmen.example/product/filtr-uganda-wanale-250g/"
+    assert key("filtr", url) == "s/filtr uganda wanale"
+
+
+@pytest.mark.parametrize("url", [None, "", "https://kmen.example/", "http://[bad/x"])
+def test_a_roast_only_name_without_a_usable_slug_keeps_its_folded_name(url: str | None) -> None:
+    assert key("Filtr", url) == "s/filtr"
+    assert key("", url) == "s/"
 
 
 def test_the_site_is_part_of_the_key() -> None:
