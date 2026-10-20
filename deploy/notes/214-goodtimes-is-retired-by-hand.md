@@ -52,7 +52,7 @@ Then check the three events reached the broker rather than sitting unpublished:
         psql -U coffee -d coffee -c \
         "SELECT count(*) FILTER (WHERE published_at IS NULL) AS waiting,
                 count(*) AS total
-         FROM outbox WHERE subject LIKE 'coffee.v1.catalogue.goodtimes.%'"
+         FROM outbox WHERE subject LIKE 'coffee.%.catalogue.goodtimes.%'"
 
 `waiting` must be 0. If it is not, the publisher is down —
 `docker compose logs publisher` — and the coffees are still on the site.

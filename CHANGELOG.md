@@ -10,6 +10,38 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.10.0 (2026-10-20)
+
+### Added
+
+- The catalogue is published on the contract's v2 wire, pinned to
+  coffee-contracts `v3.1.0`: every event now goes to
+  `coffee.v2.catalogue.<site>.<external_id>`, which the broker keeps in the
+  stream `CATALOGUE_V2`, and nothing more goes to the v1 stream `CATALOGUE`.
+  Money is an integer count of minor units: `price` became `price_minor`
+  (349.00 CZK is `34900`) and `price_per_kg_eur` became `price_per_kg_eur_cents`
+  (24.50 EUR is `2450`). The new `price_history` field is always `[]`; both
+  consumers drop it, and filling it is a separate task.
+- The stored columns are unchanged: `price`, `price_per_kg_eur` and the
+  `price_history` table are still `numeric`, and no migration ships. The
+  conversion happens only when an event is built, and a crawl's event and the
+  re-seed of the row it wrote come out identical. Over a local snapshot of 17
+  October (3,773 coffees) every price and every per-kilogram price converts
+  exactly.
+- A price that is not a whole number of minor units — a shop's figure with more
+  than two decimals — or whose currency has no known exponent (anything but CZK
+  and EUR) is published as `null` with a warning naming the coffee, the field
+  and the value. It is never rounded, and the coffee is still published.
+- `v3.1.0` rather than `v3.0.0`: the wire is identical, but `v3.0.0` named its
+  streams without the wire version, so provisioning it converted the running v1
+  streams instead of adding the v2 pair; its own changelog says nobody should
+  pin it.
+
+`deploy/notes/169-v2-stream-fills-after-republish.md` is the cutover: the
+consumers must already read `CATALOGUE_V2`, the outbox is drained before the
+deploy, and `republish --all` afterwards fills the new stream and re-sends the
+delistings the consumers missed (#223).
+
 ## 0.9.1 (2026-10-20)
 
 ### Fixed

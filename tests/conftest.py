@@ -201,7 +201,8 @@ def delisted_row(
 
     Numerics arrive from psycopg as Decimal and the jsonb columns as lists, so
     the fixture uses those types rather than the ones the contract wants: the
-    coercion between them is the thing worth regressing against.
+    coercion between them is the thing worth regressing against. The money fields
+    hold the ``numeric`` columns they are selected from, not minor units.
     """
     from coffee_aggregator.sinks.outbox import STATE_FIELDS  # noqa: PLC0415  (test helper)
 
@@ -221,9 +222,9 @@ def delisted_row(
         "flavor_notes": ["kakao"],
         "sca_score": Decimal("84.5"),
         "weight_g": 200,
-        "price": Decimal("9.99"),
+        "price_minor": Decimal("9.99"),
         "currency": "EUR",
-        "price_per_kg_eur": Decimal("49.95"),
+        "price_per_kg_eur_cents": Decimal("49.95"),
         "available": False,
         "delisted_at": datetime(2026, 10, 3, 5, 0, tzinfo=UTC),
     }
