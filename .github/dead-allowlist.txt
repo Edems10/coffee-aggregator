@@ -8,3 +8,5 @@ fetch_many
 collections_url
 MANAGED_COLUMNS
 schema_columns
+PACK_GROUP_KEY_SOURCE
+pack_group_key
