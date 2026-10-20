@@ -366,3 +366,45 @@ def test_every_event_carries_an_empty_price_history_on_the_v2_subject() -> None:
         assert subject.startswith("coffee.v2.catalogue.")
         assert json.loads(payload)["price_history"] == []
         check(json.loads(payload))
+
+
+def test_an_amount_too_large_to_scale_publishes_null_instead_of_raising(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``scaleb`` raises ``decimal.Overflow`` here, which is no ``InvalidOperation``."""
+    with caplog.at_level(logging.WARNING, logger=outbox.logger.name):
+        minor = outbox.minor_units(
+            Decimal("1E+999999999"), "CZK", site="demo", external_id="8", field="price_minor"
+        )
+
+    assert minor is None
+    [record] = caplog.records
+    assert "demo/8" in record.getMessage()
+
+
+def test_a_crawled_price_in_an_unknown_currency_publishes_null_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    coffee = make_coffee(site="demo", external_id="31", price=10.0, currency="USD")
+    with caplog.at_level(logging.WARNING, logger=outbox.logger.name):
+        state = outbox.state_for(coffee, DECIDED)
+
+    assert state.price_minor is None
+    _validated(state)
+    [record] = caplog.records
+    for part in ("demo/31", "price_minor", "USD"):
+        assert part in record.getMessage()
+
+
+def test_a_crawled_price_with_more_than_two_decimals_publishes_null_with_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    coffee = make_coffee(site="demo", external_id="32", price=12.345, currency="CZK")
+    with caplog.at_level(logging.WARNING, logger=outbox.logger.name):
+        state = outbox.state_for(coffee, DECIDED)
+
+    assert state.price_minor is None
+    _validated(state)
+    [record] = caplog.records
+    for part in ("demo/32", "price_minor", "12.345"):
+        assert part in record.getMessage()

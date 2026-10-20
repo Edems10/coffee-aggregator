@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from coffee_contracts import COFFEE_STATE, CoffeeState, SubjectError, catalogue, to_json
@@ -67,7 +67,9 @@ STATE_SELECT: str = ", ".join(STATE_EXPRESSIONS)
 #: ``numeric`` columns arrive as :class:`~decimal.Decimal`, which the contract's
 #: encoder refuses outright rather than guess a representation for.
 _FLOAT_FIELDS = frozenset({"sca_score"})
-#: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing.
+#: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing;
+#: ``price_history`` is no column but the expression ``jsonb_build_array()``,
+#: always ``[]``.
 _LIST_FIELDS = frozenset({"variety", "flavor_notes", "images", "price_history"})
 
 #: How many decimal places the minor unit of each currency the catalogue prices
@@ -144,11 +146,11 @@ def minor_units(
     if value is not None and value.is_finite() and exponent is not None:
         try:
             scaled = value.scaleb(exponent)
-        except InvalidOperation:
+        except ArithmeticError:
             scaled = None
     if scaled is None or scaled != scaled.to_integral_value():
         logger.warning(
-            "publishing %s null for %s/%s: %s %s is not a whole number of minor units",
+            "publishing %s null for %s/%s: %s %s does not convert exactly to minor units",
             field,
             site,
             external_id,
