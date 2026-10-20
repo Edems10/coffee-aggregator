@@ -146,7 +146,9 @@ sudo docker compose --env-file /etc/coffee-aggregator/env logs -f publisher
 
 Nothing is lost when it is down: the rows stay unpublished, and the next start
 sends them in order. If a consumer's store has to be rebuilt from nothing, or
-the broker's stream was re-created, re-seed it from the catalogue:
+the broker's stream was re-created, re-seed it from the catalogue. A re-seed
+sends every coffee ever seen, delisted ones included, so it grows the stream and
+every consumer's store by the number of delisted rows in `coffee`:
 
 ```bash
 sudo docker compose --env-file /etc/coffee-aggregator/env run --rm \
