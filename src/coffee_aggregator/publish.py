@@ -52,13 +52,12 @@ PRUNE_SQL = (
     "AND published_at < now() - make_interval(days => %s)"
 )
 
-#: Only what is still listed. A delisted coffee that is re-seeded would announce
-#: itself as gone, which is correct but pointless: the stream keeps one message
-#: per coffee, so a consumer replaying a re-seeded stream never learns of it at
-#: all, which is the same catalogue by a shorter route.
+#: Every coffee ever seen, each in its latest state: what a live stream holds
+#: once its delistings are accepted. A delisted coffee is re-sent as delisted,
+#: so a consumer that still holds it as listed corrects itself.
 RESEED_SQL = (
     f"SELECT {outbox.STATE_SELECT} FROM coffee "  # noqa: S608  (a module constant)
-    "WHERE delisted_at IS NULL ORDER BY site, external_id"
+    "ORDER BY site, external_id"
 )
 #: How many outbox rows one ``executemany`` of a re-seed carries.
 RESEED_CHUNK = 500
@@ -191,13 +190,16 @@ def prune(connection: psycopg.Connection[Any], *, days: int = RETENTION_DAYS) ->
 
 
 def reseed(connection: psycopg.Connection[Any], *, chunk: int = RESEED_CHUNK) -> int:
-    """Write an outbox row for every coffee still on sale.
+    """Write an outbox row for every coffee ever seen, in its latest state.
 
-    This is what makes the broker's store and every consumer's store disposable:
-    the catalogue in ``coffee`` is the record, and a stream that was lost, moved
-    or re-created is refilled from it without a crawl and without asking the
-    shops for anything. It is also the honest answer to "what backs up the
-    stream" — nothing does, because nothing needs to.
+    The stream then holds what a live stream converges to: one message per
+    coffee, a delisted one as delisted, so a consumer that missed a delisting
+    is corrected by the re-sent event. This is also what makes the broker's
+    store and every consumer's store disposable: the catalogue in ``coffee`` is
+    the record, and a stream that was lost, moved or re-created is refilled
+    from it without a crawl and without asking the shops for anything. It is
+    also the honest answer to "what backs up the stream" — nothing does,
+    because nothing needs to.
 
     Args:
         connection: An open connection with autocommit disabled.
