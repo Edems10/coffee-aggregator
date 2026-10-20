@@ -10,6 +10,36 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.11.0 (2026-10-20)
+
+### Added
+
+- `pack_group_key(site, name, url)` in `coffee_aggregator.pack_group` returns
+  one opaque string for the listings that are the same coffee from the same
+  shop in another pack, and `PACK_GROUP_KEY_SOURCE = "name:v1"` names the rule
+  that built it. A shop that publishes 250 g, 1 kg and 6 kg as separate pages
+  (kava.cz does) gives three listings that share one key; coffee-web#172 needs
+  that to leave the same coffee out of its similar coffees (#225). The owner
+  decided what counts as the same coffee on 2026-10-20:
+  - a bundle or carton is the same coffee as the single bag (`BANUA Café
+    250 g` and `5 kg (20x250g)`);
+  - the ground version of the same beans is the same coffee (`Illy Classico
+    zrnková` and `mletá`);
+  - decaf is a different coffee: `decaf`, `dekaf`, `bez kofeinu` and
+    `bezkofeinová` stay in the key;
+  - an espresso roast and a filter roast of one origin are different coffees:
+    the roast word in the name stays, and where the name states none, the one
+    roast kind the URL path states (fathers' `kava/espresso/…` against
+    `kava/filtr/…`) is appended as `#espresso` or `#filter`.
+- Nothing stores or publishes the key yet: the column is #228 and the event
+  field is #225, so no stored row and no consumer changes with this release.
+- Measured on the 17 October local snapshot (3 773 rows): 343 groups holding
+  912 rows, against 355 groups and 934 rows for the investigation's first
+  draft, which kept ground words and had no roast suffix. The 14 same-name
+  espresso/filter twins (12 fathers, 2 ohmybean) now sit in separate groups,
+  and four groups gain their ground version (kava.cz Illy Classico and
+  Dallmayr Crema Prodomo, two at tokycaffe).
+
 ## 0.10.0 (2026-10-20)
 
 ### Added
