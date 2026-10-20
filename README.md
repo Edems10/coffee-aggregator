@@ -443,6 +443,19 @@ the row has no kind or its hash misses the current name, and only when
 already stored and reports how many it wrote and how many it skipped for having no
 stored coffee. Nothing reads the kind yet.
 
+### Pack group key
+
+`coffee` carries `pack_group_key` and `pack_group_key_source` (migration
+`0.12.0_pack_group_key`). The key is the same string for the listings that are one
+coffee from one shop in another pack (`<site>/<normalised name>`, plus `~espresso` or
+`~filter` when only the URL says which roast); `pack_group.py` holds the rule and
+`pack_group_key_source` the version of it that built the key, `name:v1`. Two keys are
+comparable only under the same source. Both columns are written by the upsert on every
+crawl, so a renamed coffee takes the key of its new name, and both are NULL when the
+name and the URL give nothing to build a key from. There is no index, and the key is
+not in the catalogue event yet. A row has no key until its next crawl, and a delisted
+row keeps none.
+
 ## Migrations
 
 The DDL lives in numbered files under `src/coffee_aggregator/db/migrations/` and is

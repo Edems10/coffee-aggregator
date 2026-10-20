@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from coffee_aggregator.pack_group import PACK_GROUP_KEY_SOURCE
+
 if TYPE_CHECKING:
     from datetime import date
 
@@ -73,6 +75,7 @@ def coffee_record(coffee: Coffee, *, json_safe: bool = True) -> dict[str, Any]:
     Returns:
         A flat dictionary keyed by column name.
     """
+    pack_group_key = coffee.pack_group_key
     return {
         "site": coffee.site,
         "external_id": coffee.external_id,
@@ -81,6 +84,8 @@ def coffee_record(coffee: Coffee, *, json_safe: bool = True) -> dict[str, Any]:
         "site_country": coffee.site_country,
         "roaster": coffee.roaster_name,
         "roaster_key": coffee.roaster_key,
+        "pack_group_key": pack_group_key,
+        "pack_group_key_source": PACK_GROUP_KEY_SOURCE if pack_group_key is not None else None,
         "price": coffee.price,
         "currency": coffee.currency,
         "weight_g": coffee.weight_g,

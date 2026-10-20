@@ -10,6 +10,28 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.12.0 (2026-10-20)
+
+### Added
+
+- `coffee` stores `pack_group_key` and `pack_group_key_source` (migration
+  `0.12.0_pack_group_key`), written by the upsert from `pack_group_key()` on
+  every crawl. The key is what lets coffee-web#172 leave the same coffee in
+  another pack out of its similar coffees (#225). It carries `name:v1`, the
+  version of the rule that built it, because a change to the rule would
+  otherwise leave keys of two rules side by side and nothing could tell which
+  were comparable; the same reason `product_kind` carries its source.
+- `pack_group_key()` now returns None where it used to return `<site>/` with
+  nothing after the slash (or `<site>/~espresso`): a name with nothing in it
+  and no usable URL slug. That bare form would have put every such listing of
+  a shop in one group, so the column stores NULL, and the source is NULL with it.
+
+Rows fill on their next crawl: the migration backfills nothing, because a key
+needs Python. A delisted row is never crawled again and stays NULL. Nothing
+publishes the key yet: the catalogue event is unchanged, and `pack_group_key_source`
+is never on the wire. The publish is #225's own pull request, after the
+`coffee-contracts` release.
+
 ## 0.11.0 (2026-10-20)
 
 ### Added
