@@ -100,7 +100,7 @@ class FakeBroker:
 
 
 def _row(row_id: int, external_id: str = "1") -> tuple[int, str, str]:
-    return (row_id, f"coffee.v1.catalogue.demo.{external_id}", json.dumps({"site": "demo"}))
+    return (row_id, f"coffee.v2.catalogue.demo.{external_id}", json.dumps({"site": "demo"}))
 
 
 def test_a_batch_is_published_then_marked() -> None:
@@ -111,8 +111,8 @@ def test_a_batch_is_published_then_marked() -> None:
 
     assert sent == 2
     assert [subject for subject, _, _ in broker.sent] == [
-        "coffee.v1.catalogue.demo.1",
-        "coffee.v1.catalogue.demo.2",
+        "coffee.v2.catalogue.demo.1",
+        "coffee.v2.catalogue.demo.2",
     ]
     mark = next(call for call in connection.calls if call[0] == publish.MARK_SQL)
     assert mark[1] == ([1, 2],)
@@ -202,8 +202,8 @@ def test_republishing_queues_one_event_per_coffee_ever_seen() -> None:
 
     queued = next(call for call in connection.calls if call[0] == OUTBOX_SQL)
     assert [row[0] for row in queued[1]] == [
-        "coffee.v1.catalogue.demo.1",
-        "coffee.v1.catalogue.demo.2",
+        "coffee.v2.catalogue.demo.1",
+        "coffee.v2.catalogue.demo.2",
     ]
     assert json.loads(queued[1][0][2])["delisted_at"] is None
     assert json.loads(queued[1][1][2])["delisted_at"] is not None

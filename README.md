@@ -743,8 +743,24 @@ nothing does, because `coffee` is the record and the stream can be refilled
 from it without a crawl and without asking a single shop for anything.
 
 The event shape is `coffee_contracts.CoffeeState`, published on
-`coffee.v1.catalogue.<site>.<external_id>`. The contract is a separate
-repository, pinned here to a tag.
+`coffee.v2.catalogue.<site>.<external_id>`, which the broker keeps in the stream
+`CATALOGUE_V2`. The contract is a separate repository, pinned here to `v3.1.0`.
+
+Money travels as an integer count of minor units, and only on the wire: the
+stored columns are unchanged and stay `numeric`. `sinks/outbox.py` converts at
+the publish boundary, the same way for a crawl's event and a re-seeded row:
+
+| event field | read from | example |
+| --- | --- | --- |
+| `price_minor` | `coffee.price`, in the minor unit of `currency` | 349.00 CZK → `34900` |
+| `price_per_kg_eur_cents` | `coffee.price_per_kg_eur`, in euro cents | 24.50 → `2450` |
+| `price_history` | nothing; always `[]` | |
+
+The minor unit's exponent comes from a table in `sinks/outbox.py` that knows
+CZK and EUR, both 2. A price that is not a whole number of minor units (12.345
+CZK), or whose currency is not in the table, is published as `null` with a
+warning naming the coffee, the field and the value. It is never rounded and
+never fails the batch. The `price_history` table is not published.
 
 ## Tests
 

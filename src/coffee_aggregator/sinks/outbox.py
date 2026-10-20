@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from coffee_contracts import COFFEE_STATE, CoffeeState, SubjectError, catalogue, to_json
+
+from coffee_aggregator import money
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -45,8 +48,15 @@ STATE_FIELDS: tuple[str, ...] = tuple(CoffeeState.__dataclass_fields__)
 #: stamped with the last crawl's time is thrown away on arrival (#223);
 #: ``greatest`` takes the stamp when there is one and ignores it, as a NULL,
 #: when there is not, so a listed coffee's event is unchanged.
+#:
+#: The two money fields read the ``numeric`` columns they are counted from, and
+#: :func:`state_from_row` turns each into minor units. ``price_history`` is a
+#: series the producer does not fill, so it selects an empty list.
 _EXPRESSION_FOR: dict[str, str] = {
     "observed_at": "greatest(coalesce(scraped_at, last_seen_at), delisted_at)",
+    "price_minor": "price",
+    "price_per_kg_eur_cents": "price_per_kg_eur",
+    "price_history": "jsonb_build_array()",
 }
 
 #: The ``RETURNING``/``SELECT`` list that produces a row :func:`state_from_row`
@@ -56,9 +66,14 @@ STATE_SELECT: str = ", ".join(STATE_EXPRESSIONS)
 
 #: ``numeric`` columns arrive as :class:`~decimal.Decimal`, which the contract's
 #: encoder refuses outright rather than guess a representation for.
-_FLOAT_FIELDS = frozenset({"price", "price_per_kg_eur", "sca_score"})
+_FLOAT_FIELDS = frozenset({"sca_score"})
 #: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing.
-_LIST_FIELDS = frozenset({"variety", "flavor_notes", "images"})
+_LIST_FIELDS = frozenset({"variety", "flavor_notes", "images", "price_history"})
+
+#: How many decimal places the minor unit of each currency the catalogue prices
+#: in sits below the major one. Only CZK and EUR occur in the data, and the
+#: contract carries no table of its own.
+MINOR_UNIT_EXPONENT: dict[str, int] = {"CZK": 2, "EUR": 2}
 
 #: The three fields of an event that no parsed coffee carries: the INSERT stamps
 #: ``first_seen_at`` and its conflict branch keeps it, and the kind columns are
@@ -82,6 +97,66 @@ class StoredFields(NamedTuple):
     first_seen_at: datetime
     product_kind: str | None
     product_kind_source: str | None
+
+
+def minor_units(
+    amount: Decimal | float | None,
+    currency: str | None,
+    *,
+    site: str,
+    external_id: str,
+    field: str,
+) -> int | None:
+    """Count an amount in the minor unit of its currency, exactly or not at all.
+
+    The store keeps money as ``numeric`` and the contract carries it as an
+    integer count of minor units (349.00 CZK is 34900), so the conversion happens
+    here, at the publish boundary, and nowhere else. A crawl hands a float, which
+    goes through :func:`coffee_aggregator.money.exact` so that 24.33 is the price
+    the shop printed and not the binary float's tail; a row read back hands a
+    ``Decimal``. Both take this one path, which is what keeps a crawl's event and
+    the republish of the row it wrote identical.
+
+    An amount that is not a whole number of minor units after scaling (12.345
+    CZK), or whose currency has no known exponent, publishes as None with a
+    warning, as the repository owner decided on 2026-10-20 (#169). It is never
+    rounded, because a rounded figure is a price the shop did not state, and it
+    never raises, because raising aborts the batch and
+    :meth:`~coffee_aggregator.sinks.postgres.PostgresSink._retry_one_by_one` then
+    loses the coffee from the catalogue too.
+
+    Args:
+        amount: The amount in the major unit, or None when there is none.
+        currency: The ISO 4217 code it is counted in.
+        site: The shop's registry id, for the warning.
+        external_id: The shop's own product id, for the warning.
+        field: The event field being filled, for the warning.
+
+    Returns:
+        The count of minor units, or None when ``amount`` is None or does not
+        convert exactly.
+    """
+    if amount is None:
+        return None
+    value = amount if isinstance(amount, Decimal) else money.exact(amount)
+    exponent = MINOR_UNIT_EXPONENT.get(currency or "")
+    scaled: Decimal | None = None
+    if value is not None and value.is_finite() and exponent is not None:
+        try:
+            scaled = value.scaleb(exponent)
+        except InvalidOperation:
+            scaled = None
+    if scaled is None or scaled != scaled.to_integral_value():
+        logger.warning(
+            "publishing %s null for %s/%s: %s %s is not a whole number of minor units",
+            field,
+            site,
+            external_id,
+            amount,
+            currency,
+        )
+        return None
+    return int(scaled)
 
 
 def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
@@ -125,9 +200,21 @@ def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
         tasting_text=coffee.taste.tasting_text,
         sca_score=coffee.taste.sca_score,
         weight_g=coffee.weight_g,
-        price=coffee.price,
+        price_minor=minor_units(
+            coffee.price,
+            coffee.currency,
+            site=coffee.site,
+            external_id=coffee.external_id,
+            field="price_minor",
+        ),
         currency=coffee.currency,
-        price_per_kg_eur=coffee.price_per_kg_eur,
+        price_per_kg_eur_cents=minor_units(
+            coffee.price_per_kg_eur,
+            "EUR",
+            site=coffee.site,
+            external_id=coffee.external_id,
+            field="price_per_kg_eur_cents",
+        ),
         available=coffee.available,
         decaf=coffee.decaf,
         arabica_pct=coffee.species.arabica_pct,
@@ -146,6 +233,9 @@ def state_from_row(row: Sequence[Any]) -> CoffeeState:
     table and no longer in hand, so the event is read back out of the columns
     the crawl wrote.
 
+    The money fields arrive as the ``numeric`` columns ``price`` and
+    ``price_per_kg_eur`` and are counted in minor units by :func:`minor_units`.
+
     Args:
         row: The values of :data:`STATE_EXPRESSIONS`, in that order.
 
@@ -160,6 +250,13 @@ def state_from_row(row: Sequence[Any]) -> CoffeeState:
             values[name] = float(value)
         else:
             values[name] = value
+    key = {"site": values["site"], "external_id": values["external_id"]}
+    values["price_minor"] = minor_units(
+        values["price_minor"], values["currency"], field="price_minor", **key
+    )
+    values["price_per_kg_eur_cents"] = minor_units(
+        values["price_per_kg_eur_cents"], "EUR", field="price_per_kg_eur_cents", **key
+    )
     return CoffeeState(**values)
 
 

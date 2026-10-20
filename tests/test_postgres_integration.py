@@ -268,12 +268,12 @@ def test_retiring_a_shop_stamps_every_row_and_announces_each_one(sink: PostgresS
         sink, "SELECT count(*) FROM coffee WHERE site = 'goodtimes' AND delisted_at IS NOT NULL"
     )
     assert stamped == 3
-    announced = [row for row in _outbox(sink) if row[1].startswith("coffee.v1.catalogue.goodtimes")]
+    announced = [row for row in _outbox(sink) if row[1].startswith("coffee.v2.catalogue.goodtimes")]
     assert len(announced) == 3
     assert sorted(row[1] for row in announced) == [
-        "coffee.v1.catalogue.goodtimes.1",
-        "coffee.v1.catalogue.goodtimes.2",
-        "coffee.v1.catalogue.goodtimes.3",
+        "coffee.v2.catalogue.goodtimes.1",
+        "coffee.v2.catalogue.goodtimes.2",
+        "coffee.v2.catalogue.goodtimes.3",
     ]
     assert all(row[3]["delisted_at"] is not None for row in announced)
     assert all(row[4] is None for row in announced)
@@ -579,7 +579,7 @@ def test_an_upsert_queues_its_event_in_the_same_transaction(sink: PostgresSink) 
 
     rows = _outbox(sink)
     assert len(rows) == 1
-    assert rows[0][1] == "coffee.v1.catalogue.demo.1"
+    assert rows[0][1] == "coffee.v2.catalogue.demo.1"
     assert rows[0][2] == "coffee.state"
     assert rows[0][3]["name"] == "Kuba Serrano Superior"
     assert rows[0][4] is None
@@ -736,7 +736,7 @@ def test_republishing_re_seeds_the_outbox_from_the_catalogue(sink: PostgresSink)
     assert _scalar(sink, "SELECT count(*) FROM coffee") == 2
 
     rows = _outbox(sink)
-    assert [row[1] for row in rows] == ["coffee.v1.catalogue.demo.1", "coffee.v1.catalogue.demo.2"]
+    assert [row[1] for row in rows] == ["coffee.v2.catalogue.demo.1", "coffee.v2.catalogue.demo.2"]
     assert rows[0][3]["delisted_at"] is None
     assert rows[1][3]["delisted_at"] is not None
 
@@ -1103,6 +1103,7 @@ def test_the_crawl_event_matches_the_republish_of_the_row_it_wrote(sink: Postgre
     assert (crawled["decaf"], crawled["arabica_pct"], crawled["robusta_pct"]) == (True, 80, 20)
     assert crawled["product_kind"] == "beans"
     assert crawled["first_seen_at"] is not None
+    assert (crawled["price_minor"], crawled["price_per_kg_eur_cents"]) == (999, 4995)
     assert json.loads(republished[0][2]) == crawled
 
 

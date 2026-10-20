@@ -257,7 +257,7 @@ def test_delisting_queues_one_event_per_stamped_row(
     events = next(call for call in connection.calls if call[1] == OUTBOX_SQL)
     assert events[0] == "executemany"
     subjects = [row[0] for row in events[2]]
-    assert subjects == ["coffee.v1.catalogue.demo.9", "coffee.v1.catalogue.demo.10"]
+    assert subjects == ["coffee.v2.catalogue.demo.9", "coffee.v2.catalogue.demo.10"]
     for row in events[2]:
         assert json.loads(row[2])["delisted_at"] == "2026-10-03T05:00:00+00:00"
     # The events are written on the cursor of the UPDATE's own transaction, so
@@ -298,8 +298,8 @@ def test_retiring_a_shop_queues_one_event_per_stamped_row(
     events = next(call for call in connection.calls if call[1] == OUTBOX_SQL)
     assert events[0] == "executemany"
     assert [row[0] for row in events[2]] == [
-        "coffee.v1.catalogue.demo.9",
-        "coffee.v1.catalogue.demo.10",
+        "coffee.v2.catalogue.demo.9",
+        "coffee.v2.catalogue.demo.10",
     ]
     for row in events[2]:
         assert json.loads(row[2])["delisted_at"] == "2026-10-03T05:00:00+00:00"
