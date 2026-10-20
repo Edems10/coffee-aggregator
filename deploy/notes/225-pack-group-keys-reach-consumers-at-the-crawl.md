@@ -11,17 +11,17 @@ so a row's key travels at its next crawl after this deploy, and not before. A
 delisted row is never crawled again, so it never sends one; it keeps whatever key
 its consumer last stored, which is none.
 
-**`republish --all` does not help.** Both consumers keep an event only when its
-`observed_at` is strictly newer than the state they hold, and a re-seed repeats
-the `observed_at` a listed row already has, so a consumer that holds the row drops
-the event. Do not run it to deliver keys.
+**There is no replay.** `republish --all` does not carry the key. Both consumers
+keep an event only when its `observed_at` is strictly newer than the state they
+hold, and a re-seed repeats the `observed_at` a listed row already has, so a
+consumer that holds the row drops the event. Do not run it to deliver keys.
 
-**The key arrives only once the consumer has moved too.** A consumer reads the
-field when it is on coffee-contracts `v3.2.0` or later and has a column for it. A
-consumer still on `v3.1.0` ignores the field it does not know, so the order of the
-two deploys breaks nothing: it only decides when the key starts to arrive. The
-events a consumer on `v3.1.0` receives in the meantime are not replayed to it, so
-the keys it ignored arrive at each row's crawl after its own move.
+**There is no deploy-order constraint** between this release and a consumer's move
+to coffee-contracts `v3.2.0`. A consumer still on `v3.1.0` does not reject the
+field: its schema allows additional properties and its reader drops keys it does
+not know, so it simply loses the key. Each row then gets the key at its next crawl
+after that consumer has moved to `v3.2.0` and has a column for it. The order of
+the two deploys only decides when the keys start to arrive.
 
 ## Check that it arrived
 
