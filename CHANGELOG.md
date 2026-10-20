@@ -25,6 +25,12 @@ crawl writes.
   from here on: the ones already lost are still listed in both consumers, and
   `deploy/notes/223-count-the-delistings-consumers-missed.md` says how to count
   them.
+- `republish --all` now also re-sends delisted coffees, as delisted, so a
+  consumer that missed a delisting is corrected by the re-seed and the stream
+  holds every coffee ever seen in its latest state — which grows the stream and
+  every consumer's store by the number of delisted rows in `coffee` (#223).
+  It used to send only the listed ones, on the reasoning that a delisted coffee
+  re-seeded was pointless; that held only while no consumer had missed one.
 
 ## 0.9.0 (2026-10-18)
 

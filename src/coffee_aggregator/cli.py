@@ -106,7 +106,7 @@ def _add_outbox_parsers(
 
     republish = subparsers.add_parser(
         "republish",
-        help="queue every coffee still on sale for publication again",
+        help="queue every coffee ever seen, delisted ones included, for publication again",
         parents=[common],
     )
     republish.add_argument(
@@ -671,7 +671,7 @@ def cmd_publish(settings: Settings, args: argparse.Namespace) -> int:
 
 
 def cmd_republish(settings: Settings, args: argparse.Namespace) -> int:
-    """Queue every coffee still on sale for publication again.
+    """Queue every coffee ever seen, delisted ones included, for publication again.
 
     Args:
         settings: Environment-derived settings.

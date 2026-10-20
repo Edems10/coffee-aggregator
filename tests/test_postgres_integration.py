@@ -732,11 +732,55 @@ def test_republishing_re_seeds_the_outbox_from_the_catalogue(sink: PostgresSink)
         cursor.execute("DELETE FROM outbox")
     sink.connection.commit()
 
-    assert publish.reseed(sink.connection) == 1
+    assert publish.reseed(sink.connection) == 2
+    assert _scalar(sink, "SELECT count(*) FROM coffee") == 2
 
     rows = _outbox(sink)
-    assert [row[1] for row in rows] == ["coffee.v1.catalogue.demo.1"]
+    assert [row[1] for row in rows] == ["coffee.v1.catalogue.demo.1", "coffee.v1.catalogue.demo.2"]
     assert rows[0][3]["delisted_at"] is None
+    assert rows[1][3]["delisted_at"] is not None
+
+
+def _reseed_after_a_delisting(sink: PostgresSink) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Crawl two coffees, delist the first, then re-seed from an emptied outbox.
+
+    Returns:
+        The first coffee's crawl event and its re-seeded event.
+    """
+    sink.upsert([make_coffee(site="demo", external_id="1"), make_coffee(external_id="2")])
+    crawl = _events_for(sink, "1")[0]
+    assert sink.mark_delisted("demo", {"2"}) == 1
+    with sink.connection.cursor() as cursor:
+        cursor.execute("DELETE FROM outbox")
+    sink.connection.commit()
+
+    assert publish.reseed(sink.connection) == 2
+    return crawl, _events_for(sink, "1")[0]
+
+
+def test_a_reseed_re_sends_a_delisted_coffee_as_delisted(sink: PostgresSink) -> None:
+    _, reseeded = _reseed_after_a_delisting(sink)
+
+    assert reseeded["delisted_at"] is not None
+    assert _observed(reseeded) >= datetime.fromisoformat(reseeded["delisted_at"])
+
+
+def test_a_reseed_corrects_a_consumer_that_missed_the_delisting(sink: PostgresSink) -> None:
+    crawl, reseeded = _reseed_after_a_delisting(sink)
+    consumer = _GuardedConsumer()
+    assert consumer.apply(crawl)
+
+    assert consumer.apply(reseeded)
+    assert consumer.rows[("demo", "1")]["delisted_at"] is not None
+
+
+def test_a_reseeded_delisting_replayed_is_refused_the_second_time(sink: PostgresSink) -> None:
+    crawl, reseeded = _reseed_after_a_delisting(sink)
+    consumer = _GuardedConsumer()
+    assert consumer.apply(crawl)
+    assert consumer.apply(reseeded)
+
+    assert not consumer.apply(reseeded)
 
 
 def test_the_publisher_claims_marks_and_prunes(sink: PostgresSink) -> None:

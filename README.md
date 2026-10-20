@@ -143,7 +143,8 @@ coffee-aggregator retire --site <id> [--yes] [--dsn URL]
 * `publish` drains the `outbox` table into the broker and keeps running;
   `--once` sends what is waiting and exits, which is what a test or a one-off
   catch-up wants. See [The outbox and the publisher](#the-outbox-and-the-publisher).
-* `republish --all` queues every coffee still on sale for publication again.
+* `republish --all` queues every coffee ever seen for publication again, each in
+  its latest state, delisted ones as delisted.
   `--all` is the only scope there is and has to be typed, because a bare
   `republish` must not re-send tens of thousands of events by accident.
 * `retire --site <id>` delists everything a shop that has stopped selling still
@@ -734,8 +735,9 @@ and an empty token has no subject. Raising inside `_write_chunk` would abort
 the batch, send it down `_retry_one_by_one` and lose the coffee from the
 catalogue too — a data regression caused by a messaging concern.
 
-`coffee-aggregator republish --all` re-seeds the outbox from every non-delisted
-row of `coffee`. This is what makes the broker's store and every consumer's
+`coffee-aggregator republish --all` re-seeds the outbox from every row of
+`coffee`, delisted ones included, so a consumer that missed a delisting is
+corrected by it. This is what makes the broker's store and every consumer's
 store disposable, and it is the honest answer to "what backs up the stream":
 nothing does, because `coffee` is the record and the stream can be refilled
 from it without a crawl and without asking a single shop for anything.

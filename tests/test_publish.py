@@ -190,11 +190,11 @@ def test_pruning_only_touches_rows_that_were_published() -> None:
     assert connection.commits == 1
 
 
-def test_republishing_queues_one_event_per_coffee_still_on_sale() -> None:
+def test_republishing_queues_one_event_per_coffee_ever_seen() -> None:
     connection = FakeConnection(
         catalogue=(
             delisted_row(external_id="1", delisted_at=None),
-            delisted_row(external_id="2", delisted_at=None),
+            delisted_row(external_id="2"),
         )
     )
 
@@ -206,7 +206,8 @@ def test_republishing_queues_one_event_per_coffee_still_on_sale() -> None:
         "coffee.v1.catalogue.demo.2",
     ]
     assert json.loads(queued[1][0][2])["delisted_at"] is None
-    assert "delisted_at IS NULL" in publish.RESEED_SQL
+    assert json.loads(queued[1][1][2])["delisted_at"] is not None
+    assert "delisted_at" not in publish.RESEED_SQL.split("FROM coffee")[1]
     assert connection.commits == 1
 
 
