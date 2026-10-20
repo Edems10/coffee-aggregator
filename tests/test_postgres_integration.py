@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import psycopg
 import pytest
+from coffee_contracts import check
 from psycopg import sql
 from psycopg.errors import InsufficientPrivilege, NotNullViolation
 
@@ -19,6 +20,7 @@ from coffee_aggregator.db.connect import connect
 from coffee_aggregator.fx.rates import FxRate
 from coffee_aggregator.fx.stores import PostgresFxStore
 from coffee_aggregator.models import ProcessMethod, Species, Variant
+from coffee_aggregator.pack_group import pack_group_key
 from coffee_aggregator.pipeline import derive
 from coffee_aggregator.sinks import outbox
 from coffee_aggregator.sinks.postgres import (
@@ -527,12 +529,6 @@ def test_a_delisted_coffee_keeps_its_key(sink: PostgresSink) -> None:
 
     assert _scalar(sink, "SELECT delisted_at IS NOT NULL FROM coffee WHERE external_id = '2'")
     assert _pack_group(sink, "kava", "2") == before
-
-
-def test_the_pack_group_key_is_not_in_the_queued_event(sink: PostgresSink) -> None:
-    sink.upsert([make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g")])
-
-    assert "pack_group" not in json.dumps(_outbox(sink)[0][3])
 
 
 def test_a_retried_invocation_refreshes_the_day_instead_of_doubling_it(
@@ -1161,6 +1157,32 @@ def _seed_kind(sink: PostgresSink, coffee: Coffee) -> None:
     sink.connection.commit()
 
 
+def _crawl_and_republish(
+    sink: PostgresSink, coffee: Coffee
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Write a coffee twice around a seeded kind, then read back its event both ways.
+
+    Returns:
+        The payload of the crawl's last event, and the payload the row it wrote
+        republishes as.
+    """
+    sink.upsert([coffee])
+    _seed_kind(sink, coffee)
+    sink.upsert([coffee])
+
+    crawled = _outbox(sink)[-1][3]
+    with sink.connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT {outbox.STATE_SELECT} FROM coffee WHERE site = %s AND external_id = %s",  # noqa: S608  (a module constant)
+            (coffee.site, coffee.external_id),
+        )
+        republished = outbox.event_rows_from_db(cursor.fetchall())
+    sink.connection.commit()
+    check(crawled)
+    check(json.loads(republished[0][2]))
+    return crawled, json.loads(republished[0][2])
+
+
 def test_the_crawl_event_matches_the_republish_of_the_row_it_wrote(sink: PostgresSink) -> None:
     """Two builders, one contract: a field one path fills and the other leaves empty is #142.
 
@@ -1175,24 +1197,120 @@ def test_the_crawl_event_matches_the_republish_of_the_row_it_wrote(sink: Postgre
         species=Species(arabica_pct=80, robusta_pct=20, is_blend=True),
         price_per_kg_eur=49.95,
     )
-    sink.upsert([coffee])
-    _seed_kind(sink, coffee)
-    sink.upsert([coffee])
-
-    crawled = _outbox(sink)[-1][3]
-    with sink.connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT {outbox.STATE_SELECT} FROM coffee WHERE site = %s AND external_id = %s",  # noqa: S608  (a module constant)
-            (coffee.site, coffee.external_id),
-        )
-        republished = outbox.event_rows_from_db(cursor.fetchall())
-    sink.connection.commit()
+    crawled, republished = _crawl_and_republish(sink, coffee)
 
     assert (crawled["decaf"], crawled["arabica_pct"], crawled["robusta_pct"]) == (True, 80, 20)
     assert crawled["product_kind"] == "beans"
     assert crawled["first_seen_at"] is not None
     assert (crawled["price_minor"], crawled["price_per_kg_eur_cents"]) == (999, 4995)
-    assert json.loads(republished[0][2]) == crawled
+    assert crawled["pack_group_key"] == "demo/kuba serrano superior"
+    assert republished == crawled
+    assert json.dumps(republished, sort_keys=True) == json.dumps(crawled, sort_keys=True)
+
+
+def test_a_null_key_matches_between_the_crawl_event_and_the_republish(sink: PostgresSink) -> None:
+    coffee = make_coffee(site="kava", external_id="1", name="-", url=None)
+
+    crawled, republished = _crawl_and_republish(sink, coffee)
+
+    assert crawled["pack_group_key"] is None
+    assert republished == crawled
+
+
+def test_the_event_carries_the_stored_key_and_never_its_source(sink: PostgresSink) -> None:
+    coffee = make_coffee(site="kava", external_id="1", name=f"{KAVA_PELLINI} 1 kg")
+
+    crawled, _ = _crawl_and_republish(sink, coffee)
+
+    stored = _pack_group(sink, "kava", "1")[0]
+    assert crawled["pack_group_key"] == stored == pack_group_key("kava", coffee.name, coffee.url)
+    assert crawled["pack_group_key"] == "kava/pellini espresso bar n 4 crema tradizionale"
+    assert "pack_group_key_source" not in crawled
+    assert _outbox(sink)[-1][1] == "coffee.v2.catalogue.kava.1"
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_a_blank_name_with_no_url_queues_a_null_key_not_a_bare_site(
+    sink: PostgresSink, name: str
+) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name=name, url=None)])
+
+    payload = _outbox(sink)[-1][3]
+    assert payload["pack_group_key"] is None
+    check(payload)
+    assert _pack_group(sink, "kava", "1") == (None, None)
+
+
+def test_the_two_roasts_of_one_name_queue_two_keys(sink: PostgresSink) -> None:
+    sink.upsert(
+        [
+            make_coffee(
+                site="fathers",
+                external_id="1",
+                name="Uganda – Zebigi",
+                url=FATHERS_URL.format(kind="espresso"),
+            ),
+            make_coffee(
+                site="fathers",
+                external_id="2",
+                name="Uganda – Zebigi",
+                url=FATHERS_URL.format(kind="filtr"),
+            ),
+        ]
+    )
+
+    espresso = _events_for(sink, "1")[0]["pack_group_key"]
+    filtr = _events_for(sink, "2")[0]["pack_group_key"]
+    assert espresso.endswith("~espresso")
+    assert filtr.endswith("~filter")
+
+
+def test_a_reseed_publishes_the_crawl_events_payload(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name=f"{KAVA_PELLINI} 1 kg")])
+    crawl = _events_for(sink, "1")[0]
+    with sink.connection.cursor() as cursor:
+        cursor.execute("DELETE FROM outbox")
+    sink.connection.commit()
+
+    assert publish.reseed(sink.connection) == 1
+
+    assert _events_for(sink, "1")[0] == crawl
+    assert crawl["pack_group_key"] is not None
+
+
+def test_a_delisting_and_a_retirement_carry_the_stored_key(sink: PostgresSink) -> None:
+    sink.upsert(
+        [
+            make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g"),
+            make_coffee(site="kava", external_id="2", name="Colombia Huila 250 g"),
+        ]
+    )
+    assert sink.mark_delisted("kava", {"1"}) == 1
+    delisting = _events_for(sink, "2")[-1]
+    assert sink.retire("kava") == 1
+    retirement = _events_for(sink, "1")[-1]
+
+    assert delisting["pack_group_key"] == "kava/colombia huila"
+    assert retirement["pack_group_key"] == "kava/brazil cerrado"
+    for event in (delisting, retirement):
+        check(event)
+        assert event["delisted_at"] is not None
+        assert _observed(event) >= datetime.fromisoformat(event["delisted_at"])
+        assert "pack_group_key_source" not in event
+
+
+def test_a_row_stored_before_the_key_existed_republishes_a_null_key(sink: PostgresSink) -> None:
+    sink.upsert([make_coffee(site="kava", external_id="1", name="Brazil Cerrado 250 g")])
+    with sink.connection.cursor() as cursor:
+        cursor.execute("UPDATE coffee SET pack_group_key = NULL, pack_group_key_source = NULL")
+        cursor.execute("DELETE FROM outbox")
+    sink.connection.commit()
+
+    assert publish.reseed(sink.connection) == 1
+
+    payload = _events_for(sink, "1")[0]
+    check(payload)
+    assert payload["pack_group_key"] is None
 
 
 def test_a_later_crawl_keeps_first_seen_at_and_the_kind_it_did_not_decide(

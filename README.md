@@ -452,9 +452,10 @@ coffee from one shop in another pack (`<site>/<normalised name>`, plus `~espress
 `pack_group_key_source` the version of it that built the key, `name:v1`. Two keys are
 comparable only under the same source. Both columns are written by the upsert on every
 crawl, so a renamed coffee takes the key of its new name, and both are NULL when the
-name and the URL give nothing to build a key from. There is no index, and the key is
-not in the catalogue event yet. A row has no key until its next crawl, and a delisted
-row keeps none.
+name and the URL give nothing to build a key from. There is no index. The catalogue
+event carries `pack_group_key` as it stands in the row, or null, and never
+`pack_group_key_source`; a consumer compares the key for equality only. A row has
+no key until its next crawl, and a delisted row keeps none.
 
 ## Migrations
 
@@ -757,7 +758,7 @@ from it without a crawl and without asking a single shop for anything.
 
 The event shape is `coffee_contracts.CoffeeState`, published on
 `coffee.v2.catalogue.<site>.<external_id>`, which the broker keeps in the stream
-`CATALOGUE_V2`. The contract is a separate repository, pinned here to `v3.1.0`.
+`CATALOGUE_V2`. The contract is a separate repository, pinned here to `v3.2.0`.
 
 Money travels as an integer count of minor units, and only on the wire: the
 stored columns are unchanged and stay `numeric`. `sinks/outbox.py` converts at
@@ -774,6 +775,14 @@ CZK and EUR, both 2. A price that is not a whole number of minor units (12.345
 CZK), or whose currency is not in the table, is published as `null` with a
 warning naming the coffee, the field and the value. It is never rounded and
 never fails the batch. The `price_history` table is not published.
+
+`pack_group_key` is published as the stored column, or `null` where the column is
+NULL, so a crawl's event and the republish of the row it wrote carry the same
+value. It is never the empty string, which the contract's schema refuses. A
+consumer reads the key only as an equality: two listings of one shop with the same
+key are one coffee in different pack sizes. `pack_group_key_source` stays in the
+store. A key reaches a consumer at each row's next crawl, because a consumer keeps
+only an event whose `observed_at` is strictly newer than the one it holds.
 
 ## Tests
 

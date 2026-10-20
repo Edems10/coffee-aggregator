@@ -167,7 +167,9 @@ def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
     The event carries the subset of the row a consumer can act on — what the
     coffee is, where to buy it and what a kilogram of it costs — and not the
     provenance columns, the raw attributes or the per-shop prices, which are the
-    catalogue's own bookkeeping.
+    catalogue's own bookkeeping. ``pack_group_key_source`` stays in the store: a
+    consumer compares keys for equality and has no use for the version of the
+    rule that built one.
 
     Every value comes from the parsed coffee, except ``first_seen_at``,
     ``product_kind`` and ``product_kind_source``, which come from ``stored``: only
@@ -225,6 +227,7 @@ def state_for(coffee: Coffee, stored: StoredFields) -> CoffeeState:
         first_seen_at=stored.first_seen_at,
         product_kind=stored.product_kind,
         product_kind_source=stored.product_kind_source,
+        pack_group_key=coffee.pack_group_key,
     )
 
 
