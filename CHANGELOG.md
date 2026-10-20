@@ -17,8 +17,8 @@ crawl writes.
 - The catalogue event carries `pack_group_key` (#225), read from the stored
   column, so the key that coffee-web#172 needs to leave the same coffee out of
   its similar coffees reaches consumers. A crawl's event and the republish of the
-  row it wrote carry the same value, and a row with no key, a delisted one
-  included, publishes `null`. The value is opaque: a consumer compares it for
+  row it wrote carry the same value, and a row whose stored key is NULL
+  publishes `null`. The value is opaque: a consumer compares it for
   equality and never parses it, and it is never the empty string, which the
   contract's schema refuses. It does not identify a coffee across shops.
 - `pack_group_key_source` stays in the store and never goes on the wire: a

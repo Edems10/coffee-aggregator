@@ -455,7 +455,8 @@ crawl, so a renamed coffee takes the key of its new name, and both are NULL when
 name and the URL give nothing to build a key from. There is no index. The catalogue
 event carries `pack_group_key` as it stands in the row, or null, and never
 `pack_group_key_source`; a consumer compares the key for equality only. A row has
-no key until its next crawl, and a delisted row keeps none.
+no key until its next crawl, and a row delisted before it was crawled on 0.12.0 or
+later has none.
 
 ## Migrations
 
