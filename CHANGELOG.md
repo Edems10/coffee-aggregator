@@ -10,6 +10,32 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.13.0 (2026-10-20)
+
+### Added
+
+- The catalogue event carries `pack_group_key` (#225), read from the stored
+  column, so the key that coffee-web#172 needs to leave the same coffee out of
+  its similar coffees reaches consumers. A crawl's event and the republish of the
+  row it wrote carry the same value, and a row whose stored key is NULL
+  publishes `null`. The value is opaque: a consumer compares it for
+  equality and never parses it, and it is never the empty string, which the
+  contract's schema refuses. It does not identify a coffee across shops.
+- `pack_group_key_source` stays in the store and never goes on the wire: a
+  consumer has no use for the version of the rule that built a key.
+
+### Changed
+
+- Pins `coffee-contracts` `v3.2.0`, the release that adds the field to
+  `CoffeeState`. The wire version is still `v2` and the subject is unchanged. A
+  consumer still on `v3.1.0` drops the field it does not know, so the order the
+  two deploys happen in breaks nothing.
+
+A key reaches a consumer at each row's next crawl after this deploy and after
+that consumer's own move to `v3.2.0`, not before: consumers keep only an event
+strictly newer than the state they hold, so `republish --all` does not carry it to
+rows they already have. See `deploy/notes/225-pack-group-keys-reach-consumers-at-the-crawl.md`.
+
 ## 0.12.0 (2026-10-20)
 
 ### Added

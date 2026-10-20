@@ -12,6 +12,7 @@ from coffee_contracts import COFFEE_STATE, CoffeeState, check, coffee_from_json,
 
 from coffee_aggregator import product_kind
 from coffee_aggregator.models import Coffee, Species
+from coffee_aggregator.pack_group import pack_group_key
 from coffee_aggregator.sinks import outbox
 from coffee_aggregator.sinks.postgres import COLUMNS, MANAGED_COLUMNS, PostgresSink
 from conftest import delisted_row, make_coffee
@@ -408,3 +409,72 @@ def test_a_crawled_price_with_more_than_two_decimals_publishes_null_with_a_warni
     [record] = caplog.records
     for part in ("demo/32", "price_minor", "12.345"):
         assert part in record.getMessage()
+
+
+PELLINI = "Pellini Espresso Bar n°4 Crema Tradizionale 1 kg"
+ZEBIGI_URL = "https://fathers.example/kava/{kind}/uganda-zebigi"
+
+
+def _valid_payload(*coffees: Coffee) -> list[dict[str, Any]]:
+    return [_validated(outbox.state_for(coffee, NOT_DECIDED)) for coffee in coffees]
+
+
+def test_the_crawl_event_carries_the_pack_group_key_the_function_builds() -> None:
+    coffee = make_coffee(site="kava", name=PELLINI)
+    row = _rows(coffee)[0]
+    payload = _valid_payload(coffee)[0]
+
+    assert payload["pack_group_key"] == pack_group_key("kava", PELLINI, coffee.url)
+    assert payload["pack_group_key"] == "kava/pellini espresso bar n 4 crema tradizionale"
+    assert row[0].startswith("coffee.v2.catalogue.kava.")
+
+
+def test_the_pack_group_key_source_never_reaches_the_wire() -> None:
+    payload = _valid_payload(make_coffee(site="kava", name=PELLINI))[0]
+
+    assert "pack_group_key_source" not in payload
+    assert not [key for key in payload if key.startswith("pack_group") and key != "pack_group_key"]
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_a_name_with_nothing_in_it_publishes_a_null_key_not_a_bare_site(name: str) -> None:
+    coffee = make_coffee(site="kava", name=name, url=None)
+    payload = _valid_payload(coffee)[0]
+
+    assert payload["pack_group_key"] is None
+    assert payload["pack_group_key"] not in {"", "kava/"}
+
+
+def test_an_espresso_and_a_filter_listing_of_one_name_publish_two_keys() -> None:
+    espresso, filtr = _valid_payload(
+        make_coffee(
+            site="fathers",
+            external_id="1",
+            name="Uganda – Zebigi",
+            url=ZEBIGI_URL.format(kind="espresso"),
+        ),
+        make_coffee(
+            site="fathers",
+            external_id="2",
+            name="Uganda – Zebigi",
+            url=ZEBIGI_URL.format(kind="filtr"),
+        ),
+    )
+
+    assert espresso["pack_group_key"].endswith("~espresso")
+    assert filtr["pack_group_key"].endswith("~filter")
+    assert espresso["pack_group_key"] != filtr["pack_group_key"]
+
+
+def test_a_row_stored_before_the_key_existed_publishes_null() -> None:
+    state = outbox.state_from_row(delisted_row(pack_group_key=None))
+    payload = _validated(state)
+
+    assert payload["pack_group_key"] is None
+
+
+def test_a_row_read_back_publishes_the_key_it_stores() -> None:
+    state = outbox.state_from_row(delisted_row(pack_group_key="demo/kuba serrano superior"))
+    payload = _validated(state)
+
+    assert payload["pack_group_key"] == "demo/kuba serrano superior"
