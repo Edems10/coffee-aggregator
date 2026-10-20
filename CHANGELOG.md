@@ -34,19 +34,20 @@ crawl writes.
     `kava/filtr/…`) is appended as `~espresso` or `~filter`; the delimiter is
     `~` because a `#` is cut off when the key travels in a URL query.
 - A name with nothing left but roast words, or nothing at all (kmen's four
-  coffees all named `filtr`), takes its key from the last segment of the URL
+  coffees all named `filtr`, two named `esko`, the Czech short form of
+  espresso, which is a roast word here), takes its key from the last segment of the URL
   path instead, and an unparseable URL counts as no URL. A digit before a
   weight is kept (`n°4 250 g` and `n°3 250 g` stay apart).
 - Nothing stores or publishes the key yet: the column is #228 and the event
   field is #225, so no stored row and no consumer changes with this release.
-- Measured on the 17 October local snapshot (3 773 rows): 347 groups holding
-  920 rows, against 355 groups and 934 rows for the investigation's first
+- Measured on the 17 October local snapshot (3 773 rows): 346 groups holding
+  918 rows, against 355 groups and 934 rows for the investigation's first
   draft, which kept ground words and had no roast suffix. The 14 same-name
   espresso/filter twins (12 fathers, 2 ohmybean) now sit in separate groups,
   and four groups gain their ground version (kava.cz Illy Classico and
   Dallmayr Crema Prodomo, two at tokycaffe). Tins and portions join six more
   groups at kava.cz, nejkafe, kafista and zlatezrnko, and kmen's four `filtr`
-  rows are four coffees.
+  rows and two `esko` rows are six coffees.
 
 ## 0.10.0 (2026-10-20)
 

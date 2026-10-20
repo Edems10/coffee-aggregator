@@ -97,6 +97,7 @@ def test_the_url_tells_espresso_from_filter_when_the_name_does_not() -> None:
     [
         pytest.param("espresso", "~espresso", id="espresso"),
         pytest.param("espreso", "~espresso", id="espreso-is-espresso"),
+        pytest.param("esko", "~espresso", id="esko-is-espresso"),
         pytest.param("filtr", "~filter", id="filtr"),
         pytest.param("filter", "~filter", id="filter"),
     ],
@@ -132,11 +133,18 @@ def test_a_malformed_url_counts_as_no_url() -> None:
     assert key("filtr", "http://[bad/espresso") == "s/filtr"
 
 
-@pytest.mark.parametrize("name", ["filtr", "", "  ", "Filtr 250 g"])
+@pytest.mark.parametrize("name", ["filtr", "esko", "", "  ", "Filtr 250 g"])
 def test_a_name_without_a_coffee_in_it_is_told_apart_by_the_url_slug(name: str) -> None:
     first = key(name, "https://kmen.example/product/filtr-uganda-wanale/")
     second = key(name, "https://kmen.example/product/filtr-tanzanie/")
     assert first != second
+
+
+def test_the_kmen_esko_pair_is_two_coffees() -> None:
+    tenejapa = key("esko", "https://kmen.coffee/product/esko-tenejapa/")
+    primavera = key("esko", "https://kmen.coffee/product/esko-primavera/")
+    assert tenejapa == "s/esko tenejapa"
+    assert tenejapa != primavera
 
 
 def test_a_roast_only_name_takes_its_key_from_the_slug_without_sizes() -> None:

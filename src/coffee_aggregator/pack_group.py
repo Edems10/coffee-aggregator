@@ -20,6 +20,7 @@ _FILTER: Final = "filter"
 _ROAST_KINDS: Final = {
     "espresso": _ESPRESSO,
     "espreso": _ESPRESSO,
+    "esko": _ESPRESSO,
     "filtr": _FILTER,
     "filter": _FILTER,
 }
