@@ -1,5 +1,5 @@
 -- The key that two listings of one coffee in one shop share, and the version of
--- the rule that built it (`pack_group_key.PACK_GROUP_KEY_SOURCE`, `name:v1`).
+-- the rule that built it (`pack_group.PACK_GROUP_KEY_SOURCE`, `name:v1`).
 --
 -- Two keys are comparable only when they carry the same source, so the source
 -- travels with the key, as `product_kind_source` does with `product_kind`.

@@ -117,7 +117,8 @@ def pack_group_key(site: str, name: str, url: str | None) -> str | None:
     A name with nothing left but roast words, or nothing at all, does not say
     which coffee it is (``filtr`` names four coffees at one shop), so the last
     segment of the URL path, folded and stripped of sizes, stands in for it.
-    Without a usable URL the folded name is kept as it is.
+    Without a usable URL the folded name is kept as it is, unless nothing is
+    left of it.
 
     Sizes are removed before the separators are flattened, because a slash
     between digits is part of a blend ratio (``Blend 75/25 250 g``) and

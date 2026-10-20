@@ -28,7 +28,8 @@ crawl writes.
 
 Rows fill on their next crawl: the migration backfills nothing, because a key
 needs Python. A delisted row is never crawled again and stays NULL. Nothing
-publishes the key yet: the catalogue event is unchanged, and `pack_group_key_source`
+publishes the key yet: the catalogue event is unchanged, the JSONL sink and the `parse`
+output carry both fields like every other column, and `pack_group_key_source`
 is never on the wire. The publish is #225's own pull request, after the
 `coffee-contracts` release.
 

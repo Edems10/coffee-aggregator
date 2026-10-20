@@ -313,7 +313,7 @@ class Coffee:
             The key of :func:`~coffee_aggregator.pack_group.pack_group_key`, or
             None when the name and the URL give nothing to build it from.
         """
-        from coffee_aggregator.pack_group import pack_group_key  # noqa: PLC0415  (as roaster_key)
+        from coffee_aggregator.pack_group import pack_group_key  # noqa: PLC0415  (import cycle)
 
         return pack_group_key(self.site, self.name, self.url)
 

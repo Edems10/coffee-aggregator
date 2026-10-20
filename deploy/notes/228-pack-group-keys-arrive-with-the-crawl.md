@@ -34,4 +34,7 @@ failed keeps the NULLs it had until its next good crawl.
 
 The code is rolled back by the previous commit checked out in
 `/opt/coffee-aggregator` and rebuilt. The two columns can stay: nothing reads
-them, and the older code's INSERT does not name them.
+them, and the older code's INSERT does not name them. While the older code runs,
+its upsert does not write the key, so a coffee renamed in that time keeps a stale
+key until the next crawl on 0.12.0 or later; nothing reads the key yet, so this is
+harmless.
