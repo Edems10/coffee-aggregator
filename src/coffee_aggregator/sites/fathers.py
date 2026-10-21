@@ -15,6 +15,7 @@ from coffee_aggregator.labels import (
     F_PROCESS,
     F_SPECIES,
     blend_verdict,
+    brewing_methods,
     is_decaf,
     label_pair,
     parse_origin,
@@ -495,7 +496,7 @@ class FathersSite(SiteAdapter):
         return Taste(
             flavor_notes=normalize.split_list(facts.get(F_FLAVOR)),
             tasting_text=_localised(product.get("metaDescription")),
-            brewing_methods=[slug] if slug else [],
+            brewing_methods=brewing_methods([slug] if slug else []),
         )
 
     def _disclosures(self, product: dict[str, object]) -> dict[str, str]:

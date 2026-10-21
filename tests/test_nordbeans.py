@@ -175,13 +175,7 @@ def test_gakenke_taste_media_and_categories(gakenke: Coffee) -> None:
     assert gakenke.taste.scale_max == 5
     assert gakenke.taste.flavor_notes == ["višně", "med", "černý rybíz"]
     assert gakenke.taste.tasting_text == "Sladká, Ovocná, Květinová"
-    assert gakenke.taste.brewing_methods == [
-        "Filtr",
-        "Aeropress",
-        "Frenchpress",
-        "Chemex",
-        "Batch brew",
-    ]
+    assert gakenke.taste.brewing_methods == ["filter", "aeropress", "french_press"]
     assert len(gakenke.images) >= 2
     assert all(image.startswith("https://data.nordbeans.cz/data/tmp/") for image in gakenke.images)
     assert gakenke.categories[:2] == ["Káva", "Filtrovaná káva"]

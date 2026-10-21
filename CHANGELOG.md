@@ -10,6 +10,47 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.0 (2026-10-22)
+
+### Changed
+
+- `brewing_methods` now holds only `espresso`, `moka`, `filter`, `french_press`,
+  `aeropress`, `turkish`, `automatic` and `cold_brew`, in the order a page first
+  names them and without repeats (#242). It used to store the shop's own words, so
+  one method appeared as `espresso`/`Espresso`/`espreso`/`Domáce espresso`, a
+  bracketed list broke into `Filter (chemex` and `V60)`, and a fifth of the items
+  were grinds (`zrnko`, `Zrnková káva`, `Celá zrna`). `fathers` stores its
+  subcategory slug through the same mapper, so `filtr` is `filter`.
+- Every method an item names is kept, so `espresso (automat)` is `espresso` and
+  `automatic`, and `Mletá káva na filter (V60` is `filter`. The spellings are in
+  `labels/terms.py` and are matched at the start of a word, so `džezvu`, `espressa`
+  and `na turka` read too.
+- Nothing is guessed. A grind with no method, and a word that could be either of
+  two methods, names nothing and is dropped: `zalévaná`/`zalievaná` (pour-over or
+  Czech turek), a bare `kávovar` (drip or espresso machine) and `alternativní
+  příprava`. So are `cappuccino` and `vakuum pot`, which are outside the eight. An
+  item that negates a suitability statement (`nevhodné`, `není vhodná`, `ne pro`,
+  `nelze`, `nehodí se`, `nepoužívejte`, `není určena`, `nedoporučujeme`,
+  `neodporúčame`, `not suitable`) is dropped whole, and so is one that names a
+  capsule or instant product (`Dolce Gusto espresso kapsle`, `Instant espresso`),
+  so a method a shop rules out, or that belongs to another product, is never
+  stored. No stored item carries a negation yet.
+- An item of five words or more used to be dropped as a sentence; that limit is
+  gone, because the closed set is what keeps prose out, and a sentence now
+  contributes the methods it names (`Kávu lze použít na espresso` is `espresso`).
+  The #211/#213 sentence tests now expect those methods, because the vocabulary is
+  closed and a sentence can no longer be stored as text.
+- On the 2026-10-17 local crawl 7 196 stored items from 454 distinct strings give
+  6 207 items under the eight values, and 108 strings (989 items) name no method.
+  1 907 coffees had a list; 50 of them (18 of those at `coffegarden`, whose only
+  item was `zrnková`) now have none.
+- `roast_profile` is untouched: it is still read from the shop's own brewing
+  label, not from this list.
+- No consumer reads `brewing_methods`: it is not in a tagged `coffee-contracts`
+  release (this repository pins `v3.2.0`), and `coffee-api`, `coffee-cupper`,
+  `coffee-broker` and `coffee-web` do not read it, so no consumer saw the old
+  meaning and the number is a minor. Rows change on each coffee's next crawl.
+
 ## 0.13.3 (2026-10-21)
 
 ### Fixed

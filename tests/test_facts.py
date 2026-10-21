@@ -15,7 +15,6 @@ from coffee_aggregator.labels import (
     F_ROAST,
     F_SPECIES,
     F_WEIGHT,
-    MAX_BREWING_METHOD_WORDS,
     Labels,
     bare_label,
     brewing_methods,
@@ -127,51 +126,47 @@ def test_plausible_gates_the_fields_with_an_obvious_shape(
 
 # --- brewing_methods ----------------------------------------------------------
 
-#: Every one a value the fixture corpus holds. The kept rows are what an
-#: allowlist or a character threshold would have deleted; the dropped rows are
-#: the three sentences #211 is about, and ``01``, a numbered preparation step.
+#: Every one a value the fixture corpus holds, and what the closed vocabulary makes of it.
+#: The sentences are the three #211 is about and they now name the methods they state;
+#: ``01``, a numbered preparation step, names none.
 BREWING_ITEMS = [
-    ("Filter (chemex/V60)", True),
-    ("Moka (koťogo)", True),
-    ("French press", True),
-    ("Zalievanie", True),
-    ("Jezva", True),
-    ("Turek", True),
-    ("Automatický kávovar", True),
-    ("Frenchpress", True),
-    ("Cold Brew", True),
-    ("Koťogo", True),
-    ("cappuccino", True),
-    ("V60", True),
-    ("mletá na zalévanou kávu", True),
-    ("automatické kávovary a koťogo", True),
-    ("Vhodné pre pákové kávovary", True),
-    ("V60)", True),
-    ("Filter (chemex", True),
-    ("espresso - ideální do pákových kávovarů či pro domácí přípravu v moka konvičce", False),
-    ("Najviac jej svedči pákový alebo automatický kávovar", False),
-    ("Kávu lze použít na espresso", False),
-    ("01", False),
+    ("Filter (chemex/V60)", ["filter"]),
+    ("Moka (koťogo)", ["moka"]),
+    ("French press", ["french_press"]),
+    ("Zalievanie", []),
+    ("Jezva", ["turkish"]),
+    ("Turek", ["turkish"]),
+    ("Automatický kávovar", ["automatic"]),
+    ("Frenchpress", ["french_press"]),
+    ("Cold Brew", ["cold_brew"]),
+    ("Koťogo", ["moka"]),
+    ("cappuccino", []),
+    ("V60", ["filter"]),
+    ("mletá na zalévanou kávu", []),
+    ("automatické kávovary a koťogo", ["automatic", "moka"]),
+    ("Vhodné pre pákové kávovary", ["espresso"]),
+    ("V60)", ["filter"]),
+    ("Filter (chemex", ["filter"]),
+    (
+        "espresso - ideální do pákových kávovarů či pro domácí přípravu v moka konvičce",
+        ["espresso", "moka"],
+    ),
+    ("Najviac jej svedči pákový alebo automatický kávovar", ["espresso", "automatic"]),
+    ("Kávu lze použít na espresso", ["espresso"]),
+    ("01", []),
 ]
 
 
 @pytest.mark.parametrize(("value", "expected"), BREWING_ITEMS, ids=[v for v, _ in BREWING_ITEMS])
-def test_a_sentence_is_not_a_brewing_method(value: str, *, expected: bool) -> None:
-    assert (brewing_methods([value]) == [value]) is expected
+def test_a_brewing_item_maps_onto_the_closed_vocabulary(value: str, expected: list[str]) -> None:
+    assert brewing_methods([value]) == expected
 
 
-def test_the_margin_between_a_method_and_a_sentence_is_one_word() -> None:
-    """Four words is the longest genuine item in the corpus and five the shortest sentence."""
-    assert MAX_BREWING_METHOD_WORDS == 4
-    assert brewing_methods(["mletá na zalévanou kávu"]) == ["mletá na zalévanou kávu"]
-    assert brewing_methods(["Kávu lze použít na espresso"]) == []
-
-
-def test_a_brewing_list_keeps_the_methods_beside_the_sentence_it_drops() -> None:
+def test_a_brewing_list_keeps_every_method_beside_the_sentence_that_names_one() -> None:
     """valasska prints a sentence first and three real methods after it."""
     assert brewing_methods(
         ["Kávu lze použít na espresso", "pákový kávovar", "frenchpress", "turek"]
-    ) == ["pákový kávovar", "frenchpress", "turek"]
+    ) == ["espresso", "french_press", "turkish"]
 
 
 def test_an_implausible_roast_stays_out_of_the_typed_field() -> None:
@@ -444,7 +439,11 @@ def test_brewing_methods_split_into_a_list() -> None:
     collected = Labels()
     collected.by_field[F_BREWING] = "Espresso, V60, French press"
 
-    assert facts.parse_taste(collected, None).brewing_methods == ["Espresso", "V60", "French press"]
+    assert facts.parse_taste(collected, None).brewing_methods == [
+        "espresso",
+        "filter",
+        "french_press",
+    ]
 
 
 # --- stated_pack and the pack-beats-label rule --------------------------------

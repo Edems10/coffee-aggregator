@@ -171,6 +171,18 @@ def test_chapata_taste_media_and_flags(chapata: Coffee) -> None:
     assert chapata.origin_text == "Kolumbie"
 
 
+def test_a_filtr_subcategory_is_stored_as_the_filter_method(
+    site: FathersSite,
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    html = fixture_html("fathers", "detail_chapata.html")
+    assert 'urlSlug_cs":"espresso"' in html
+    ref = ProductRef(site_id="fathers", external_id="", url=f"{BASE}/kava/filtr/x")
+    coffee = site.parse_product(html.replace('urlSlug_cs":"espresso"', 'urlSlug_cs":"filtr"'), ref)
+    assert coffee is not None
+    assert coffee.taste.brewing_methods == ["filter"]
+
+
 def test_chapata_variants_price_every_package(chapata: Coffee) -> None:
     by_weight = {variant.weight_g: variant for variant in chapata.variants}
     assert set(by_weight) == {250, 1000, 2000}

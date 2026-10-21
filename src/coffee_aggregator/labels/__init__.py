@@ -21,7 +21,6 @@ from coffee_aggregator.labels.collect import (
     says,
 )
 from coffee_aggregator.labels.read import (
-    MAX_BREWING_METHOD_WORDS,
     bar,
     blend_verdict,
     brewing_methods,
@@ -41,6 +40,7 @@ from coffee_aggregator.labels.read import (
     stated_weight,
 )
 from coffee_aggregator.labels.terms import (
+    BREWING_METHODS,
     F_ACIDITY,
     F_ALTITUDE,
     F_BEST_BEFORE,
@@ -74,6 +74,7 @@ from coffee_aggregator.labels.terms import (
 )
 
 __all__ = [
+    "BREWING_METHODS",
     "F_ACIDITY",
     "F_ALTITUDE",
     "F_BEST_BEFORE",
@@ -106,7 +107,6 @@ __all__ = [
     "MAX_BARE_LABEL_WORDS",
     "MAX_BARE_VALUE_CHARS",
     "MAX_BEAN_WEIGHT_G",
-    "MAX_BREWING_METHOD_WORDS",
     "MAX_FUZZY_LABEL_CHARS",
     "MAX_FUZZY_LABEL_WORDS",
     "MAX_PACK_WEIGHT_G",
