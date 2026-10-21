@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 import pytest
+from bs4 import BeautifulSoup
 
 from coffee_aggregator import platforms, sites
 from coffee_aggregator.http import FetchResult
@@ -700,6 +701,64 @@ def test_the_option_priced_at_the_headline_beats_a_stale_name(
     assert {variant.weight_g for variant in coffee.variants} == {1000}
     assert (coffee.price, coffee.weight_g) == (1075.0, 1000)
     assert coffee.price_per_kg == 1075.0
+
+
+ANGRYBEANS_URL = "https://www.angrybeans.eu/100espro/"
+
+
+def _angrybeans_variants(
+    fixture_html: Callable[[str, str], str],
+    edit: Callable[[BeautifulSoup], None] | None = None,
+) -> list[tuple[int | None, float | None, str | None]]:
+    html = fixture_html("shoptet_angrybeans", "detail_100espro.html")
+    if edit is not None:
+        soup = BeautifulSoup(html, "html.parser")
+        edit(soup)
+        html = str(soup)
+    coffee = parse(cast("ShoptetSite", adapter_for("angrybeans")), html, "78", ANGRYBEANS_URL)
+    return [(variant.weight_g, variant.price, variant.currency) for variant in coffee.variants]
+
+
+def test_combined_variant_prices_come_from_the_aligned_offers(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """angrybeans shows prices without VAT in its select; the offers state them with it."""
+    assert _angrybeans_variants(fixture_html) == [(250, 289.0, "CZK"), (1000, 1109.0, "CZK")]
+
+
+def test_combined_variant_price_is_unchanged_when_option_and_offer_agree(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    def agree(soup: BeautifulSoup) -> None:
+        for offer, price in zip(soup.select("[itemprop=offers]"), ("258", "990"), strict=True):
+            offer.select_one("meta[itemprop=price]")["content"] = price  # type: ignore[index]
+
+    assert _angrybeans_variants(fixture_html, agree) == [(250, 258.0, "CZK"), (1000, 990.0, "CZK")]
+
+
+def test_combined_variant_prices_come_from_the_options_when_no_offer_lines_up(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    def drop_last_offer(soup: BeautifulSoup) -> None:
+        soup.select("[itemprop=offers]")[-1].decompose()
+
+    assert _angrybeans_variants(fixture_html, drop_last_offer) == [
+        (250, 258.0, "CZK"),
+        (1000, 990.0, "CZK"),
+    ]
+
+
+def test_combined_variant_takes_the_currency_of_its_offer(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    def euro(soup: BeautifulSoup) -> None:
+        for meta in soup.select("[itemprop=offers] > meta[itemprop=priceCurrency]"):
+            meta["content"] = "EUR"
+
+    assert [currency for _, _, currency in _angrybeans_variants(fixture_html, euro)] == [
+        "EUR",
+        "EUR",
+    ]
 
 
 # --- item 22: every shipped config parses its own saved pages ----------------

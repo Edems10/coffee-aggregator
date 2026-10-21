@@ -62,6 +62,11 @@ _PAGE_DATA_RE: Final = re.compile(r"page_data\s*=\s*(?P<json>\{.*?\})\s*;\s*page
 #: ``gtm_prva[1417] = {'id': ..., 'price': ...};`` — one entry per package size.
 _VARIATION_RE: Final = re.compile(r"gtm_prva\[(?P<id>\d+)\]\s*=\s*\{(?P<fields>[^}]*)\}")
 _VARIATION_FIELD_RE: Final = re.compile(r"'(?P<key>\w+)'\s*:\s*'?(?P<value>[^',}]*)'?")
+#: ``wpj.variations[1417] = { price: "375 Kč", priceNoVat: ... }`` — what the
+#: package-size switcher shows a visitor for one variation, VAT included.
+_SWITCHER_PRICE_RE: Final = re.compile(
+    r"wpj\.variations\[(?P<id>\d+)\]\s*=\s*\{[^}]*?\bprice:\s*\"(?P<price>[^\"]*)\""
+)
 #: The shop writes its cup notes as ``a - b - c``, which the shared splitter
 #: leaves whole because a bare dash also joins words.
 _NOTE_SPLIT_RE: Final = re.compile(r"\s+[‐-―−-]\s+")
@@ -185,17 +190,28 @@ def _read_params(soup: BeautifulSoup) -> tuple[kit.Facts, dict[str, int]]:
 def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
     """Read the package-size switcher out of the inline GA4 variation map.
 
+    The GA4 map states each variation's price without VAT, so a variant is
+    priced from the switcher entry with the same variation id, which states
+    what the visitor pays.
+
     Args:
         soup: The parsed detail page.
         ref: The reference being parsed.
 
     Returns:
-        One variant per package size, in page order.
+        One variant per package size, in page order; a variant whose variation
+        has no switcher entry has no price.
     """
+    scripts = [script.get_text() for script in soup.find_all("script")]
+    prices = {
+        match.group("id"): match.group("price")
+        for text in scripts
+        for match in _SWITCHER_PRICE_RE.finditer(text)
+    }
     variants: list[Variant] = []
     seen: set[str] = set()
-    for script in soup.find_all("script"):
-        for match in _VARIATION_RE.finditer(script.get_text()):
+    for text in scripts:
+        for match in _VARIATION_RE.finditer(text):
             identifier = match.group("id")
             if identifier in seen:
                 continue
@@ -209,7 +225,7 @@ def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
                     external_id=fields.get("id") or identifier,
                     url=f"{ref.url}#{identifier}",
                     label=fields.get("variationName"),
-                    price=normalize.parse_amount(fields.get("price")),
+                    price=normalize.parse_amount(prices.get(identifier)),
                     currency=DEFAULT_CURRENCY,
                 )
             )

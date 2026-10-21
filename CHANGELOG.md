@@ -10,6 +10,24 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.13.1 (2026-10-21)
+
+### Fixed
+
+- Variant prices at `nordbeans` and `angrybeans` are now the price the page
+  charges a consumer, VAT included, as the product price beside them already
+  was (#235). A crawl on 2026-10-21 found 63 variant prices of 34 coffees stored
+  without VAT (`nordbeans` 41 of 21, `angrybeans` 22 of 13), mostly 12 % under
+  the page: 334.82 for a bag the page sells at 375. `nordbeans` reads each
+  variant from the package-size switcher, which states the price with VAT,
+  instead of from the GA4 map, which states it without; a variation with no
+  switcher entry now has no price rather than one without VAT. A Shoptet product
+  whose weights live in one combined select takes each variant's price from the
+  matching microdata offer when the offers and the options line up, because
+  `angrybeans` displays prices without VAT in the select (`250 g (258 Kč)`)
+  while the offer and the page say 289 Kč. When they do not line up the price
+  still comes from the option text.
+
 ## 0.13.0 (2026-10-20)
 
 ### Added
