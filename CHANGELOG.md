@@ -10,6 +10,30 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.13.3 (2026-10-21)
+
+### Fixed
+
+- A taste score a shop states out of a number other than 5, or with a decimal
+  point, is now rescaled onto the 0-5 scale instead of being stored as if it
+  were out of 5 (#241). `bar` took the first integer of the value, so
+  `penerini` `ACIDITA 1/3`, `HOŘKOST 2/3` and `SLADKOST 3/3` were stored as 1, 2
+  and 3 (now 2, 3 and 5), `nejkafe` `SLADKOST 5/10` as 5 (now 3), `nejkafe` `TĚLO
+  8/8` and `HOŘKOST 7/10` as `NULL` (now 5 and 4), and a `nejkafe` acidity of
+  `1,5/5` or `2.5/5` as 1 or 2 (now 2 or 3). A fraction `a/b` with 3 <= `b` <= 10
+  and no unit (`g`, `kg`, `ml`, `l`) after it is scored `a * 5 / b` rounded half
+  up and wins over an intensity word in the same text; with `a` above `b` it is
+  `NULL`, and a zero `b` is `NULL` too (`6/5`, `4/3`, `1/0`). Any other fraction is
+  ignored and the value is read as before, by its first integer from 0 to 5, else
+  its intensity word: a date such as `10/2024`, a harvest year such as `2023/24`
+  and a ratio such as `1/2 kg` (`vysoká, sklizeň 2023/24` is 4). Percentages stay
+  `NULL`, and `taste_scale_max` stays 5. Half up also moves a `0,5/5` or `0.5/5`
+  from 0 to 1: seven `nejkafe` acidity scores worded "Absolutně minimální až
+  nulová", "Absolutně nulová", "Téměř nulová" or "Téměř žádná" go from 0 to 1,
+  while a value stated `0/5` stays 0. On the 2026-10-17 local crawl 79 stored
+  scores change, at 75 coffees: `nejkafe` 76 (acidity 72, body 2, bitterness 1,
+  sweetness 1) and `penerini` 3 (acidity, bitterness and sweetness, one coffee).
+
 ## 0.13.2 (2026-10-21)
 
 ### Fixed

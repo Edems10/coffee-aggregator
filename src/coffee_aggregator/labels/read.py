@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from decimal import ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING, Final
 
 from coffee_aggregator import normalize
@@ -231,11 +232,58 @@ def score(labels: Labels) -> float | None:
     return value
 
 
+#: A value that states its own scale: ``5/10``, ``1,5/5``, ``(1.5/5)``.
+_OUT_OF_RE: Final = re.compile(r"(?<![\d.,])(\d+(?:[.,]\d+)?)\s*/\s*(\d+(?:[.,]\d+)?)")
+_UNIT_RE: Final = re.compile(r"\s*(?:kg|g|ml|l)\b", re.IGNORECASE)
+_MIN_STATED_SCALE: Final = 3
+_MAX_STATED_SCALE: Final = 10
+
+
+def _stated_points(value: str) -> tuple[bool, int | None]:
+    """Rescale the first ``a/b`` in a value that is a score onto the 0-5 scale.
+
+    A fraction is a score when ``3 <= b <= 10`` and no unit (``g``, ``kg``, ``ml``,
+    ``l``) follows it. Its score is ``a * 5 / b`` rounded half up, or None when
+    ``a`` exceeds ``b``; half up is spelled out because the built-in ``round``
+    rounds half to even, which would send ``5/10`` and ``7/10`` to opposite sides of
+    the same half-point. A zero ``b`` is a stated fraction with no score. Any other
+    fraction is not a score and is skipped: a date (``10/2024``), a harvest year
+    (``2023/24``), a ratio (``1/2 kg``).
+
+    Args:
+        value: The text of a taste row.
+
+    Returns:
+        ``(True, score)`` when a fraction states a score, where the score is None for
+        a stated fraction that cannot be one, and ``(False, None)`` when the value
+        states none.
+    """
+    for stated in _OUT_OF_RE.finditer(value):
+        points = Decimal(stated.group(1).replace(",", "."))
+        out_of = Decimal(stated.group(2).replace(",", "."))
+        if out_of == 0:
+            return True, None
+        if not _MIN_STATED_SCALE <= out_of <= _MAX_STATED_SCALE:
+            continue
+        if _UNIT_RE.match(value, stated.end()):
+            continue
+        if points > out_of:
+            return True, None
+        scaled = points * DEFAULT_TASTE_SCALE_MAX / out_of
+        return True, int(scaled.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    return False, None
+
+
 def bar(labels: Labels, field_name: str) -> int | None:
     """Read a sensory bar, in points when the shop draws one and in words when not.
 
     Half the shops publish "Telo: 4/5" and the other half "Telo: vysoké"; both
-    end up on the same 1-5 scale so the two are comparable.
+    end up on the same 0-5 scale so the two are comparable. A value that states
+    ``a/b`` as a score (see ``_stated_points``) is rescaled to ``a * 5 / b``, wins
+    over any word beside it, and is None when ``a`` exceeds ``b`` or ``b`` is zero,
+    so ``3/3`` is 5, ``5/10`` is 3 and ``6/5`` is None. A value without one,
+    including one whose ``a/b`` is not a score, is its first integer when that lies
+    on the scale, else the intensity word it contains.
 
     Args:
         labels: Every labelled value on the page.
@@ -245,6 +293,10 @@ def bar(labels: Labels, field_name: str) -> int | None:
         The value on the 0-5 scale, or None when the page states neither.
     """
     value = labels.get(field_name)
+    if value:
+        stated, score = _stated_points(value)
+        if stated:
+            return score
     points = normalize.parse_int(value)
     if points is not None and 0 <= points <= DEFAULT_TASTE_SCALE_MAX:
         return points
