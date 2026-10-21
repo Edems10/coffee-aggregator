@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, cast
 
 import pytest
+from bs4 import BeautifulSoup
 
 from coffee_aggregator import normalize
 from coffee_aggregator.http import FetchResult
@@ -191,8 +193,61 @@ def test_gakenke_variants_carry_both_package_sizes(gakenke: Coffee) -> None:
     assert set(by_weight) == {250, 1000}
     assert by_weight[250].label == "Hmotnost: 250g"
     assert by_weight[250].external_id == "3984_1417"
-    assert by_weight[1000].price == 1216.96
+    assert by_weight[1000].price == 1363
     assert by_weight[1000].currency == "CZK"
+
+
+def test_gakenke_variant_prices_include_vat(gakenke: Coffee) -> None:
+    assert [(variant.weight_g, variant.price) for variant in gakenke.variants] == [
+        (250, 375),
+        (1000, 1363),
+    ]
+    assert gakenke.price == 375
+
+
+def test_house_blend_variant_prices_include_vat(house_blend: Coffee) -> None:
+    assert [(variant.weight_g, variant.price) for variant in house_blend.variants] == [
+        (250, 246),
+        (1000, 818),
+    ]
+    assert house_blend.price == 246
+
+
+@pytest.mark.parametrize(
+    ("name", "external_id"),
+    [("detail_3984_gakenke.html", "3984"), ("detail_19_house_blend.html", "19")],
+)
+def test_variant_prices_agree_with_the_json_ld_offers(
+    site: NordbeansSite,
+    fixture_html: Callable[[str, str], str],
+    name: str,
+    external_id: str,
+) -> None:
+    html = fixture_html("nordbeans", name)
+    offered: dict[str, float] = {}
+    for script in BeautifulSoup(html, "html.parser").select('script[type="application/ld+json"]'):
+        document = json.loads(script.get_text())
+        for offer in document.get("offers", {}).get("offers", []):
+            offered[offer["sku"]] = float(offer["price"])
+    coffee = parse(site, fixture_html, name, external_id)
+    assert len(offered) == len(coffee.variants) == 2
+    assert {variant.external_id: variant.price for variant in coffee.variants} == offered
+
+
+def test_a_variation_without_a_switcher_entry_has_no_price(site: NordbeansSite) -> None:
+    html = (
+        "<html><body><h1>Holá káva</h1><p class='price' data-price>250 Kč</p>"
+        "<script>gtm_prva[5] = {'id': '7_5','variationName': 'Hmotnost: 250g','price': 223.21,};"
+        "gtm_prva[6] = {'id': '7_6','variationName': 'Hmotnost: 1000g','price': 800,};</script>"
+        '<script>wpj.variations[6] = { price: "896 Kč", priceNoVat: "800 Kč", };</script>'
+        "</body></html>"
+    )
+    coffee = site.parse_product(html, ProductRef("nordbeans", "7", f"{BASE}/hola_z7/"))
+    assert coffee is not None
+    assert [(variant.weight_g, variant.price) for variant in coffee.variants] == [
+        (250, None),
+        (1000, 896),
+    ]
 
 
 def test_gakenke_keeps_every_label_in_raw_attributes(gakenke: Coffee) -> None:

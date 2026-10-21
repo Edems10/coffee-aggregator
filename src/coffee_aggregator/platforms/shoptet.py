@@ -773,29 +773,40 @@ def _combined_variants(root: Tag, ref: ProductRef, currency: str | None) -> list
         return []
     options = _real_options(selects[0])
     offers = _offers(root)
-    skus = [_first_value(offer, "sku") for offer in offers]
-    if len(skus) != len(options):
-        skus = [None] * len(options)
+    stated: list[tuple[str | None, float | None, str | None]] = [(None, None, None)] * len(options)
+    if len(offers) == len(options):
+        stated = [_offer_fields(offer)[:3] for offer in offers]
     return [
-        _combined_variant(option, sku, ref, currency)
-        for option, sku in zip(options, skus, strict=False)
+        _combined_variant(
+            option, sku, ref, currency, offer_price=offer_price, offer_currency=offer_currency
+        )
+        for option, (sku, offer_price, offer_currency) in zip(options, stated, strict=False)
     ]
 
 
-def _combined_variant(
+def _combined_variant(  # noqa: PLR0913  (one argument per source a variant is read from)
     option: Tag,
     sku: str | None,
     ref: ProductRef,
     currency: str | None,
+    *,
+    offer_price: float | None,
+    offer_currency: str | None,
 ) -> Variant:
     """Build one variant from one option of a combined select.
+
+    The price is the offer's microdata price when the offer is known, because
+    the offer states what the visitor pays with VAT whether or not the shop
+    displays prices without it; otherwise it is the option's own text.
 
     Args:
         option: The ``<option>`` element.
         sku: The sku of the offer that stands for the same variant, when the
             two lists line up.
         ref: The product reference being parsed.
-        currency: The product's currency, used when the option states none.
+        currency: The product's currency, used when nothing else states one.
+        offer_price: The price of that offer, when it states one.
+        offer_currency: The currency of that offer, when it states one.
 
     Returns:
         The variant.
@@ -803,12 +814,17 @@ def _combined_variant(
     # Shoptet pads these options with non-breaking spaces; a label that reaches
     # the database should read the way the shop renders it.
     label = _WHITESPACE_RE.sub(" ", dom.text(option) or "").strip()
-    price, detected = normalize.parse_price(_option_price(label))
+    price: float | None = offer_price
+    detected = offer_currency
+    if price is None:
+        price, detected = normalize.parse_price(_option_price(label))
+    if price is None:
+        price = normalize.parse_amount(_option_amount(option))
     return Variant(
         external_id=sku,
         url=ref.url,
         weight_g=_option_weight(label, sku),
-        price=price if price is not None else normalize.parse_amount(_option_amount(option)),
+        price=price,
         currency=detected or currency,
         available=kit.stock_state(label),
         availability_raw=kit.stock_wording(label),
