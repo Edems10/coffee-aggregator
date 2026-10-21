@@ -530,7 +530,7 @@ def test_the_grind_axis_feeds_brewing_and_the_roast_profile(
     fixture_html: Callable[[str, str], str],
 ) -> None:
     coffee = parse(kavypitel, fixture_html(KAVYPITEL, "detail_brasil.html"), "1775", "https://x/")
-    assert coffee.taste.brewing_methods == ["Espresso", "Filtr", "Turek", "Moka", "French press"]
+    assert coffee.taste.brewing_methods == ["espresso", "filter", "turkish", "moka", "french_press"]
     assert coffee.roast.profile is not RoastProfile.UNKNOWN
     assert coffee.raw_attributes["KÁVU NAMELTE NA"].startswith("Espresso +10")
 

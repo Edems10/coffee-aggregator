@@ -7,6 +7,11 @@ from typing import TYPE_CHECKING, Final
 from coffee_aggregator import normalize
 from coffee_aggregator.labels.collect import plausible_pack, plausible_weight
 from coffee_aggregator.labels.terms import (
+    BREWING_METHOD_TERMS,
+    BREWING_METHOD_WORDS,
+    BREWING_METHODS,
+    BREWING_NEGATIONS,
+    BREWING_NOT_BEANS,
     CAFFEINE_TERMS,
     DECAF_PATTERNS,
     DECAF_TERMS,
@@ -50,7 +55,6 @@ if TYPE_CHECKING:
     from coffee_aggregator.models import Variant
 
 __all__ = [
-    "MAX_BREWING_METHOD_WORDS",
     "bar",
     "blend_verdict",
     "brewing_methods",
@@ -160,40 +164,55 @@ def option_list(text: str | None) -> list[str]:
     return [item for item in cleaned if item]
 
 
-#: The most words a stated brewing method runs to. Measured over every fixture the
-#: repository holds: the longest genuine item is four words ("mletá na zalévanou
-#: kávu", "automatické kávovary a koťogo", "Vhodné pre pákové kávovary") and the
-#: shortest sentence that is not a brewing method is five ("Kávu lze použít na
-#: espresso"). The margin is one word.
-MAX_BREWING_METHOD_WORDS: Final = 4
+def _compile_brewing_terms() -> tuple[tuple[str, re.Pattern[str]], ...]:
+    """Compile each method's spellings into one pattern anchored at a word start.
+
+    Returns:
+        ``(method, pattern)`` pairs in vocabulary order.
+    """
+    patterns = []
+    for method in BREWING_METHODS:
+        stems = "|".join(map(re.escape, BREWING_METHOD_TERMS[method]))
+        words = "".join(
+            rf"|{re.escape(word)}(?![a-z0-9])" for word in BREWING_METHOD_WORDS.get(method, ())
+        )
+        patterns.append((method, re.compile(rf"(?<![a-z0-9])(?:{stems}{words})")))
+    return tuple(patterns)
+
+
+_BREWING_PATTERNS: Final = _compile_brewing_terms()
+_NOT_A_METHOD: Final = re.compile(
+    r"(?<![a-z0-9])(?:" + "|".join(map(re.escape, (*BREWING_NEGATIONS, *BREWING_NOT_BEANS))) + ")"
+)
 
 
 def brewing_methods(values: Iterable[str]) -> list[str]:
-    """Keep the items that can name a way of making the coffee.
+    """Map the shop's brewing statements onto the closed vocabulary.
 
-    An item qualifies when it carries at least one letter, so that a bare option
-    id such as ``01`` is never one, and when it runs to at most
-    ``MAX_BREWING_METHOD_WORDS`` words, which is what tells a method from a
-    sentence a roastery wrote about the drink.
-
-    The filter takes an already-split list and belongs at every point one is
-    built, not in ``plausible``: ``Labels.add`` sees the shop's whole
-    enumeration before it is split, where no threshold separates a genuine
-    option list from prose, and ``parse_roast`` reads that same unsplit value,
-    so a rule there would delete roast profiles that are right.
+    Every method named in an item is kept, so ``espresso (automat)`` is
+    ``espresso`` and ``automatic``. Grinds, ambiguous words and methods outside
+    ``BREWING_METHODS`` name nothing and are dropped. An item that negates a
+    suitability statement (``BREWING_NEGATIONS``) or names a capsule or instant
+    product (``BREWING_NOT_BEANS``) is dropped whole.
 
     Args:
         values: The items a stated brewing list was split into.
 
     Returns:
-        The items that can be a brewing method, in the order given.
+        The methods, each once, in the order they first appear.
     """
-    return [
-        value
-        for value in values
-        if any(character.isalpha() for character in value)
-        and len(value.split()) <= MAX_BREWING_METHOD_WORDS
-    ]
+    found: list[str] = []
+    for value in values:
+        folded = normalize.fold(value)
+        if _NOT_A_METHOD.search(folded):
+            continue
+        named = sorted(
+            (match.start(), method)
+            for method, pattern in _BREWING_PATTERNS
+            if (match := pattern.search(folded))
+        )
+        found.extend(method for _, method in named if method not in found)
+    return found
 
 
 def notes_from_text(text: str | None) -> list[str]:

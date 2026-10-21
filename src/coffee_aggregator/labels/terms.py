@@ -6,7 +6,12 @@ from typing import Final
 from coffee_aggregator import normalize
 
 __all__ = [
+    "BREWING_METHODS",
     "BREWING_METHOD_MARKERS",
+    "BREWING_METHOD_TERMS",
+    "BREWING_METHOD_WORDS",
+    "BREWING_NEGATIONS",
+    "BREWING_NOT_BEANS",
     "CAFFEINE_TERMS",
     "DECAF_PATTERNS",
     "DECAF_TERMS",
@@ -518,6 +523,116 @@ BREWING_METHOD_MARKERS: Final[tuple[str, ...]] = (
     "preliv",
     "zaleva",
     "zaliev",
+)
+
+#: The closed vocabulary of ``brewing_methods``, in the order the owner listed it
+#: (coffee-web#226). Nothing else is ever stored.
+BREWING_METHODS: Final[tuple[str, ...]] = (
+    "espresso",
+    "moka",
+    "filter",
+    "french_press",
+    "aeropress",
+    "turkish",
+    "automatic",
+    "cold_brew",
+)
+
+#: Folded spellings a shop uses for each method. A spelling matches at the start of
+#: a word and may run on, so ``filtr`` also reads ``filtrovaná``, ``prekapav`` reads
+#: ``překapávač`` and ``překapávaná``, ``espress`` reads ``espressa`` and ``dzezv``
+#: reads ``džezvu``. A word that could be either of two methods has no entry and is
+#: dropped, never guessed: ``zalévaná`` (pour-over or Czech turek), a bare
+#: ``kávovar`` (drip or espresso machine) and ``alternativní příprava``. ``turka``
+#: is the inflection in ``na turka``, and the ``turecka``/``turecke``/``turecky``/
+#: ``tureckou`` forms stop short of ``turecko``, which is the country.
+BREWING_METHOD_TERMS: Final[dict[str, tuple[str, ...]]] = {
+    "espresso": (
+        "espress",
+        "espreso",
+        "paka",
+        "pakov",
+    ),
+    "moka": (
+        "moka",
+        "mokka",
+        "konvic",
+        "kanvic",
+        "kotogo",
+        "bialetti",
+    ),
+    "filter": (
+        "filtr",
+        "filter",
+        "prekapav",
+        "drip",
+        "v60",
+        "chemex",
+        "batch brew",
+        "pour over",
+        "pourover",
+        "kalita",
+    ),
+    "french_press": (
+        "french press",
+        "frenchpress",
+    ),
+    "aeropress": ("aeropress",),
+    "turkish": (
+        "turek",
+        "turka",
+        "turecka",
+        "turecke",
+        "turecky",
+        "tureckou",
+        "dzezv",
+        "jezv",
+        "ibrik",
+    ),
+    "automatic": (
+        "automat",
+        "plnoautomat",
+    ),
+    "cold_brew": (
+        "cold brew",
+        "coldbrew",
+    ),
+}
+
+#: Spellings that match only as a whole word, because as a stem they would read a
+#: different word: ``mocca`` begins ``moccamaster``, which is a filter machine.
+BREWING_METHOD_WORDS: Final[dict[str, tuple[str, ...]]] = {"moka": ("mocca",)}
+
+#: Folded phrases that negate a suitability statement, matched at the start of a
+#: word. An item containing one is dropped whole, so that "nevhodné pro espresso" or
+#: "nelze použít na espresso" never stores the method it rules out. They start at a
+#: word so that ``ne na`` does not read the end of "jemně na espresso". No stored
+#: item on the 2026-10-17 crawl carries one; the guard is for the first that does.
+BREWING_NEGATIONS: Final[tuple[str, ...]] = (
+    "nevhodn",
+    "neni vhodn",
+    "nie je vhodn",
+    "neni pro",
+    "neni urcen",
+    "nie je urcen",
+    "ne pro",
+    "ne na",
+    "nelze",
+    "nehodi se",
+    "nepouz",
+    "nedoporuc",
+    "neodporuc",
+    "not suitable",
+)
+
+#: Folded stems of a product that is not these beans brewed: "Dolce Gusto espresso
+#: kapsle" and "Instant espresso" name a method for a different product. An item
+#: containing one is dropped whole.
+BREWING_NOT_BEANS: Final[tuple[str, ...]] = (
+    "kapsl",
+    "kapsul",
+    "instant",
+    "rozpust",
 )
 
 #: Folded phrases that say the coffee has had its caffeine removed. They are

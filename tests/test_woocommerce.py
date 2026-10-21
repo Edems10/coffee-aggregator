@@ -382,7 +382,7 @@ def test_attributes_map_onto_canonical_fields(ripit: WooSite) -> None:
     assert coffee.roast.level is RoastLevel.LIGHT
     assert coffee.roast.profile is RoastProfile.FILTER
     assert coffee.taste.flavor_notes == ["červený melón", "med", "liči"]
-    assert coffee.taste.brewing_methods == ["Filter"]
+    assert coffee.taste.brewing_methods == ["filter"]
     assert (coffee.taste.body, coffee.taste.acidity, coffee.taste.sweetness) == (5, 4, 5)
     assert coffee.species.arabica_pct == 100
     assert coffee.species.is_blend is False
