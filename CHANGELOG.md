@@ -10,6 +10,34 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.1 (2026-10-22)
+
+### Fixed
+
+- A Shoptet variant's size now comes from the parameter value its own key names,
+  not from its position among the offers or from the sku suffix (#236). Shoptet
+  keys every variant of a per-parameter product by the values it combines
+  (`250-1838-252-1746`) and states each key's sku in the code spans and in the
+  variant data the page ships, so an offer is matched to its key through its sku
+  and named by the `parameterValueId[N]` select option or radio-button label
+  that key points at. The label is now the values (`250 g / Zrnková káva`)
+  instead of the sku, and the weight is the size axis's value. `botacoffee`'s
+  115 Kč option is a 70 g pack that the page names in a hidden radio label; it
+  was stored with no weight, and the product's 115 Kč was divided by the 250 g
+  of the pack beside it. The sku suffix, and the positional pairing of offers
+  with the weight select, stay only for an offer whose key the page does not
+  state and for a page that states no key at all. A crawl on 2026-10-21 over the
+  96 live Shoptet shops moved 2 106 of 11 132 variants in 20 shops and no price,
+  currency or availability: 1 878 gained a weight, 228 changed one, none lost
+  one (`belkocoffee` 693 was stored at 500 g for what the page sells as 250 g in
+  a Turek grind, `donfranko` 462's `/130` at 250 g where the page states 125 g,
+  and `pepecoffee`'s `/250` skus at 250 g where the page states 200 g). Through
+  the existing precedence 52 products change `weight_g` (26 gain one) and 69
+  change `price_per_kg` (43 gain one) at the next crawl; variants with no weight
+  fell from 2 660 to 782 across the catalogue. The shops with a combined
+  `priceId` select (`labcafe`, `vrescaffe`, `melodyroastery`, `angrybeans`) read
+  exactly as before.
+
 ## 0.14.0 (2026-10-22)
 
 ### Changed
