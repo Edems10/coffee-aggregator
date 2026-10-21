@@ -99,6 +99,15 @@ def test_detect_currency(text: str | None, expected: str | None) -> None:
         ("nadmorská výška neuvedená", (None, None)),
         ("", (None, None)),
         (None, (None, None)),
+        ("1.200 m.n.m.", (1200, 1200)),
+        ("1.700 m.n.m.", (1700, 1700)),
+        ("do 1.200 m n.m.", (1200, 1200)),
+        ("1.200m n.m.", (1200, 1200)),
+        ("1.500 m.a.s.l", (1500, 1500)),
+        ("950 - 1.250 m n. m.", (950, 1250)),
+        ("1.500 - 2.000 m.n.m.", (1500, 2000)),
+        ("zber 2024, 1800 m n.m.", (1800, 1800)),
+        ("232 M N. M.", (232, 232)),
     ],
 )
 def test_parse_altitude(text: str | None, expected: tuple[int | None, int | None]) -> None:

@@ -10,6 +10,23 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.13.2 (2026-10-21)
+
+### Fixed
+
+- A single altitude written with a dot as the thousands separator is now read
+  as thousands (#240). `1.200 m.n.m.` was stored as 200 m, `1.500 m.a.s.l` as
+  500 m: the number pattern ended at the dot, so only the three digits after it
+  were read. A local crawl of 2026-10-17 had 15 rows of 11 distinct texts stored
+  this way, every one 1000 m or more too low (`1.700 m.n.m.` 700, `1.650 m.n.m.`
+  650, `1.903 m.a.s.l.` 903), and `altitude_min_m` is in the published
+  contract. Each now stores the figure it states (1700, 1650, 1903), with
+  `altitude_max_m` equal to it. Ranges such as `1.500 - 2.000 m.n.m.` were
+  already read correctly and do not change. A comma is not read as thousands:
+  `1,800 m.a.s.l.` (11 rows of 3 texts) still stores 800, because a comma can be
+  a decimal in Czech and Slovak. A coffee's stored altitude changes at its next
+  crawl.
+
 ## 0.13.1 (2026-10-21)
 
 ### Fixed

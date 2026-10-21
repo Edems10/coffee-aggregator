@@ -405,15 +405,19 @@ _ALTITUDE_RE = re.compile(
     r"(\d[\d\s .,]*)(?:\s*(?:az|do|to|\+)?\s*[-]\s*|\s+az\s+|\s+do\s+|\s+to\s+)"
     r"(\d[\d\s .,]*)"
 )
+#: One altitude number: a dot-thousands figure such as ``1.200`` (one or two
+#: digits, a dot, exactly three digits, no digit after), or digits grouped by
+#: spaces. A comma never joins digits, because ``1,800`` can be a decimal in
+#: Czech and Slovak and ``"2024, 1800"`` is two candidates rather than one blob.
+_ALTITUDE_NUMBER = r"(?:(?<!\d)\d{1,2}\.\d{3}(?!\d)|\d[\d\s]*\d|\d)"
 #: A number immediately followed by a metre marker — the only reliable way to
 #: tell an altitude from the harvest year that so often shares the same cell.
 _ALTITUDE_UNIT_RE = re.compile(
-    r"(\d[\d\s]*\d|\d)\s*(?:m\s*\.?\s*n\.?\s*m|masl|metrov|metru|metrech|metres|meters|m)\b",
+    rf"({_ALTITUDE_NUMBER})\s*(?:m\s*\.?\s*n\.?\s*m|masl|metrov|metru|metrech|metres|meters|m)\b",
     re.IGNORECASE,
 )
-#: A bare number; spaces group thousands, but a comma or a dot ends it, so
-#: "2024, 1800" is two candidates rather than one unparsable blob.
-_ALTITUDE_SINGLE_RE = re.compile(r"(\d[\d\s]*\d|\d)")
+#: A bare altitude number, tried only when no number carries a metre marker.
+_ALTITUDE_SINGLE_RE = re.compile(f"({_ALTITUDE_NUMBER})")
 
 
 def _altitude_value(raw: str) -> int | None:
