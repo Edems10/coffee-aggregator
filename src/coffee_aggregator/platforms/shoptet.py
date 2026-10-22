@@ -17,10 +17,12 @@ from coffee_aggregator.labels import (
     F_COUNTRY,
     F_PROCESS,
     F_SHIP_WEIGHT,
+    F_WEIGHT,
     MAX_FUZZY_LABEL_WORDS,
     TERMS,
     Labels,
     build_map,
+    clean_label,
     headline_weight,
     is_decaf,
     map_label,
@@ -715,7 +717,13 @@ def _first_value(scope: Tag, prop: str) -> str | None:
     return _value(tag) if tag is not None else None
 
 
-def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
+def _parse_variants(
+    soup: BeautifulSoup,
+    root: Tag,
+    ref: ProductRef,
+    currency: str | None,
+    label_map: dict[str, str],
+) -> list[Variant]:
     """Build one variant per offer, naming it from the page's variant keys.
 
     Shoptet keys every variant of a per-parameter product by the parameter values
@@ -725,6 +733,11 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     weight stated by the value of the axis that lists weights; only an offer whose
     key the page does not state falls back to the weight its sku suffix suggests.
 
+    A page whose variants are radio buttons each named by one hidden label that
+    joins every parameter (``Druh kávy: Zrnková, Hmotnost: 250g``) matches an
+    offer to its label through the radio value the page's tracking data states for
+    the sku, and reads the weight from the label's size part.
+
     A page that states no key at all pairs the offers with the weight select by
     position, which holds only when the select's options and the offers line up
     one to one; otherwise the offers still carry sku and price.
@@ -733,14 +746,16 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     data states for its sku, when that price is above the variant's own.
 
     Args:
+        soup: The whole page, which holds the tracking data.
         root: The ``div.p-detail`` wrapper.
         ref: The product reference being parsed.
         currency: The product's currency, used when an offer states none.
+        label_map: Folded label -> field, which names the size axes.
 
     Returns:
         The variants, or an empty list for a product without any.
     """
-    variants = _read_variants(root, ref, currency)
+    variants = _read_variants(soup, root, ref, currency, label_map)
     standard = _standard_prices(root)
     for variant in variants:
         regular = standard.get(variant.external_id or "")
@@ -749,13 +764,21 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     return variants
 
 
-def _read_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
-    """Build the variants from the first of the page's three variant sources that has any.
+def _read_variants(
+    soup: BeautifulSoup,
+    root: Tag,
+    ref: ProductRef,
+    currency: str | None,
+    label_map: dict[str, str],
+) -> list[Variant]:
+    """Build the variants from the first of the page's variant sources that has any.
 
     Args:
+        soup: The whole page, which holds the tracking data.
         root: The ``div.p-detail`` wrapper.
         ref: The product reference being parsed.
         currency: The product's currency, used when an offer states none.
+        label_map: Folded label -> field, which names the size axes.
 
     Returns:
         The variants, or an empty list for a product without any.
@@ -770,6 +793,9 @@ def _read_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Var
     keys = _variant_keys(root)
     if keys and offers:
         return _drop_guessed_weights(_keyed_variants(root, offers, keys, ref, currency))
+    joined = _joined_labels(soup, root, label_map)
+    if joined and offers:
+        return _drop_guessed_weights(_joined_variants(offers, joined, ref, currency, label_map))
     labels = _offer_labels(root, len(offers), options)
     variants = [
         _variant(offer, label, ref, currency) for offer, label in zip(offers, labels, strict=False)
@@ -1291,6 +1317,120 @@ def _keyed_variants(
     return variants
 
 
+# --- joined variant labels ----------------------------------------------------
+
+#: The comma that ends one ``Name: value`` part of a joined label and starts the
+#: next, as opposed to the comma inside ``0,25 kg``.
+_JOINED_PART_RE: Final = re.compile(r",\s+(?=[^,:]+:\s)")
+
+
+def _tracked_skus(soup: BeautifulSoup) -> dict[str, str]:
+    """Map each variant id the page's tracking data names to its sku.
+
+    Args:
+        soup: The whole page.
+
+    Returns:
+        ``{radio value: sku}`` for every tracked variant that names exactly one sku.
+    """
+    script = soup.select_one("script#trackingScript")
+    try:
+        data = json.loads(dom.attr(script, "data-products") or "")
+    except ValueError, RecursionError:
+        return {}
+    products = data.get("products") if isinstance(data, dict) else None
+    if not isinstance(products, dict):
+        return {}
+    skus: dict[str, str] = {}
+    for identifier, tracked in products.items():
+        codes = tracked.get("content_ids") if isinstance(tracked, dict) else None
+        if isinstance(codes, list) and len(codes) == 1 and isinstance(codes[0], str):
+            skus[str(identifier)] = codes[0]
+    return skus
+
+
+def _joined_labels(soup: BeautifulSoup, root: Tag, label_map: dict[str, str]) -> dict[str, str]:
+    """Map each sku to the hidden label of the radio button that selects it.
+
+    Args:
+        soup: The whole page, which holds the tracking data.
+        root: The ``div.p-detail`` wrapper.
+        label_map: Folded label -> field, which names the size axes.
+
+    Returns:
+        ``{sku: label}`` for every ``priceId`` radio button whose label states a
+        size as one of its ``Name: value`` parts; empty when none does.
+    """
+    radios = root.select("input[type=radio][name=priceId]")
+    if not radios:
+        return {}
+    skus = _tracked_skus(soup)
+    labels: dict[str, str] = {}
+    for radio in radios:
+        identifier = dom.attr(radio, "value")
+        block = radio.find_parent("div")
+        if not identifier or identifier not in skus or block is None or not _own(root, radio):
+            continue
+        label = _radio_name(block, radio, identifier)
+        if label and _joined_weight(label, label_map) is not None:
+            labels[skus[identifier]] = label
+    return labels
+
+
+def _joined_weight(label: str, label_map: dict[str, str]) -> int | None:
+    """Read the weight a joined label states for its size parameter.
+
+    Args:
+        label: A hidden label such as ``Druh kávy: Zrnková, Hmotnost: 250g``.
+        label_map: Folded label -> field. A parameter whose name maps to the bag
+            weight, or to the weight a Shoptet table calls ``Hmotnost``, is the
+            size axis.
+
+    Returns:
+        The weight in grams of the first size part that states one, or None.
+    """
+    for part in _JOINED_PART_RE.split(label):
+        name, _, value = part.partition(":")
+        field_name = map_label(normalize.fold(clean_label(name)), label_map)
+        if field_name in {F_WEIGHT, F_SHIP_WEIGHT}:
+            grams = normalize.parse_option_grams(value)
+            if plausible_weight(grams):
+                return grams
+    return None
+
+
+def _joined_variants(
+    offers: list[Tag],
+    labels: dict[str, str],
+    ref: ProductRef,
+    currency: str | None,
+    label_map: dict[str, str],
+) -> list[Variant]:
+    """Build one variant per offer, named and weighed by its radio button's label.
+
+    An offer whose sku no label was matched to keeps its sku as its name and the
+    weight the sku suffix suggests.
+
+    Args:
+        offers: The ``[itemprop=offers]`` blocks of the product.
+        labels: The hidden label of each sku.
+        ref: The product reference being parsed.
+        currency: The product's currency, used when an offer states none.
+        label_map: Folded label -> field, which names the size axes.
+
+    Returns:
+        One variant per offer, in page order.
+    """
+    variants: list[Variant] = []
+    for offer in offers:
+        label = labels.get(_offer_fields(offer)[0] or "")
+        variant = _variant(offer, label, ref, currency)
+        if label is not None:
+            variant.weight_g = _joined_weight(label, label_map)
+        variants.append(variant)
+    return variants
+
+
 def _preselected_values(root: Tag) -> dict[int, int]:
     """Read the value each variant parameter shows before a visitor chooses.
 
@@ -1699,7 +1839,7 @@ class ShoptetSite(ConfiguredSite[ShoptetConfig]):
         price, currency = self._price(root, ref)
         categories = _parse_categories(soup, root, name)
         species = parse_species(labels, name)
-        variants = _parse_variants(root, ref, currency)
+        variants = _parse_variants(soup, root, ref, currency, self.label_map)
         summary = _short_description(root)
         availability = _micro(root, "availability")
         return Coffee(
