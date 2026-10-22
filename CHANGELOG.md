@@ -10,6 +10,59 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.6 (2026-10-22)
+
+### Fixed
+
+- A WooCommerce Store API variation now carries its own price (#237). The product
+  listing names a product's variations but prices none, so under #172's rule no
+  option could be chosen and the row kept the range minimum with the smallest bag.
+  Discovery now reads `products?type=variation&per_page=100&include=<ids>` for the
+  variations of every product that has more than one and copies each variation's
+  `prices` into the product's payload, matched by id and `parent`. Products are
+  held back while the held ones list at most 100 variations, or until the walk
+  ends, so a shop costs about one request per 100 variations whatever its
+  categories, and `--limit` or a deadline stop the walk within about one window (a
+  shop with fewer variations than a window is walked to the end first); a
+  product with one variation, a simple product and an ignored product are never
+  asked about. A product takes the prices only when the listing states a price for every
+  one of its variations, so the price and weight it is stored under come from one
+  option: a variation the shop prices at `"0"` leaves the whole product as it
+  was (`bonte/7956` and `bonte/4749` still store 7.90 EUR for 125 g). A listing
+  that fails, is not a JSON array or answers for nothing leaves the crawl as it
+  was, with one warning in the log and no discovery note. A malformed
+  `currency_minor_unit` in a variation reads as the product's. `seriouscoffee/3532`
+  now stores 250 g at 10.90 EUR and 1000 g at 27.90 EUR on its variants.
+- Cost: one extra request per 100 variations of the shop's multi-variation coffee
+  products, none for the non-coffee products a shop-wide listing would carry
+  (`zlatezrnko`'s lists 138 variations for 97 that matter). Measured on 2026-10-22
+  against 44 of the 47 Store API configs, with the crawler's own User-Agent and
+  each host's robots.txt delay (`caffeoro` states 30 s, every other shop the 1 s
+  default): 56 requests for 2 964 variations of 716 products with the walk batched
+  whole, which is 36 shops at one request, `bonte` and `kavaloka` at five,
+  `prazirnagrain` at four, `aurelica`, `caffe4u` and `kmen` at two, and `lubezna`
+  and `networkcafe` at none. Every listing returned exactly the ids asked for. The
+  shipped windows ask the same ids in smaller batches; replayed offline over the
+  same 878 saved products they cost 59 requests (`bonte` 6 and `prazirnagrain` 6,
+  the rest unchanged). The three Store API configs not measured are `goodtimes`
+  and `spiritcoffee`, switched off, and `moritzcafe`, whose Store API pages were
+  not in the cache the measurement replayed.
+- Rows that move, re-parsed offline from the 878 saved Store API payloads of the
+  44 shops with and without the variation prices: 86 products in 9 shops change
+  `price`, `weight_g` or `price_per_kg` (`bonte` 36, `kavaloka` 17,
+  `prazirnagrain` 11, `frisnakava` 10, `naturpark12` 5, `longberry` 3, `kmen` 2,
+  `caffe4u` 1, `ciernaperla` 1), and 2 `twohands` rows lose an `original_price`
+  of 16.01 EUR against a price of 16.00, which makes 88 rows in 10 shops. Weights:
+  36 go 125 g to 250 g (`bonte`), 30 go 100 g to 250 g, 11 go 100 g to 300 g,
+  5 go 150 g to 250 g, 4 keep their weight and change the price. Per kilogram of
+  the 86: 8 go up, 69 down, 6 keep their figure and 3 have none before or after.
+  Examples: `kavaloka/9059` 83 Kč per 100 g becomes 208 Kč per 250 g,
+  `frisnakava/2427` 8.00 EUR per 100 g becomes 19.90 EUR per 250 g, `bonte/9992`
+  7.90 EUR per 125 g becomes 14.90 EUR per 250 g.
+  `seriouscoffee` moves nothing. The estimate in #237 was 46 rows in five shops;
+  those five shops still move 46 (17, 11, 10, 5 and 3 against its 16, 11, 10, 6, 3).
+  Stored rows change at the next crawl; no migration.
+
 ## 0.14.5 (2026-10-22)
 
 ### Fixed
