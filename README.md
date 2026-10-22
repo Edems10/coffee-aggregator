@@ -430,6 +430,29 @@ replays every migration to assert the two agree — with a second check against
 `information_schema.columns` in the integration suite, so the code, the DDL and the
 live database cannot drift apart.
 
+### Which option a product is stored under
+
+A product that offers several packages at different prices is stored under one of
+them: `price`, `weight_g`, `currency` and `original_price` all come from that one
+option (`price_option.settle_price_option`, applied to every adapter's
+`parse_product`). The candidates are the options that state a price and a
+plausible weight; they narrow in this order, and a step that would leave nothing
+is skipped:
+
+1. only options known to be in stock (`Variant.available is True`);
+2. only options of at least 100 g, since a sample is skipped when a larger option
+   exists;
+3. the option nearest 250 g in absolute grams, the heavier one on a tie;
+4. among options of that one weight, the page's default option
+   (`Variant.default`), otherwise the first in page order.
+
+A product with one option, with no option, or whose priced options all state one
+price is left as its adapter built it, and so is one whose options state weights
+but no price (WooCommerce Store API variations). When no priced option states a
+weight, the pack the product name or a weight label states is every option's pack;
+when the page states none, `price`, `weight_g`, `currency` and `original_price`
+are NULL.
+
 ### Product kind
 
 `coffee` carries `product_kind`, `product_kind_source` and `product_kind_name_hash`

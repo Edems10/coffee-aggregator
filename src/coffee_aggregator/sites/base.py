@@ -3,12 +3,14 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from functools import wraps
 from typing import TYPE_CHECKING, Literal
 
 from coffee_aggregator import normalize
+from coffee_aggregator.price_option import settle_price_option
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from coffee_aggregator.http import PoliteFetcher
     from coffee_aggregator.models import Coffee
@@ -106,12 +108,38 @@ class ProductRef:
     payload: str | None = None
 
 
+def _settled(
+    parse: Callable[[SiteAdapter, str, ProductRef], Coffee | None],
+) -> Callable[[SiteAdapter, str, ProductRef], Coffee | None]:
+    """Make a ``parse_product`` hand back a coffee settled on one option.
+
+    Args:
+        parse: The adapter's own ``parse_product``.
+
+    Returns:
+        A function with the same signature that settles the coffee it returns.
+    """
+
+    @wraps(parse)
+    def settled(self: SiteAdapter, html: str, ref: ProductRef) -> Coffee | None:
+        coffee = parse(self, html, ref)
+        if coffee is not None:
+            settle_price_option(coffee)
+        return coffee
+
+    return settled
+
+
 class SiteAdapter(ABC):
     """One shop: how to enumerate its products and how to read one page.
 
     Subclasses must be constructible with no arguments so the registry can
     instantiate them, and :meth:`parse_product` must stay pure — the pipeline
-    owns every HTTP request.
+    owns every HTTP request. The coffee a subclass's :meth:`parse_product`
+    returns is settled on one option by
+    :func:`~coffee_aggregator.price_option.settle_price_option` after the adapter
+    returns, so an adapter builds its own headline and never chooses between
+    options.
 
     Attributes:
         roaster: The roastery every row of this shop is from; None when the shop
@@ -125,6 +153,23 @@ class SiteAdapter(ABC):
     kind: str = "bespoke"
     roaster: str | None = None
     max_pages: int = 100
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        """Wrap the subclass's own ``parse_product`` so its coffee settles on one option.
+
+        Every adapter and the ``parse`` command reach a coffee through
+        ``parse_product``, so wrapping it here is what keeps a product's price,
+        weight, currency and original price from different options out of every
+        adapter, present and future, without each one having to call
+        :func:`~coffee_aggregator.price_option.settle_price_option`.
+
+        Args:
+            **kwargs: Passed on to :meth:`object.__init_subclass__`.
+        """
+        super().__init_subclass__(**kwargs)
+        parse = cls.__dict__.get("parse_product")
+        if parse is not None:
+            cls.parse_product = _settled(parse)  # type: ignore[method-assign, assignment]  # mypy types a method as a def, so replacing it with the wrapper is flagged twice
 
     @abstractmethod
     def discover(
@@ -150,7 +195,11 @@ class SiteAdapter(ABC):
     def parse_product(self, html: str, ref: ProductRef) -> Coffee | None:
         """Turn one detail page into a :class:`~coffee_aggregator.models.Coffee`.
 
-        Partial data is fine — unmapped labels belong in ``raw_attributes``.
+        Partial data is fine — unmapped labels belong in ``raw_attributes``. The
+        returned coffee is settled by
+        :func:`~coffee_aggregator.price_option.settle_price_option` once the
+        implementation returns, which may replace its price, weight, currency and
+        original price.
 
         Args:
             html: The detail page source.

@@ -100,6 +100,12 @@ class Variant:
     #: "whole" or "ground" when the shop stated the grind of this package, None
     #: when it stated none. Read by :func:`coffee_aggregator.labels.stated_grind`.
     grind: str | None = None
+    #: True when the page presents this option as its pre-selected one. Read only
+    #: by :func:`coffee_aggregator.price_option.choose_option` and never stored.
+    default: bool = False
+    #: The pre-discount price the shop states for this very option, or None when
+    #: it states none or states it for the product as a whole. Never stored.
+    original_price: float | None = None
     #: Filled by the pipeline's derive step from the day's fixing, never by an
     #: adapter: a shop states one price, in one currency.
     price_eur: float | None = None

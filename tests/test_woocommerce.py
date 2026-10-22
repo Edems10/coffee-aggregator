@@ -15,7 +15,9 @@ from coffee_aggregator.platforms.common import PlatformConfigError
 from coffee_aggregator.platforms.woocommerce import (
     DEFAULT_LABEL_MAP,
     WooSite,
+    _matches,
     _own_price,
+    _preselected,
     minor_amount,
 )
 from coffee_aggregator.sites import CONFIG_DIR
@@ -584,7 +586,7 @@ def test_html_detail_page_yields_canonical_fields(ebenica: WooSite) -> None:
 
     assert coffee is not None
     assert coffee.name == "Colombia La Secreta"
-    assert (coffee.price, coffee.currency, coffee.weight_g) == (4.49, "EUR", 70)
+    assert (coffee.price, coffee.currency, coffee.weight_g) == (11.9, "EUR", 220)
     assert coffee.available is True
     assert coffee.availability_raw == "InStock"
     assert coffee.origin.country == "CO"
@@ -1267,3 +1269,28 @@ def test_a_lot_the_shop_never_names_keeps_the_title_it_states() -> None:
     # identifiable even while its title is not.
     assert coffee.origin.producer == "Fidel Huancas"
     assert coffee.origin.region == "El Corazon, Chirinos, Peru"
+
+
+def test_a_variation_form_that_preselects_nothing_leaves_the_page_order_to_decide() -> None:
+    form = (
+        '<form class="variations_form" data-product_variations="[]">'
+        '<select name="attribute_pa_size"><option value="">Choose</option>'
+        '<option value="220g">220g</option></select></form>'
+    )
+
+    assert _preselected(BeautifulSoup(form, "lxml").select_one("form")) == {}
+
+
+def test_a_variation_form_names_the_variation_it_preselects() -> None:
+    form = (
+        '<form class="variations_form">'
+        '<select name="attribute_pa_size"><option value="">Choose</option>'
+        "<option value=\"220g\" selected='selected'>220g</option></select></form>"
+    )
+
+    chosen = _preselected(BeautifulSoup(form, "lxml").select_one("form"))
+
+    assert chosen == {"attribute_pa_size": "220g"}
+    assert _matches({"attribute_pa_size": "220g"}, chosen)
+    assert _matches({"attribute_pa_size": ""}, chosen)
+    assert not _matches({"attribute_pa_size": "500g"}, chosen)

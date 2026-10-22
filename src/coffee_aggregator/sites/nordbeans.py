@@ -187,7 +187,11 @@ def _read_params(soup: BeautifulSoup) -> tuple[kit.Facts, dict[str, int]]:
     return facts, intensities
 
 
-def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
+def _parse_variants(
+    soup: BeautifulSoup,
+    ref: ProductRef,
+    preselected: str | None = None,
+) -> list[Variant]:
     """Read the package-size switcher out of the inline GA4 variation map.
 
     The GA4 map states each variation's price without VAT, so a variant is
@@ -197,6 +201,8 @@ def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
     Args:
         soup: The parsed detail page.
         ref: The reference being parsed.
+        preselected: The ``idVariation`` of the page's GA4 record, which names
+            the package size the switcher shows before a visitor chooses.
 
     Returns:
         One variant per package size, in page order; a variant whose variation
@@ -220,15 +226,15 @@ def _parse_variants(soup: BeautifulSoup, ref: ProductRef) -> list[Variant]:
                 found.group("key"): found.group("value").strip()
                 for found in _VARIATION_FIELD_RE.finditer(match.group("fields"))
             }
-            variants.append(
-                kit.package(
-                    external_id=fields.get("id") or identifier,
-                    url=f"{ref.url}#{identifier}",
-                    label=fields.get("variationName"),
-                    price=normalize.parse_amount(prices.get(identifier)),
-                    currency=DEFAULT_CURRENCY,
-                )
+            variant = kit.package(
+                external_id=fields.get("id") or identifier,
+                url=f"{ref.url}#{identifier}",
+                label=fields.get("variationName"),
+                price=normalize.parse_amount(prices.get(identifier)),
+                currency=DEFAULT_CURRENCY,
             )
+            variant.default = preselected is not None and identifier == preselected
+            variants.append(variant)
     return variants
 
 
@@ -430,7 +436,8 @@ class NordbeansSite(SiteAdapter):
             return None
         facts, intensities = _read_params(soup)
         kit.keep(facts.raw, dom.page_meta(soup))
-        variants = _parse_variants(soup, ref)
+        selected = record.get("idVariation")
+        variants = _parse_variants(soup, ref, None if selected is None else str(selected))
         price = self._price(soup, record, ref)
         species = self._species(name, facts)
         categories = self._categories(record)

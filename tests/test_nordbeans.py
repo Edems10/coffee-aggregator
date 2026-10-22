@@ -349,3 +349,51 @@ def test_the_declared_roaster_is_what_the_page_publishes(
     assert NordbeansSite.roaster == published_brand(
         fixture_html("nordbeans", "detail_19_house_blend.html")
     )
+
+
+def test_the_variation_the_page_preselects_is_the_default(gakenke: Coffee) -> None:
+    assert [(variant.weight_g, variant.default) for variant in gakenke.variants] == [
+        (250, True),
+        (1000, False),
+    ]
+
+
+def test_the_preselected_variation_decides_between_two_prices_of_one_weight(
+    site: NordbeansSite,
+) -> None:
+    html = (
+        "<html><body><h1>Holá káva</h1>"
+        '<script>page_data = {"products":[{"idVariation":6,"priceWithVat":310}]};'
+        "page_data['x'] = 1;"
+        "gtm_prva[5] = {'id': '7_5','variationName': 'Hmotnost: 250g','price': 223.21,};"
+        "gtm_prva[6] = {'id': '7_6','variationName': 'Hmotnost: 250g, mletá','price': 276.79,};"
+        "gtm_prva[7] = {'id': '7_7','variationName': 'Hmotnost: 1000g','price': 800,};"
+        'wpj.variations[5] = { price: "300 Kč", }; wpj.variations[6] = { price: "310 Kč", };'
+        'wpj.variations[7] = { price: "896 Kč", };</script>'
+        "</body></html>"
+    )
+
+    coffee = site.parse_product(html, ProductRef("nordbeans", "7", f"{BASE}/hola_z7/"))
+
+    assert coffee is not None
+    assert (coffee.price, coffee.weight_g) == (310, 250)
+
+
+def test_a_preselected_kilogram_does_not_outrank_the_250_g_bag(site: NordbeansSite) -> None:
+    """The record states the kilogram's price because the switcher shows it first."""
+    html = (
+        "<html><body><h1>Holá káva</h1>"
+        '<script>page_data = {"products":[{"idVariation":7,"priceWithVat":896}]};'
+        "page_data['x'] = 1;"
+        "gtm_prva[5] = {'id': '7_5','variationName': 'Hmotnost: 70g','price': 80,};"
+        "gtm_prva[6] = {'id': '7_6','variationName': 'Hmotnost: 250g','price': 267.86,};"
+        "gtm_prva[7] = {'id': '7_7','variationName': 'Hmotnost: 1000g','price': 800,};"
+        'wpj.variations[5] = { price: "90 Kč", }; wpj.variations[6] = { price: "300 Kč", };'
+        'wpj.variations[7] = { price: "896 Kč", };</script>'
+        "</body></html>"
+    )
+
+    coffee = site.parse_product(html, ProductRef("nordbeans", "7", f"{BASE}/hola_z7/"))
+
+    assert coffee is not None
+    assert (coffee.price, coffee.weight_g, coffee.price_per_kg) == (300, 250, 1200.0)

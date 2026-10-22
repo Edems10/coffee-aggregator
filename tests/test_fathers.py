@@ -347,3 +347,30 @@ def test_the_declared_roaster_is_what_the_page_publishes(
     fixture_html: Callable[[str, str], str],
 ) -> None:
     assert FathersSite.roaster == published_brand(fixture_html("fathers", "detail_chapata.html"))
+
+
+def test_a_ladder_listed_kilogram_first_is_stored_at_the_250_g_bag(site: FathersSite) -> None:
+    def option(identifier: str, grams: int, price: float) -> dict[str, object]:
+        return {
+            "id": identifier,
+            "weightInGrams": grams,
+            "label": {"cs": f"{grams} g"},
+            "prices": {"CZK": {"21": {"price": {"withTax": price}, "countries": ["Czechia"]}}},
+        }
+
+    payload = json.dumps(
+        {
+            "product": {
+                "id": "abc",
+                "name": {"cs": "Testovací káva"},
+                "urlSlug_cs": "testovaci-kava",
+                "variants": [option("a", 1000, 1000.0), option("b", 250, 300.0)],
+            },
+            "subcategory": {"urlSlug_cs": "filtr"},
+        }
+    )
+
+    coffee = site.parse_product(payload, ProductRef("fathers", "abc", f"{BASE}/kava/filtr/x"))
+
+    assert coffee is not None
+    assert (coffee.price, coffee.weight_g, coffee.price_per_kg) == (300.0, 250, 1200.0)
