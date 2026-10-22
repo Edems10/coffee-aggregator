@@ -371,6 +371,33 @@ def test_a_package_reads_its_weight_off_its_own_label() -> None:
     assert variant.currency == "CZK"
 
 
+@pytest.mark.parametrize(
+    ("label", "grams"),
+    [("2x 250g", 500), ("500g+500g", 1000), ("1000g ( 1Kg)", 1000), ("250 g", 250)],
+)
+def test_a_package_that_states_several_bags_weighs_all_of_them(label: str, grams: int) -> None:
+    variant = kit.package(external_id="1", url="/1", label=label, price=None, currency="CZK")
+    assert variant.weight_g == grams
+
+
+@pytest.mark.parametrize(
+    ("label", "grams"),
+    [("20x 500g", None), ("10x 500g", 5000), ("250 g", 250)],
+)
+def test_a_package_label_total_beyond_a_bag_of_coffee_stores_no_weight(
+    label: str, grams: int | None
+) -> None:
+    variant = kit.package(external_id="1", url="/1", label=label, price=None, currency="CZK")
+    assert variant.weight_g == grams
+
+
+def test_a_weight_the_shop_states_is_kept_as_given() -> None:
+    variant = kit.package(
+        external_id="1", url="/1", label="20x 500g", price=None, currency="CZK", weight_g=10000
+    )
+    assert variant.weight_g == 10000
+
+
 def test_a_package_without_a_price_states_no_currency() -> None:
     variant = kit.package(external_id="1", url="/1", label="1 kg", price=None, currency="CZK")
     assert variant.weight_g == 1000

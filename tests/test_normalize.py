@@ -550,6 +550,42 @@ def test_a_summed_or_spelt_out_pack_is_read_as_one_bag(text: str, grams: int) ->
 
 
 @pytest.mark.parametrize(
+    ("text", "grams"),
+    [
+        ("3x1000g", 3000),
+        ("3x 1kg", 3000),
+        ("4x200 gramov", 800),
+        ("2 x 200 g", 400),
+        ("2x 250g zrnková", 500),
+        ("10x1kg", 10000),
+        ("500g+500g", 1000),
+        ("1000g+1000g", 2000),
+        ("200g + 200g", 400),
+        ("200g + 200 g", 400),
+        ("10x 500g", 5000),
+        ("1000g ( 1Kg)", 1000),
+        ("1000g (4x250g)", 1000),
+        ("250 g", 250),
+        ("1 kg + 250 g", 1000),
+        ("250g - 500g", 250),
+        ("bez váhy", None),
+        (None, None),
+    ],
+)
+def test_parse_option_grams_totals_the_bags_an_option_states(
+    text: str | None, grams: int | None
+) -> None:
+    """An option priced for several bags weighs all of them; a size restated stays one size."""
+    assert normalize.parse_option_grams(text) == grams
+
+
+def test_parse_option_grams_leaves_the_name_rule_alone() -> None:
+    """Names and labels elsewhere keep reading one bag; only an option's value is totalled."""
+    assert normalize.parse_weight_grams("3x 1kg") == 1000
+    assert normalize.parse_weight_grams("500g+500g") == 500
+
+
+@pytest.mark.parametrize(
     ("text", "items"),
     [
         ("0,25 kg", ["0,25 kg"]),

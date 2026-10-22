@@ -490,6 +490,22 @@ def test_variations_become_variants_with_weights_from_the_term_labels(
     assert all(variant.external_id for variant in coffee.variants)
 
 
+def test_a_variation_that_states_several_bags_stores_their_total(kavaloka: WooSite) -> None:
+    """ciernaperla's "2x 250g zrnková" is priced for two bags, so it weighs 500 g."""
+    item = json.loads(json.dumps(_by_id("kavaloka", 9059)))
+    for attribute in item["attributes"]:
+        for term in attribute["terms"]:
+            if term["name"] == "250 g":
+                term["name"] = "2x 250g"
+
+    coffee = parse_api(kavaloka, item)
+
+    assert {variant.label: variant.weight_g for variant in coffee.variants}[
+        "2x 250g / zrnková"
+    ] == 500
+    assert {variant.weight_g for variant in coffee.variants} == {100, 500, 1000}
+
+
 def test_a_single_variation_keeps_the_headline_price(ripit: WooSite) -> None:
     coffee = parse_api(ripit, _by_id("ripit", 4222))
 
@@ -596,6 +612,20 @@ def test_html_detail_page_prices_every_weight(ebenica: WooSite) -> None:
     assert (70, 4.49) in priced
     assert (1000, 39.9) in priced
     assert coffee.variants[-1].available is False
+
+
+def test_an_html_variation_that_states_several_bags_stores_their_total(ebenica: WooSite) -> None:
+    """The variation form names its option by slug, and a slug such as "2x70g" is two bags."""
+    body = (FIXTURE_ROOT / EBENICA / "detail_colombia_la_secreta.html").read_text("utf-8")
+    body = body.replace('"70g-zrnkova-vzorka"', '"2x70g-zrnkova-vzorka"')
+    ref = ProductRef(site_id="ebenica", external_id="51422", url="https://ebenica.sk/x/")
+
+    coffee = ebenica.parse_product(body, ref)
+
+    assert coffee is not None
+    priced = [(v.weight_g, v.price) for v in coffee.variants]
+    assert (140, 4.49) in priced
+    assert (1000, 39.9) in priced
 
 
 def test_a_related_card_inside_the_wrapper_never_supplies_the_price(

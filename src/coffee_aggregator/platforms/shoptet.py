@@ -753,7 +753,7 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     ]
     if not variants:
         variants = [
-            Variant(url=ref.url, weight_g=normalize.parse_weight_grams(option), label=option)
+            Variant(url=ref.url, weight_g=normalize.parse_option_grams(option), label=option)
             for option in options
         ]
     return _drop_guessed_weights(variants)
@@ -877,7 +877,7 @@ def _option_weight(label: str, sku: str | None) -> int | None:
     Returns:
         The weight in grams, or None.
     """
-    grams = normalize.parse_weight_grams(label)
+    grams = normalize.parse_option_grams(label)
     if grams is None:
         match = _SKU_WEIGHT_RE.search(sku or "")
         grams = _sku_grams(int(match.group(1))) if match else None
@@ -1223,7 +1223,7 @@ def _keyed_variants(
         }
         variant = _variant(offer, " / ".join(named.values()) or None, ref, currency)
         if size in named:
-            grams = normalize.parse_weight_grams(named[size])
+            grams = normalize.parse_option_grams(named[size])
             variant.weight_g = grams if plausible_weight(grams) else None
         variants.append(variant)
     return variants
