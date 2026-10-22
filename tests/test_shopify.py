@@ -235,7 +235,7 @@ def test_discovery_carries_the_payload_so_no_detail_page_is_fetched(tmp_path: Pa
     assert ref.payload is not None
     assert json.loads(ref.payload)["id"] == 1
     assert ref.url == "https://tiny.sk/products/kava-1"
-    assert (ref.price, ref.currency) == (12.5, "EUR")
+    assert (ref.price, ref.currency) == (None, None)
     assert all("/products/kava-" not in url for url in fake.requested)
 
 
@@ -561,3 +561,44 @@ def test_every_shipped_config_names_collections_its_shop_publishes(site_id: str)
 
     assert site.config.collections, f"{site_id} walks the unfiltered catalogue"
     assert set(site.config.collections) <= published
+
+
+# --- one option decides the price, the weight and the discount -----------------
+
+
+def _ladder(penguincoffee: ShopifySite, grams: list[int], **fields: list[object]) -> Coffee:
+    """Parse the Cuba Serrano product with its variants rewritten to a new ladder."""
+    item = json.loads(json.dumps(_by_handle("penguincoffee", "cuba-serrano-lavado-dark-edition")))
+    template = cast("list[dict[str, object]]", item["variants"])[0]
+    item["variants"] = [
+        {
+            **template,
+            "id": index + 1,
+            "title": f"{weight}g",
+            "grams": weight,
+            "price": f"{weight}.00",
+            **{key: values[index] for key, values in fields.items()},
+        }
+        for index, weight in enumerate(grams)
+    ]
+    return parse(penguincoffee, item)
+
+
+def test_a_ladder_is_stored_at_the_variant_nearest_250_g(penguincoffee: ShopifySite) -> None:
+    coffee = _ladder(penguincoffee, [70, 500, 1000])
+
+    assert (coffee.price, coffee.weight_g) == (500.0, 500)
+
+
+def test_the_discount_is_the_chosen_variants_not_the_cheapest(
+    penguincoffee: ShopifySite,
+) -> None:
+    coffee = _ladder(penguincoffee, [100, 250, 1000], compare_at_price=["150.00", None, "1500.00"])
+
+    assert (coffee.price, coffee.weight_g, coffee.original_price) == (250.0, 250, None)
+
+
+def test_the_discount_of_the_chosen_variant_is_kept(penguincoffee: ShopifySite) -> None:
+    coffee = _ladder(penguincoffee, [100, 250, 1000], compare_at_price=[None, "300.00", None])
+
+    assert (coffee.price, coffee.weight_g, coffee.original_price) == (250.0, 250, 300.0)

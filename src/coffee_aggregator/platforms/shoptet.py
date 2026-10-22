@@ -729,6 +729,29 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     position, which holds only when the select's options and the offers line up
     one to one; otherwise the offers still carry sku and price.
 
+    A variant's ``original_price`` is the struck-through price the page's variant
+    data states for its sku, when that price is above the variant's own.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+        ref: The product reference being parsed.
+        currency: The product's currency, used when an offer states none.
+
+    Returns:
+        The variants, or an empty list for a product without any.
+    """
+    variants = _read_variants(root, ref, currency)
+    standard = _standard_prices(root)
+    for variant in variants:
+        regular = standard.get(variant.external_id or "")
+        if regular is not None and variant.price is not None and regular > variant.price:
+            variant.original_price = regular
+    return variants
+
+
+def _read_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
+    """Build the variants from the first of the page's three variant sources that has any.
+
     Args:
         root: The ``div.p-detail`` wrapper.
         ref: The product reference being parsed.
@@ -839,6 +862,7 @@ def _combined_variant(  # noqa: PLR0913  (one argument per source a variant is r
         available=kit.stock_state(label),
         availability_raw=kit.stock_wording(label),
         label=label or sku,
+        default=option.has_attr("selected"),
     )
 
 
@@ -1025,8 +1049,8 @@ def _read_variant_key(token: str) -> VariantKey | None:
     return tuple(zip(numbers[::2], numbers[1::2], strict=True))
 
 
-def _shipped_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
-    """Yield the ``(key, sku)`` pairs of the variant data the page ships.
+def _shipped_variants(root: Tag) -> Iterator[tuple[str, dict[str, object]]]:
+    """Yield the ``(key token, record)`` pairs of the variant data the page ships.
 
     Args:
         root: The ``div.p-detail`` wrapper.
@@ -1048,10 +1072,42 @@ def _shipped_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
         if not isinstance(data, dict):
             continue
         for token, variant in data.items():
-            key = _read_variant_key(str(token))
-            code = variant.get("code") if isinstance(variant, dict) else None
-            if key is not None and isinstance(code, str) and code.strip():
-                yield key, code.strip()
+            if isinstance(variant, dict):
+                yield str(token), variant
+
+
+def _shipped_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
+    """Yield the ``(key, sku)`` pairs of the variant data the page ships.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Yields:
+        One pair per variant the data names.
+    """
+    for token, variant in _shipped_variants(root):
+        key = _read_variant_key(token)
+        code = variant.get("code")
+        if key is not None and isinstance(code, str) and code.strip():
+            yield key, code.strip()
+
+
+def _standard_prices(root: Tag) -> dict[str, float]:
+    """Map each sku to the struck-through price the page's variant data states for it.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Returns:
+        The standard price of every sku whose variant data states one.
+    """
+    prices: dict[str, float] = {}
+    for _token, variant in _shipped_variants(root):
+        code = variant.get("code")
+        amount = normalize.parse_price(str(variant.get("standardPrice") or ""))[0]
+        if isinstance(code, str) and amount is not None:
+            prices[code.strip()] = amount
+    return prices
 
 
 def _rendered_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
@@ -1212,6 +1268,7 @@ def _keyed_variants(
     """
     axes = _keyed_axes(root)
     size = _size_parameter(axes)
+    preselected = _preselected_values(root)
     variants: list[Variant] = []
     for offer in offers:
         sku = _offer_fields(offer)[0]
@@ -1225,8 +1282,41 @@ def _keyed_variants(
         if size in named:
             grams = normalize.parse_option_grams(named[size])
             variant.weight_g = grams if plausible_weight(grams) else None
+        variant.default = (
+            bool(preselected)
+            and preselected.keys() == axes.keys()
+            and (preselected.items() <= chosen.items())
+        )
         variants.append(variant)
     return variants
+
+
+def _preselected_values(root: Tag) -> dict[int, int]:
+    """Read the value each variant parameter shows before a visitor chooses.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Returns:
+        The ``{parameter id: value id}`` of every select option marked
+        ``selected`` and every radio button marked ``checked``. The prompt
+        ("Zvolte variantu") is never a value.
+    """
+    found: dict[int, int] = {}
+    for control in _variant_controls(root):
+        marked = (
+            control.select("option[selected]")
+            if control.name == "select"
+            else control.select("input[type=radio][checked]")
+        )
+        for element in marked:
+            match = _PARAMETER_FIELD_RE.fullmatch(
+                dom.attr(control if control.name == "select" else element, "name") or ""
+            )
+            identifier = dom.attr(element, "value")
+            if match is not None and identifier is not None and identifier.isdigit():
+                found[int(match.group(1))] = int(identifier)
+    return found
 
 
 def _parse_images(root: Tag, base_url: str) -> list[str]:

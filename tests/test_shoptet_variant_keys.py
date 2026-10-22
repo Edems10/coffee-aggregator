@@ -156,12 +156,12 @@ def test_a_second_axis_does_not_shift_the_weights(
 def test_the_product_weight_follows_the_variant_that_carries_its_price(
     fixture_html: Callable[[str, str], str],
 ) -> None:
-    """The existing precedence now sees the 200 g and 70 g packs the pages state."""
+    """pepecoffee's nearest pack is 200 g; botacoffee's 70 g sample gives way to the 250 g bag."""
     pepe = _coffee("pepecoffee", _html(fixture_html, "pepecoffee"))
     bota = _coffee("botacoffee", _html(fixture_html, "botacoffee"))
 
     assert (pepe.price, pepe.weight_g) == (220.0, 200)
-    assert (bota.price, bota.weight_g) == (115.0, 70)
+    assert (bota.price, bota.weight_g) == (359.0, 250)
 
 
 def test_the_rendered_code_spans_resolve_a_key_without_the_shipped_data(
@@ -319,3 +319,64 @@ def test_a_positional_label_that_states_several_bags_stores_their_total(
         ("Espresso - moderné / 3x 1kg", 3000),
         ("Espresso - moderné / 250 g", 250),
     ]
+
+
+def _preselect(*values: tuple[str, str]) -> Callable[[BeautifulSoup], None]:
+    def mark(soup: BeautifulSoup) -> None:
+        for name, value in values:
+            option = soup.select_one(
+                f'select[name="parameterValueId[{name}]"] option[value="{value}"]'
+            )
+            assert option is not None
+            option["selected"] = "selected"
+
+    return mark
+
+
+def test_the_variant_every_axis_preselects_is_the_page_default(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """Weight 250 g and the light roast both preselected name one offer."""
+    html = _edit(_html(fixture_html, "daliacoffee"), _preselect(("17", "14"), ("20", "23")))
+
+    coffee = _coffee("daliacoffee", html)
+
+    assert [variant.external_id for variant in coffee.variants if variant.default] == [
+        "1077/250/SV"
+    ]
+
+
+def test_a_page_that_preselects_one_axis_only_names_no_default(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    html = _edit(_html(fixture_html, "daliacoffee"), _preselect(("17", "14")))
+
+    coffee = _coffee("daliacoffee", html)
+
+    assert not any(variant.default for variant in coffee.variants)
+
+
+def test_a_page_that_preselects_nothing_names_no_default(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    coffee = _coffee("daliacoffee", _html(fixture_html, "daliacoffee"))
+
+    assert not any(variant.default for variant in coffee.variants)
+
+
+def test_the_option_a_combined_select_marks_selected_is_the_page_default(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    html = fixture_html("shoptet_birdsong", "detail_bolivie_teoponte.html")
+
+    def mark(soup: BeautifulSoup) -> None:
+        select = soup.select_one("select[name=priceId]")
+        assert select is not None
+        options = [option for option in select.select("option") if option.get("value")]
+        options[1]["selected"] = "selected"
+
+    plain = _coffee("birdsong", html)
+    chosen = _coffee("birdsong", _edit(html, mark))
+
+    assert not any(variant.default for variant in plain.variants)
+    assert [variant.external_id for variant in chosen.variants if variant.default] == ["BTE-500"]

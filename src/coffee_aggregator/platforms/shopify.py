@@ -34,6 +34,7 @@ from coffee_aggregator.labels import (
 from coffee_aggregator.models import Coffee, Popularity, Variant
 from coffee_aggregator.platforms.common import ConfiguredSite, common_fields
 from coffee_aggregator.platforms.shoptet import BRAND_KEY
+from coffee_aggregator.price_option import first_priced
 from coffee_aggregator.sites import html as dom
 from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
@@ -269,21 +270,6 @@ def _variant_weight(variant: dict[str, Any]) -> int | None:
         return grams
     titled = normalize.parse_option_grams(str(variant.get("title") or ""))
     return titled if plausible_weight(titled) else None
-
-
-def _cheapest(variants: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Return the variant the headline price belongs to.
-
-    Args:
-        variants: The product's variant objects.
-
-    Returns:
-        The cheapest priced variant, or None when none states a price.
-    """
-    priced = [(amount, entry) for entry in variants if (amount := _amount(entry.get("price")))]
-    if not priced:
-        return None
-    return min(priced, key=lambda pair: pair[0])[1]
 
 
 def _images(item: dict[str, Any]) -> list[str]:
@@ -549,16 +535,12 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
         if self.is_ignored(name):
             logger.debug("%s: %s is not coffee beans, skipping", self.site_id, name)
             return None
-        cheapest = _cheapest(_variants(item))
-        price = _amount(cheapest.get("price")) if cheapest else None
         images = _images(item)
         return ProductRef(
             site_id=self.site_id,
             external_id=external_id,
             url=self.product_url(item),
             name=name or None,
-            price=price,
-            currency=self.config.currency if price is not None else None,
             image_url=images[0] if images else None,
             payload=json.dumps(item, ensure_ascii=False),
         )
@@ -619,8 +601,8 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
         labels, prose = self._labels(item)
         entries = _variants(item)
         variants = self._variants(item, entries)
-        cheapest = _cheapest(entries)
-        price = _amount(cheapest.get("price")) if cheapest else None
+        lead = first_priced(variants)
+        price = lead.price if lead is not None else None
         vendor = str(item.get("vendor") or "").strip()
         if vendor:
             # The model has no brand column yet, and a Shopify catalogue is very
@@ -663,7 +645,7 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
             categories=categories,
             certifications=option_list(labels.get(F_CERTIFICATIONS)),
             specialty_grade=specialty_grade(name, categories, score(labels)),
-            original_price=_original_price(cheapest, price),
+            original_price=lead.original_price if lead is not None else None,
             description="\n".join(prose) or None,
             origin_text=labels.get(F_COUNTRY),
             raw_attributes=labels.raw,
@@ -693,25 +675,24 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
                 currency=self.config.currency,
                 available=bool(entry["available"]) if "available" in entry else None,
                 label=str(entry.get("title") or "") or None,
+                original_price=_original_price(entry),
             )
             for entry in entries
         ]
 
 
-def _original_price(cheapest: dict[str, Any] | None, price: float | None) -> float | None:
-    """Return the pre-discount price, when the product is actually discounted.
+def _original_price(entry: dict[str, Any]) -> float | None:
+    """Return the pre-discount price of one variant, when it is actually discounted.
 
     Args:
-        cheapest: The variant the headline price belongs to.
-        price: The price that variant sells for now.
+        entry: One entry of the product's ``variants`` array.
 
     Returns:
         The ``compare_at_price``, or None when it is not higher than the
-        current one.
+        variant's current price.
     """
-    if cheapest is None or price is None:
-        return None
-    regular = _amount(cheapest.get("compare_at_price"))
-    if regular is None or regular <= price:
+    price = _amount(entry.get("price"))
+    regular = _amount(entry.get("compare_at_price"))
+    if price is None or regular is None or regular <= price:
         return None
     return regular

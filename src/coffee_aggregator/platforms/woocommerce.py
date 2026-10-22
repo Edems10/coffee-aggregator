@@ -37,6 +37,7 @@ from coffee_aggregator.platforms.common import (
     PlatformConfigError,
     common_fields,
 )
+from coffee_aggregator.price_option import first_priced
 from coffee_aggregator.sites import html as dom
 from coffee_aggregator.sites.base import ProductRef, SiteAdapter
 
@@ -594,19 +595,6 @@ def _own_price(root: Tag) -> Tag | None:
     return None
 
 
-def _cheapest_variant_price(variants: list[Variant]) -> float | None:
-    """Return the lowest price any of the variants states.
-
-    Args:
-        variants: The variants the variation form prices.
-
-    Returns:
-        The lowest price, or None when no variant states one.
-    """
-    priced = [variant.price for variant in variants if variant.price is not None]
-    return min(priced) if priced else None
-
-
 def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
     """Build variants from the variation form's ``data-product_variations``.
 
@@ -631,21 +619,78 @@ def _html_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Var
     except ValueError:
         logger.debug("unreadable data-product_variations on %s", ref.url)
         return []
+    chosen = _preselected(form)
     variants: list[Variant] = []
     for entry in kit.records(parsed):
-        labels = [str(value) for value in kit.as_dict(entry.get("attributes")).values() if value]
+        attributes = kit.as_dict(entry.get("attributes"))
+        labels = [str(value) for value in attributes.values() if value]
+        price = normalize.parse_float(str(entry.get("display_price")))
+        regular = normalize.parse_float(str(entry.get("display_regular_price")))
         variants.append(
             Variant(
                 external_id=str(entry.get("variation_id")) if entry.get("variation_id") else None,
                 url=ref.url,
                 weight_g=_variant_weight(labels),
-                price=normalize.parse_float(str(entry.get("display_price"))),
+                price=price,
                 currency=currency,
                 available=bool(entry["is_in_stock"]) if "is_in_stock" in entry else None,
                 label=" / ".join(labels) or None,
+                original_price=regular if price and regular and regular > price else None,
+                default=_matches(attributes, chosen),
             )
         )
+    _keep_first_default(variants)
     return variants
+
+
+def _preselected(form: Tag | None) -> dict[str, str]:
+    """Read the value each attribute select of a variation form shows before a visitor chooses.
+
+    Args:
+        form: The ``form.variations_form`` element.
+
+    Returns:
+        The selected value of every select, keyed by the select's name. Empty
+        when any select shows its "choose an option" prompt, since the page then
+        pre-selects no single variation.
+    """
+    chosen: dict[str, str] = {}
+    for select in form.select("select[name^=attribute_]") if form is not None else []:
+        option = select.select_one("option[selected]")
+        value = dom.attr(option, "value")
+        if not value:
+            return {}
+        chosen[dom.attr(select, "name") or ""] = value
+    return chosen
+
+
+def _matches(attributes: dict[str, Any], chosen: dict[str, str]) -> bool:
+    """Say whether one variation is the one the form's pre-selected values name.
+
+    Args:
+        attributes: The variation's ``attributes`` object.
+        chosen: What :func:`_preselected` read.
+
+    Returns:
+        True when every pre-selected value is the variation's own, or the
+        variation accepts any value of that attribute.
+    """
+    return bool(chosen) and all(
+        attributes.get(name, "") in {"", value} for name, value in chosen.items()
+    )
+
+
+def _keep_first_default(variants: list[Variant]) -> None:
+    """Leave only the first of several variations a form pre-selects marked as default.
+
+    Args:
+        variants: The variations, modified in place.
+    """
+    seen = False
+    for variant in variants:
+        if variant.default and seen:
+            variant.default = False
+        seen = seen or variant.default
 
 
 class WooSite(ConfiguredSite[WooConfig]):
@@ -1202,10 +1247,10 @@ class WooSite(ConfiguredSite[WooConfig]):
         taken from the product's own ``.price`` block rather than from a related
         card nested inside the wrapper — see :func:`_own_price`. A theme that
         prices the product from JavaScript alone renders no own ``.price`` node
-        at all, so the cheapest variant the variation form states answers third;
-        that is the headline a variable product already gets on the Store API
-        path and in the Shopify adapter. The listing card's price remains the
-        last resort.
+        at all, so the first priced variant the variation form states answers
+        third; :func:`~coffee_aggregator.price_option.settle_price_option` then
+        replaces it whenever the variants state more than one price. The listing
+        card's price remains the last resort.
 
         Args:
             root: The product wrapper.
@@ -1220,7 +1265,8 @@ class WooSite(ConfiguredSite[WooConfig]):
         if price is None:
             price = normalize.parse_price(dom.text(_own_price(root)))[0]
         if price is None:
-            price = _cheapest_variant_price(variants)
+            lead = first_priced(variants)
+            price = lead.price if lead is not None else None
         return price if price is not None else ref.price
 
 

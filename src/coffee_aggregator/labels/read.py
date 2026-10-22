@@ -841,10 +841,14 @@ def headline_weight(
        describes a family of packs and the page cannot say which;
     5. a weight the product name states, for the shops whose "Brasil 1000 g" is
        the only place the size is written at all;
-    6. the weight of the cheapest priced variant, since every platform quotes
-       the cheapest variant as the headline price of a variable product;
+    6. the weight of the cheapest priced variant;
     7. the smallest weight any variant states, when no variant is priced;
     8. a caller-supplied last resort, such as Shoptet's parcel weight.
+
+    This is the reading of a product that offers one price. A product whose
+    options state different prices is stored under the one option
+    :func:`~coffee_aggregator.price_option.settle_price_option` chooses, which
+    replaces this weight together with the price.
 
     A count the name states, such as ``"36 ks"`` in ``"Illy Intenso 36 ks"``, multiplies the
     single-package weight last. That name is thirty-six tins, and the page states the size of

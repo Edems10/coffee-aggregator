@@ -10,6 +10,68 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.4 (2026-10-22)
+
+### Fixed
+
+- A product that offers several packages at different prices is stored under one
+  of them, the option nearest 250 g, with that option's own price, weight,
+  currency and original price (#172). Before, every platform quoted its own
+  headline (Shopify and WooCommerce the cheapest option, fathers the first,
+  Shoptet the price the page prints) and the weight was read separately, so a
+  row could carry a price and a weight from different options. `botacoffee/5524`
+  offers 70 g at 115 Kč, 250 g at 359 Kč and 1 kg at 1 399 Kč; it stored the 70
+  g sample and now stores 359 Kč for 250 g, 1 436 Kč/kg. The owner's rule
+  (2026-10-18, completed 2026-10-21), applied by one function,
+  `price_option.settle_price_option`, to every adapter's `parse_product` and so
+  to `coffee-aggregator parse` too: among the options that state a price and a
+  weight, skip any under 100 g when a larger one exists; among what is left
+  prefer those known to be in stock; take the one nearest 250 g, the heavier on
+  a tie; between options of that one weight at different prices (a grind, a
+  roast, a returnable tin) take the page's default option, else the first in
+  page order. Nothing is too far: a shop that sells only 500 g and 1 kg stores
+  the 500 g. A product with one option, with none, or whose priced options all
+  state one price is untouched, and so is one whose options state weights but no
+  price; that is every WooCommerce Store API variable product until #237 prices
+  its variations.
+- Measured on 3 798 products (2 621 Shoptet pages re-parsed from the 2026-10-21
+  cache, 1 177 products crawled from the other platforms on 2026-10-22): 1 343
+  offer several prices and 450 of them change `price`, 439 also `weight_g`.
+  Per-kilogram prices go up for 205, down for 196, stay the same for 48 and are
+  lost for one (`kavakromeriz/1614` prints 218 Kč for both its 250 g and 100 g
+  options, which `price_basis` still refuses to divide). The largest move is
+  `danielasroastery/162`, 2 180 to 1 320 Kč/kg: the 100 g option it stored is
+  now the 250 g one. The other 2 455 products are byte-identical on price,
+  weight, per-kilogram price, original price and currency. The stock preference
+  chose a different option for 11 products, the page order decided between
+  options of one weight for 79, and the sample rule and the page's own default
+  option decided none.
+- Nine products lose their price: no option states a weight and the name does
+  not either, so the "from" price they stored said nothing about any pack. They
+  store NULL `price`, `weight_g`, per-kilogram price, `currency` and
+  `original_price`: `cafegape` 2166, 2172, 2211, 2241; `cityroasters`
+  6644243988542; `hippocafe` 77, 83, 89, 107. A product whose options state no
+  weight but whose name or weight label states the pack (22: `kavaoliver`'s 250
+  g tins and one `coffeespot` set) is priced at the default option, else the
+  first; none of the 22 moves.
+- 34 products keep their price but lose `original_price`: it belonged to another
+  option (`cafemontana` 27: `115` stored 506 Kč, the 500 g option's
+  struck-through price, beside its 250 g price of 253 Kč) or to none the page
+  names (`kafista` 5, `melodyroastery` 1, `vrescaffe` 1). Each option's own
+  struck-through price is now read from Shoptet's variant data, Shopify's
+  `compare_at_price` and WooCommerce's `display_regular_price`.
+- Removed: Shopify's `_cheapest` and the price it put on the discovery
+  reference, which no parser read, and WooCommerce's `_cheapest_variant_price`;
+  both fell back to the first priced option, which the chooser replaces whenever
+  options differ in price.
+- `price_history`: the next crawl records each of the 450 products at its new
+  price, so the series jumps by one day for every product that moved (the
+  largest, `danielasroastery/162`, by 860 Kč/kg). The jump is recorded here and
+  in `deploy/notes/172-prices-take-the-250g-option-at-the-next-crawl.md`; it is
+  neither reset nor flagged, as decided on #172, because nothing on the site
+  reads price history yet and a reset would destroy the only record. No
+  migration.
+
 ## 0.14.3 (2026-10-22)
 
 ### Fixed
