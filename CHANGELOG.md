@@ -10,6 +10,43 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.6 (2026-10-22)
+
+### Fixed
+
+- A WooCommerce Store API variation now carries its own price (#237). The product
+  listing names a product's variations but prices none, so under #172's rule no
+  option could be chosen and the row kept the range minimum with the smallest bag.
+  Discovery now reads `products?type=variation&per_page=100&include=<ids>` for the
+  variations of every product that has more than one, after the whole catalogue
+  walk, and copies each variation's `prices` into the product's payload, matched by
+  id and `parent`. A product takes the prices only when the listing answered for
+  every one of its variations; a variation the shop prices at `"0"` stays unpriced;
+  a listing that fails, is not a JSON array or answers for nothing leaves the
+  crawl as it was, with a warning in the log and no discovery note. A product with
+  one variation, a simple product and an ignored product are never asked about.
+  `seriouscoffee/3532` now stores 250 g at 10.90 EUR and 1000 g at 27.90 EUR.
+- Cost: one extra request per 100 variations of the shop's multi-variation coffee
+  products, not one per product, and none for the non-coffee products a shop-wide
+  listing would carry (`zlatezrnko`'s lists 138 variations for 97 that matter).
+  Measured on 2026-10-22 against 44 Store API shops, with the crawler's own
+  User-Agent and each host's robots.txt delay (`caffeoro` states 30 s, every other
+  shop the 1 s default): 56 requests for 2 964 variations of 716 products, which
+  is 36 shops at one request, `bonte` and `kavaloka` at five, `prazirnagrain` at
+  four, `aurelica`, `caffe4u` and `kmen` at two, and `lubezna` and `networkcafe` at
+  none. Every listing returned exactly the ids asked for.
+- Rows that move, re-parsed offline from one live fetch of the product and
+  variation listings: 46 of 85 products in six shops change `price`, `weight_g`
+  or `price_per_kg` (price and weight 46, per kilogram 40): `kavaloka` 17,
+  `prazirnagrain` 11, `frisnakava` 10, `naturpark12` 5, `longberry` 3 and
+  `seriouscoffee` 0, which already stored its cheapest, smallest bag. Each is
+  stored under the option nearest 250 g instead of the cheapest, smallest one:
+  `kavaloka/9059` 83 Kč per 100 g becomes 208 Kč per 250 g, `frisnakava/2427` 8.00
+  EUR per 100 g becomes 19.90 EUR per 250 g, `prazirnagrain/1043` 93 Kč per
+  100 g becomes 271 Kč per 300 g. The `original_price` of three of them moves
+  with the option. The estimate in #237 was 46 rows too, split 16, 11, 10, 6, 3.
+  Stored rows change at the next crawl; no migration.
+
 ## 0.14.5 (2026-10-22)
 
 ### Fixed

@@ -116,7 +116,7 @@ wheels = [
 
 [[package]]
 name = "coffee-aggregator"
-version = "0.14.5"
+version = "0.14.6"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },

@@ -1,0 +1,212 @@
+[
+  {
+    "id": 4207,
+    "name": "Brain Blend",
+    "slug": "brain-blend-1000g",
+    "parent": 3532,
+    "type": "variation",
+    "variation": "Veľkosť: 1000g",
+    "permalink": "https://www.seriouscoffee.sk/produkt/brain-blend/?attribute_velkost=1000g",
+    "sku": "",
+    "short_description": "",
+    "description": "",
+    "on_sale": false,
+    "prices": {
+      "price": "2790",
+      "regular_price": "2790",
+      "sale_price": "2790",
+      "price_range": null,
+      "currency_code": "EUR",
+      "currency_symbol": "€",
+      "currency_minor_unit": 2,
+      "currency_decimal_separator": ".",
+      "currency_thousand_separator": ",",
+      "currency_prefix": "",
+      "currency_suffix": " €"
+    },
+    "price_html": "<span class=\"woocommerce-Price-amount amount\"><bdi>27.90&nbsp;<span class=\"woocommerce-Price-currencySymbol\">&euro;</span></bdi></span>",
+    "average_rating": "0",
+    "review_count": 0,
+    "images": [
+      {
+        "id": 4205,
+        "src": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659.jpg",
+        "thumbnail": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x300.jpg",
+        "srcset": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659.jpg 2000w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x272.jpg 300w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1024x929.jpg 1024w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-768x697.jpg 768w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1536x1394.jpg 1536w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-600x545.jpg 600w",
+        "sizes": "(max-width: 2000px) 100vw, 2000px",
+        "thumbnail_srcset": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x300.jpg 300w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-150x150.jpg 150w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-550x550.jpg 550w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1100x1100.jpg 1100w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-100x100.jpg 100w",
+        "thumbnail_sizes": "(max-width: 300px) 100vw, 300px",
+        "name": "Office káva Brain Blend",
+        "alt": "Office káva Brain Blend"
+      }
+    ],
+    "categories": [],
+    "tags": [],
+    "brands": [],
+    "attributes": [],
+    "variations": [],
+    "grouped_products": [],
+    "has_options": false,
+    "is_purchasable": true,
+    "is_in_stock": true,
+    "is_on_backorder": false,
+    "low_stock_remaining": null,
+    "stock_availability": {
+      "text": "",
+      "class": "in-stock"
+    },
+    "sold_individually": false,
+    "weight": "1000",
+    "dimensions": {
+      "length": "",
+      "width": "",
+      "height": ""
+    },
+    "formatted_weight": "1000 g",
+    "formatted_dimensions": "-",
+    "add_to_cart": {
+      "text": "Pridať do košíka",
+      "description": "Pridať do košíka: „Brain Blend &#8211; 1000g“",
+      "url": "https://www.seriouscoffee.sk/produkt/brain-blend/?attribute_velkost=1000g&#038;variation_id=4207&#038;add-to-cart=3532",
+      "single_text": "Pridať do košíka",
+      "minimum": 1,
+      "maximum": 9999,
+      "multiple_of": 1
+    },
+    "is_password_protected": false,
+    "extensions": {},
+    "_links": {
+      "self": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products/4207",
+          "targetHints": {
+            "allow": [
+              "GET"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products"
+        }
+      ],
+      "up": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products/3532"
+        }
+      ],
+      "related": [
+        {
+          "embeddable": true,
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products?related=4207&per_page=10"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4206,
+    "name": "Brain Blend",
+    "slug": "brain-blend-250g",
+    "parent": 3532,
+    "type": "variation",
+    "variation": "Veľkosť: 250g",
+    "permalink": "https://www.seriouscoffee.sk/produkt/brain-blend/?attribute_velkost=250g",
+    "sku": "",
+    "short_description": "",
+    "description": "",
+    "on_sale": false,
+    "prices": {
+      "price": "1090",
+      "regular_price": "1090",
+      "sale_price": "1090",
+      "price_range": null,
+      "currency_code": "EUR",
+      "currency_symbol": "€",
+      "currency_minor_unit": 2,
+      "currency_decimal_separator": ".",
+      "currency_thousand_separator": ",",
+      "currency_prefix": "",
+      "currency_suffix": " €"
+    },
+    "price_html": "<span class=\"woocommerce-Price-amount amount\"><bdi>10.90&nbsp;<span class=\"woocommerce-Price-currencySymbol\">&euro;</span></bdi></span>",
+    "average_rating": "0",
+    "review_count": 0,
+    "images": [
+      {
+        "id": 4205,
+        "src": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659.jpg",
+        "thumbnail": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x300.jpg",
+        "srcset": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659.jpg 2000w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x272.jpg 300w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1024x929.jpg 1024w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-768x697.jpg 768w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1536x1394.jpg 1536w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-600x545.jpg 600w",
+        "sizes": "(max-width: 2000px) 100vw, 2000px",
+        "thumbnail_srcset": "https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-300x300.jpg 300w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-150x150.jpg 150w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-550x550.jpg 550w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-1100x1100.jpg 1100w, https://www.seriouscoffee.sk/wp-content/uploads/2021/03/PhotoRoom_20221116_141659-100x100.jpg 100w",
+        "thumbnail_sizes": "(max-width: 300px) 100vw, 300px",
+        "name": "Office káva Brain Blend",
+        "alt": "Office káva Brain Blend"
+      }
+    ],
+    "categories": [],
+    "tags": [],
+    "brands": [],
+    "attributes": [],
+    "variations": [],
+    "grouped_products": [],
+    "has_options": false,
+    "is_purchasable": true,
+    "is_in_stock": true,
+    "is_on_backorder": false,
+    "low_stock_remaining": null,
+    "stock_availability": {
+      "text": "",
+      "class": "in-stock"
+    },
+    "sold_individually": false,
+    "weight": "250",
+    "dimensions": {
+      "length": "",
+      "width": "",
+      "height": ""
+    },
+    "formatted_weight": "250 g",
+    "formatted_dimensions": "-",
+    "add_to_cart": {
+      "text": "Pridať do košíka",
+      "description": "Pridať do košíka: „Brain Blend &#8211; 250g“",
+      "url": "https://www.seriouscoffee.sk/produkt/brain-blend/?attribute_velkost=250g&#038;variation_id=4206&#038;add-to-cart=3532",
+      "single_text": "Pridať do košíka",
+      "minimum": 1,
+      "maximum": 9999,
+      "multiple_of": 1
+    },
+    "is_password_protected": false,
+    "extensions": {},
+    "_links": {
+      "self": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products/4206",
+          "targetHints": {
+            "allow": [
+              "GET"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products"
+        }
+      ],
+      "up": [
+        {
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products/3532"
+        }
+      ],
+      "related": [
+        {
+          "embeddable": true,
+          "href": "https://www.seriouscoffee.sk/wp-json/wc/store/v1/products?related=4206&per_page=10"
+        }
+      ]
+    }
+  }
+]
