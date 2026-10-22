@@ -5,6 +5,7 @@ import math
 import re
 import unicodedata
 from datetime import date
+from itertools import pairwise
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -25,6 +26,7 @@ _NUMBER_RE = re.compile(r"\d[\d\s .,]*")
 # a 250 g bag as 25 kg, and "Blend 75/25 250 g" as 25250 g at 11 CZK/kg.
 _LIST_SPLIT_RE = re.compile(r"(?:[;|•·∙‧\n\r]|(?<!\d)[,/]|[,/](?!\d))+")
 _MAX_PERCENT = 100
+_MIN_SUMMED_PARTS = 2
 _MIN_ALTITUDE_M = 100
 _MAX_ALTITUDE_M = 4000
 _DECIMAL_DIGITS = 2
@@ -256,6 +258,54 @@ def parse_weights_grams(text: str | None) -> list[int]:
     return [
         grams for match in _WEIGHT_RE.finditer(text) if (grams := _match_grams(match)) is not None
     ]
+
+
+def parse_option_grams(text: str | None) -> int | None:
+    """Parse the weight one purchasable option's size value or label buys.
+
+    An option that states several bags is priced for all of them, so
+    ``"3x 1kg"`` is 3000 g and ``"500g+500g"`` is 1000 g. A size restated, such
+    as ``"1000g ( 1Kg)"`` or a total that reconciles with its parts
+    (``"1000g (4x250g)"``), is one size and keeps it. A sum is read only when
+    every part is the same size, because ``"1 kg + 250 g"`` may be two different
+    articles. Anything else reads as :func:`parse_weight_grams` does.
+
+    Args:
+        text: An option's size value or label, such as ``"250 g"``,
+            ``"4x200 gramov"`` or ``"200g + 200 g"``.
+
+    Returns:
+        The total weight in grams, or None when the text states none.
+    """
+    if not text:
+        return None
+    multiplied = parse_multiplied_pack_grams(text)
+    if multiplied is not None:
+        each, total = multiplied
+        if set(parse_weights_grams(text)) <= {each, total}:
+            return total
+        return parse_weight_grams(text)
+    summed = _summed_grams(text)
+    return summed if summed is not None else parse_weight_grams(text)
+
+
+def _summed_grams(text: str) -> int | None:
+    """Add up several equal weights written with a plus between them.
+
+    Args:
+        text: Text such as ``"200g + 200 g"``.
+
+    Returns:
+        The sum in grams, or None unless the text states two or more weights of
+        one size and nothing but ``+`` separates them.
+    """
+    matches = list(_WEIGHT_RE.finditer(text))
+    grams = [_match_grams(match) for match in matches]
+    if len(matches) < _MIN_SUMMED_PARTS or None in grams or len(set(grams)) != 1:
+        return None
+    if any(text[a.end() : b.start()].strip() != "+" for a, b in pairwise(matches)):
+        return None
+    return sum(part for part in grams if part is not None)
 
 
 def _match_grams(match: re.Match[str]) -> int | None:

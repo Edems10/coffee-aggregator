@@ -15,6 +15,7 @@ from coffee_aggregator.platforms.shopify import (
     DEFAULT_LABEL_MAP,
     ShopifySite,
     _amount,
+    _variant_weight,
 )
 from coffee_aggregator.sites import CONFIG_DIR
 from coffee_aggregator.sites import get as get_site
@@ -314,6 +315,37 @@ def test_a_variant_without_grams_falls_back_to_its_title(penguincoffee: ShopifyS
         ("1000g", 1000),
     ]
     assert (coffee.price, coffee.weight_g) == (305.0, 250)
+
+
+def test_a_title_that_states_several_bags_stores_their_total(penguincoffee: ShopifySite) -> None:
+    """With no grams the title is the weight, and a two-bag title weighs both."""
+    item = json.loads(json.dumps(_by_handle("penguincoffee", "trenggiling-indonesia")))
+    item["variants"][0]["title"] = "2x250g"
+
+    coffee = parse(penguincoffee, item)
+
+    assert (coffee.variants[0].label, coffee.variants[0].weight_g) == ("2x250g", 500)
+
+
+@pytest.mark.parametrize(
+    ("title", "grams"),
+    [("20x 500g", None), ("10x 500g", 5000), ("250 g", 250), ("2x250g", 500)],
+)
+def test_a_title_total_beyond_a_bag_of_coffee_stores_no_weight(
+    title: str, grams: int | None
+) -> None:
+    """The title fallback passes through the same plausibility guard as every other reader."""
+    assert _variant_weight({"title": title, "grams": 0}) == grams
+
+
+def test_grams_beat_a_title_that_states_several_bags(penguincoffee: ShopifySite) -> None:
+    """The shop's own stated weight stays first, whatever the title says."""
+    item = json.loads(json.dumps(_by_handle("penguincoffee", "cuba-serrano-lavado-dark-edition")))
+    item["variants"][0]["title"] = "2x250g"
+
+    coffee = parse(penguincoffee, item)
+
+    assert [variant.weight_g for variant in coffee.variants] == [250, 500, 1000]
 
 
 def test_a_kilo_written_as_1kg_is_read_as_a_kilo(coffia: ShopifySite) -> None:

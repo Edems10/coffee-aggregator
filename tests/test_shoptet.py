@@ -962,3 +962,32 @@ def test_a_page_stating_nothing_about_blending_is_none_not_false(tmp_path: Path)
 
     assert coffee.species.is_blend is None
     assert coffee.origin.country is None
+
+
+_BUNDLE_SELECT = """
+<html><body><div class="p-detail"><h1>Kolumbia Esmeralda</h1>
+  <select name="priceId">
+    <option value="" data-choose="1">Zvoľte variant</option>
+    <option value="1">Hmotnost: 250 g - Skladem (262 Kč)</option>
+    <option value="2">Hmotnost: 10x 500g - Skladem (3 100 Kč)</option>
+    <option value="3">Hmotnost: 1000g ( 1Kg) - Skladem (500 Kč)</option>
+    <option value="4">Hmotnost: 1000g (4x250g) - Skladem (480 Kč)</option>
+    <option value="5">Hmotnost: 1000g+1000g - Skladem (900 Kč)</option>
+  </select>
+</div></body></html>
+"""
+
+
+def test_a_combined_option_that_states_several_bags_stores_their_total(tmp_path: Path) -> None:
+    """melodyroastery's "10x 500g" is priced for ten bags; a restated size stays one size."""
+    adapter = cast("ShoptetSite", platforms.build_from_config(_write(tmp_path, MINIMAL_TOML)))
+
+    coffee = parse(adapter, _BUNDLE_SELECT, "1", "https://tiny.sk/kolumbia/")
+
+    assert [(v.weight_g, v.price) for v in coffee.variants] == [
+        (250, 262.0),
+        (5000, 3100.0),
+        (1000, 500.0),
+        (1000, 480.0),
+        (2000, 900.0),
+    ]

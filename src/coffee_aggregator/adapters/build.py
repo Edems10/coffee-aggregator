@@ -4,6 +4,7 @@ import re
 from typing import TYPE_CHECKING, Final
 
 from coffee_aggregator import normalize
+from coffee_aggregator.labels import plausible_weight
 from coffee_aggregator.models import Variant
 from coffee_aggregator.sites import html as dom
 
@@ -198,12 +199,16 @@ def package(  # noqa: PLR0913  (one variant field per argument; grouping them hi
         available: Whether this option is in stock, when the shop says.
 
     Returns:
-        The variant.
+        The variant. A weight read off the label is kept only when it is a
+        plausible bag of coffee.
     """
+    if weight_g is None:
+        parsed = normalize.parse_option_grams(label)
+        weight_g = parsed if plausible_weight(parsed) else None
     return Variant(
         external_id=external_id,
         url=url,
-        weight_g=weight_g if weight_g is not None else normalize.parse_weight_grams(label),
+        weight_g=weight_g,
         price=price,
         currency=currency if price is not None else None,
         available=available,

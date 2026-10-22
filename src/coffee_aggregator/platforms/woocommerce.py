@@ -369,7 +369,7 @@ def _variant_weight(labels: list[str]) -> int | None:
         The weight in grams, or None when no axis states one.
     """
     for label in labels:
-        grams = normalize.parse_weight_grams(label)
+        grams = normalize.parse_option_grams(label)
         if plausible_weight(grams):
             return grams
     return None

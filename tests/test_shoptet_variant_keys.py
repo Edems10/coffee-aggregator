@@ -270,3 +270,52 @@ def test_a_deeply_nested_variant_script_is_ignored_not_fatal(
     coffee = _coffee("pepecoffee", _edit(_html(fixture_html, "pepecoffee"), nested))
 
     assert len(coffee.variants) == 4
+
+
+@pytest.mark.parametrize(
+    ("size_value", "grams"),
+    [
+        ("200g + 200g", 400),
+        ("200g + 200 g", 400),
+        ("2x200 g", 400),
+        ("200g ( 0,2Kg)", 200),
+        ("200 g (2x100g)", 200),
+    ],
+)
+def test_a_size_value_that_states_several_bags_stores_their_total(
+    size_value: str, grams: int, fixture_html: Callable[[str, str], str]
+) -> None:
+    """johnnycoffee's `/201` option reads "200g + 200g" and its price buys both bags."""
+
+    def bundled(soup: BeautifulSoup) -> None:
+        option = soup.select_one("select[name='parameterValueId[18]'] option[value='306']")
+        assert option is not None
+        option.string = size_value
+
+    coffee = _coffee("pepecoffee", _edit(_html(fixture_html, "pepecoffee"), bundled))
+
+    assert _weights(coffee) == {"69/503": grams, "69/250": grams, "69/504": 500, "69/505": 1000}
+    assert [v.price for v in coffee.variants] == [
+        v.price for v in _coffee("pepecoffee", _html(fixture_html, "pepecoffee")).variants
+    ]
+
+
+def test_a_positional_label_that_states_several_bags_stores_their_total(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """With no variant keys the offers take labels by position, and that label is read alike."""
+
+    def bundled(soup: BeautifulSoup) -> None:
+        _drop_variant_data(soup)
+        option = soup.select_one("select[name='parameterValueId[18]'] option[value='20']")
+        assert option is not None
+        option.string = "3x 1kg"
+
+    coffee = _coffee("jungleroastery", _edit(_html(fixture_html, "jungleroastery"), bundled))
+
+    assert [(v.label, v.weight_g) for v in coffee.variants] == [
+        ("Filter - Light roast / 3x 1kg", 3000),
+        ("Filter - Light roast / 250 g", 250),
+        ("Espresso - moderné / 3x 1kg", 3000),
+        ("Espresso - moderné / 250 g", 250),
+    ]

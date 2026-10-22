@@ -262,12 +262,13 @@ def _variant_weight(variant: dict[str, Any]) -> int | None:
         variant: One entry of the product's ``variants`` array.
 
     Returns:
-        The weight in grams, or None when neither source states one.
+        The weight in grams, or None when neither source states a plausible one.
     """
     grams = normalize.parse_int(str(variant.get("grams") or ""))
     if plausible_weight(grams):
         return grams
-    return normalize.parse_weight_grams(str(variant.get("title") or ""))
+    titled = normalize.parse_option_grams(str(variant.get("title") or ""))
+    return titled if plausible_weight(titled) else None
 
 
 def _cheapest(variants: list[dict[str, Any]]) -> dict[str, Any] | None:

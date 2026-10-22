@@ -10,6 +10,37 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.3 (2026-10-22)
+
+### Fixed
+
+- An option whose size value states several bags now stores their total weight
+  (#250). `mohaji`'s `3x 1kg` was stored at 1000 g for a price that buys 3 kg,
+  so its per-kilogram figure was three times too high; it now stores 3000 g.
+  The owner's rule: a multiplied value (`3x1000g`, `3x 1kg`, `4x200 gramov`,
+  `2 x 200 g`, `10x 500g`) or a sum of one size (`500g+500g`, `200g + 200 g`)
+  stores the total, and a single size restated (`1000g ( 1Kg)`) or a total that
+  reconciles with its parts (`1000g (4x250g)`) keeps that size. A sum is read
+  only when every part is the same size, so `1 kg + 250 g` reads as before. One
+  function, `normalize.parse_option_grams`, is used by every reader of an
+  option's weight: Shoptet's keyed size value, combined-select label and
+  positional label, WooCommerce's variation labels on both the API and HTML
+  paths, Shopify's variant title (`grams` still wins) and the bespoke shops'
+  `package`. `parse_weight_grams` and the product-name rules are unchanged.
+  Re-parsing the 2 621 cached Shoptet pages moved 65 variants in 7 shops and
+  no price, currency, availability or label: 48 gained a total (`ambere` 22,
+  `coffeespot` 2, `johnnycoffee` 2, `lighthousecoffee` 3, `melodyroastery` 1,
+  `mohaji` 16, `zhanecafe` 2), and 17 whose total exceeds the 5 000 g
+  plausibility limit (`mohaji`'s `6x 1kg`, `melodyroastery`'s `20x 500g`) now
+  store no weight instead of one bag's. Shopify's title fallback and the bespoke shops' labels pass through the same
+  limit, so they store no weight there too. A live crawl of every WooCommerce and
+  Shopify shop, `coffeein`, `fathers` and `nordbeans` moved 10 variants:
+  `ciernaperla` 8 (`2x 250g zrnková` 250 g to 500 g, `3x100g` 100 g to 300 g)
+  and `longberry`'s two `10x1kg` to no weight. Through the existing precedence 7
+  products change `weight_g` and `price_per_kg` at the next crawl: `ambere` 6
+  (`153` per-kilogram 1 458 to 729 Kč) and `lighthousecoffee` 1 (`480`, 167.20
+  to 41.80 Kč).
+
 ## 0.14.2 (2026-10-22)
 
 ### Changed
