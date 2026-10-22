@@ -10,6 +10,34 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.5 (2026-10-22)
+
+### Fixed
+
+- A Shoptet variant named by one hidden label that joins every parameter
+  (`Druh kávy: Zrnková, Hmotnost: 250g`, or `Velikost balení: 250 g` where the
+  shop has one parameter) now takes its weight from the label's size part (#260).
+  Before, no weight was read from these pages, so under #172's rule (no option
+  states a weight, so no price) a coffee whose page states 209 Kč for 250 g was
+  stored with no price at all. Each offer is matched to its label through the
+  radio value the page's tracking data states for the offer's sku. The size
+  parameter is one the shared label vocabulary in `labels/` reads as a weight
+  (`Velikost balení`, `Množství`, `Gramáž` and the rest, plus Shoptet's own
+  `Hmotnost`), and a decimal comma such as `0,25 kg` stays one value. A variant
+  takes the page's label as its name instead of its sku.
+- Measured on the 2 621 Shoptet pages re-parsed from the 2026-10-21 cache: 15
+  carry the joined-label shape (`cafegape` 10, `hippocafe` 4, `eshopmakacoffee`
+  1). 41 variants gain a weight (`hippocafe` 32, `cafegape` 8, `eshopmakacoffee`
+  1, whose `58/1KG` reads 1 000 g), 13 more already had it from their sku and
+  keep it under the new name, and none changes or loses one. Eight products gain
+  a price they did not have: `hippocafe/77` stores 330 Kč for 250 g (1 320
+  Kč/kg), `cafegape/2166` 209 Kč for 250 g (836 Kč/kg), and `cafegape` 2172,
+  2211, 2241 and `hippocafe` 83, 89, 107 likewise. They are eight of the nine
+  products #172 would have stored without a price; the ninth is a Shopify drip
+  sachet this fix does not touch. No variant price, no other field of any
+  variant and no product outside the 15 pages changes, and no existing price is
+  rewritten. Stored rows change at the next crawl; no migration.
+
 ## 0.14.4 (2026-10-22)
 
 ### Fixed
