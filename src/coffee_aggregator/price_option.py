@@ -67,9 +67,10 @@ def choose_option(
     The candidates are the options that state a price and a plausible weight.
     They narrow in this order, and a step that would leave nothing is skipped:
 
-    1. in stock: only the options known to be in stock, which a product that
+    1. not a sample: only the options of at least :data:`SAMPLE_BELOW_G`, so a
+       sample in stock never outranks a larger option that is sold out;
+    2. in stock: only the options known to be in stock, which a product that
        states stock per product only, or in no option, never narrows;
-    2. not a sample: only the options of at least :data:`SAMPLE_BELOW_G`;
     3. nearest :data:`TARGET_WEIGHT_G` in absolute grams, the heavier of two
        equidistant weights;
     4. the one option of that weight the page marks as its default, otherwise
@@ -89,8 +90,8 @@ def choose_option(
         grams = option.weight_g if assume_weight_g is None else assume_weight_g
         if states_price(option) and grams and (assume_weight_g or plausible_weight(grams)):
             pool.append((option, grams))
-    pool = [pair for pair in pool if pair[0].available is True] or pool
     pool = [pair for pair in pool if pair[1] >= SAMPLE_BELOW_G] or pool
+    pool = [pair for pair in pool if pair[0].available is True] or pool
     if not pool:
         return None
     nearest = min(_distance(grams) for _, grams in pool)

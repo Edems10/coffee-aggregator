@@ -133,6 +133,37 @@ def test_a_coffee_sold_only_as_a_sample_keeps_its_sample() -> None:
     assert (coffee.price, coffee.weight_g) == (130.0, 80)
 
 
+def test_a_sample_in_stock_does_not_beat_a_larger_option_that_is_sold_out() -> None:
+    coffee = product(
+        option(70, 115.0, available=True),
+        option(250, 359.0, available=False),
+        option(1000, 1399.0, available=False),
+    )
+
+    settle_price_option(coffee)
+
+    assert (coffee.price, coffee.weight_g) == (359.0, 250)
+
+
+def test_a_sample_in_stock_gives_way_to_the_larger_option_in_stock() -> None:
+    coffee = product(
+        option(70, 115.0, available=True),
+        option(250, 359.0, available=False),
+        option(1000, 1399.0, available=True),
+    )
+
+    settle_price_option(coffee)
+
+    assert (coffee.price, coffee.weight_g) == (1399.0, 1000)
+
+
+def test_a_sample_that_is_the_only_option_is_kept() -> None:
+    chosen = choose_option([option(70, 115.0, available=True)])
+
+    assert chosen is not None
+    assert chosen.weight_g == 70
+
+
 # --- stock --------------------------------------------------------------------
 
 
@@ -146,6 +177,14 @@ def test_the_nearest_option_that_is_out_of_stock_gives_way_to_one_in_stock() -> 
     settle_price_option(coffee)
 
     assert (coffee.price, coffee.weight_g) == (560.0, 500)
+
+
+def test_kofi_1531_stores_the_1_kg_option_when_the_250_g_is_sold_out() -> None:
+    coffee = product(option(250, 14.0, available=False), option(1000, 38.0, available=True))
+
+    settle_price_option(coffee)
+
+    assert (coffee.price, coffee.weight_g) == (38.0, 1000)
 
 
 @pytest.mark.parametrize("stock", [None, False])

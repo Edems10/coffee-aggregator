@@ -25,14 +25,15 @@ crawl writes.
   (2026-10-18, completed 2026-10-21), applied by one function,
   `price_option.settle_price_option`, to every adapter's `parse_product` and so
   to `coffee-aggregator parse` too: among the options that state a price and a
-  weight, prefer those known to be in stock; skip any under 100 g when a larger
-  one exists; take the one nearest 250 g, the heavier on a tie; between options
-  of that one weight at different prices (a grind, a roast, a returnable tin)
-  take the page's default option, else the first in page order. Nothing is too
-  far: a shop that sells only 500 g and 1 kg stores the 500 g. A product with
-  one option, with none, or whose priced options all state one price is
-  untouched, and so is one whose options state weights but no price; that is
-  every WooCommerce Store API variable product until #237 prices its variations.
+  weight, skip any under 100 g when a larger one exists; among what is left
+  prefer those known to be in stock; take the one nearest 250 g, the heavier on
+  a tie; between options of that one weight at different prices (a grind, a
+  roast, a returnable tin) take the page's default option, else the first in
+  page order. Nothing is too far: a shop that sells only 500 g and 1 kg stores
+  the 500 g. A product with one option, with none, or whose priced options all
+  state one price is untouched, and so is one whose options state weights but no
+  price; that is every WooCommerce Store API variable product until #237 prices
+  its variations.
 - Measured on 3 798 products (2 621 Shoptet pages re-parsed from the 2026-10-21
   cache, 1 177 products crawled from the other platforms on 2026-10-22): 1 343
   offer several prices and 450 of them change `price`, 439 also `weight_g`.
