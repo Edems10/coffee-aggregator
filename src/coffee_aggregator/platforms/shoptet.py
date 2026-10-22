@@ -716,11 +716,18 @@ def _first_value(scope: Tag, prop: str) -> str | None:
 
 
 def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Variant]:
-    """Build one variant per offer, naming it from the weight select.
+    """Build one variant per offer, naming it from the page's variant keys.
 
-    Shoptet renders one ``[itemprop=offers]`` block per purchasable variant in
-    the same order as the weight select's options, so the two zip together when
-    their lengths agree; when they do not, the offers still carry sku and price.
+    Shoptet keys every variant of a per-parameter product by the parameter values
+    it combines (``250-1838-252-1746``) and states the sku of each key in the
+    page's code spans and variant data, so an offer is matched to its key through
+    its sku and named by the values the key holds. A variant's weight is the
+    weight stated by the value of the axis that lists weights; only an offer whose
+    key the page does not state falls back to the weight its sku suffix suggests.
+
+    A page that states no key at all pairs the offers with the weight select by
+    position, which holds only when the select's options and the offers line up
+    one to one; otherwise the offers still carry sku and price.
 
     Args:
         root: The ``div.p-detail`` wrapper.
@@ -737,6 +744,9 @@ def _parse_variants(root: Tag, ref: ProductRef, currency: str | None) -> list[Va
     options = _weight_options(root)
     if len(offers) <= 1 and not options:
         return []
+    keys = _variant_keys(root)
+    if keys and offers:
+        return _drop_guessed_weights(_keyed_variants(root, offers, keys, ref, currency))
     labels = _offer_labels(root, len(offers), options)
     variants = [
         _variant(offer, label, ref, currency) for offer, label in zip(offers, labels, strict=False)
@@ -979,6 +989,244 @@ def _variant(offer: Tag, label: str | None, ref: ProductRef, currency: str | Non
         availability_raw=availability_raw,
         label=label or sku,
     )
+
+
+# --- variant keys -------------------------------------------------------------
+
+#: One variant's identity: ``(parameter id, value id)`` for every parameter it
+#: combines, in the order the shop wrote them.
+type VariantKey = tuple[tuple[int, int], ...]
+
+#: A parameter's value ids, each with the name the page gives it, keyed by the
+#: parameter id, in the order the page lists the parameters.
+type KeyedAxes = dict[int, dict[int, str]]
+
+_VARIANT_KEY_RE: Final = re.compile(r"\d+(?:-\d+)+")
+_PARAMETER_FIELD_RE: Final = re.compile(r"parameterValueId\[(\d+)\]")
+#: The script that ships every variant's data under its key.
+_VARIANT_DATA_MARKER: Final = "necessaryVariantData"
+
+
+def _read_variant_key(token: str) -> VariantKey | None:
+    """Read a variant key such as ``250-1838-252-1746``.
+
+    Args:
+        token: A class name of a ``parameter-dependent`` span, or a key of the
+            shipped variant data.
+
+    Returns:
+        The ``(parameter, value)`` pairs, or None when the token is not a key.
+    """
+    if _VARIANT_KEY_RE.fullmatch(token) is None:
+        return None
+    numbers = [int(part) for part in token.split("-")]
+    if len(numbers) % 2:
+        return None
+    return tuple(zip(numbers[::2], numbers[1::2], strict=True))
+
+
+def _shipped_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
+    """Yield the ``(key, sku)`` pairs of the variant data the page ships.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Yields:
+        One pair per variant the data names.
+    """
+    decoder = json.JSONDecoder()
+    for script in root.find_all("script"):
+        source = script.get_text()
+        marker = source.find(_VARIANT_DATA_MARKER)
+        brace = source.find("{", marker) if marker >= 0 else -1
+        if brace < 0 or not _own(root, script):
+            continue
+        try:
+            data, _ = decoder.raw_decode(source, brace)
+        except ValueError, RecursionError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        for token, variant in data.items():
+            key = _read_variant_key(str(token))
+            code = variant.get("code") if isinstance(variant, dict) else None
+            if key is not None and isinstance(code, str) and code.strip():
+                yield key, code.strip()
+
+
+def _rendered_codes(root: Tag) -> Iterator[tuple[VariantKey, str]]:
+    """Yield the ``(key, sku)`` pairs of the page's ``parameter-dependent`` code spans.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Yields:
+        One pair per code span that carries a key.
+    """
+    for span in root.select(".p-code .parameter-dependent"):
+        sku = dom.text(span)
+        if sku is None or not _own(root, span):
+            continue
+        for token in dom.classes(span):
+            key = _read_variant_key(token)
+            if key is not None:
+                yield key, sku
+
+
+def _variant_keys(root: Tag) -> dict[str, VariantKey]:
+    """Map each sku the page states a key for to that key.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Returns:
+        The key of every sku, left out when the page gives one sku two keys.
+    """
+    found: dict[str, set[VariantKey]] = {}
+    for key, sku in (*_shipped_codes(root), *_rendered_codes(root)):
+        found.setdefault(sku, set()).add(key)
+    return {sku: next(iter(keys)) for sku, keys in found.items() if len(keys) == 1}
+
+
+def _keyed_axes(root: Tag) -> KeyedAxes:
+    """Name every value of every parameter a variant key can refer to.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+
+    Returns:
+        The values of each ``parameterValueId[N]`` select and radio group. A
+        surcharge select is not part of any key and is left out.
+    """
+    axes: KeyedAxes = {}
+    for control in _variant_controls(root):
+        found = _select_values(control) if control.name == "select" else _radio_values(control)
+        if found is not None and found[1]:
+            axes[found[0]] = found[1]
+    return axes
+
+
+def _select_values(select: Tag) -> tuple[int, dict[int, str]] | None:
+    """Read the parameter id and the named values of one select.
+
+    Args:
+        select: The ``<select>`` element.
+
+    Returns:
+        The parameter id and its ``{value id: name}``, or None when the select is
+        not a ``parameterValueId[N]`` one.
+    """
+    match = _PARAMETER_FIELD_RE.fullmatch(dom.attr(select, "name") or "")
+    if match is None:
+        return None
+    values: dict[int, str] = {}
+    for option in _real_options(select):
+        identifier, name = dom.attr(option, "value"), dom.text(option)
+        if identifier is not None and identifier.isdigit() and name:
+            values[int(identifier)] = name
+    return int(match.group(1)), values
+
+
+def _radio_values(block: Tag) -> tuple[int, dict[int, str]] | None:
+    """Read the parameter id and the named values of one radio-button block.
+
+    Args:
+        block: The ``div`` that holds the parameter's radio buttons.
+
+    Returns:
+        The parameter id and its ``{value id: name}``, or None when the block
+        holds no ``parameterValueId[N]`` radio button.
+    """
+    parameter: int | None = None
+    values: dict[int, str] = {}
+    for radio in block.select("input[type=radio]"):
+        match = _PARAMETER_FIELD_RE.fullmatch(dom.attr(radio, "name") or "")
+        identifier = dom.attr(radio, "value")
+        if match is None or identifier is None or not identifier.isdigit():
+            continue
+        parameter = int(match.group(1))
+        name = _radio_name(block, radio, identifier)
+        if name:
+            values[int(identifier)] = name
+    return None if parameter is None else (parameter, values)
+
+
+def _radio_name(block: Tag, radio: Tag, identifier: str) -> str | None:
+    """Return the name a radio button's value goes by.
+
+    Args:
+        block: The ``div`` that holds the parameter's radio buttons.
+        radio: The ``<input type=radio>`` element.
+        identifier: Its value id.
+
+    Returns:
+        The text of the hidden ``span.parameter-value`` naming it, or the title
+        of its picture.
+    """
+    label = radio.find_parent("label")
+    scope = label if isinstance(label, Tag) else block
+    name = dom.text(scope.select_one(".parameter-value"))
+    if name is None and scope is not block:
+        name = dom.attr(scope.select_one(".advanced-parameter-inner"), "title")
+    return name or dom.text(block.select_one(f"#parameter-value-name-{identifier}"))
+
+
+def _size_parameter(axes: KeyedAxes) -> int | None:
+    """Pick the parameter whose values are package weights.
+
+    Args:
+        axes: The named values of every parameter.
+
+    Returns:
+        The id of the first parameter whose every value states a weight, or None.
+    """
+    for parameter, values in axes.items():
+        if all(normalize.parse_weight_grams(name) for name in values.values()):
+            return parameter
+    return None
+
+
+def _keyed_variants(
+    root: Tag,
+    offers: list[Tag],
+    keys: dict[str, VariantKey],
+    ref: ProductRef,
+    currency: str | None,
+) -> list[Variant]:
+    """Build one variant per offer from the key the page states for its sku.
+
+    The label names the key's values in the order the page lists the parameters.
+    The weight is the weight stated by the key's value of the size parameter. An
+    offer whose key is unknown, or names none of its values, keeps no label but
+    its sku and the weight its sku suffix suggests.
+
+    Args:
+        root: The ``div.p-detail`` wrapper.
+        offers: The ``[itemprop=offers]`` blocks of the product.
+        keys: The key of each sku the page states one for.
+        ref: The product reference being parsed.
+        currency: The product's currency, used when an offer states none.
+
+    Returns:
+        One variant per offer, in page order.
+    """
+    axes = _keyed_axes(root)
+    size = _size_parameter(axes)
+    variants: list[Variant] = []
+    for offer in offers:
+        sku = _offer_fields(offer)[0]
+        chosen = dict(keys.get(sku or "", ()))
+        named = {
+            parameter: values[chosen[parameter]]
+            for parameter, values in axes.items()
+            if chosen.get(parameter) in values
+        }
+        variant = _variant(offer, " / ".join(named.values()) or None, ref, currency)
+        if size in named:
+            grams = normalize.parse_weight_grams(named[size])
+            variant.weight_g = grams if plausible_weight(grams) else None
+        variants.append(variant)
+    return variants
 
 
 def _parse_images(root: Tag, base_url: str) -> list[str]:
