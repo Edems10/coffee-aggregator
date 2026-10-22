@@ -759,7 +759,7 @@ from it without a crawl and without asking a single shop for anything.
 
 The event shape is `coffee_contracts.CoffeeState`, published on
 `coffee.v2.catalogue.<site>.<external_id>`, which the broker keeps in the stream
-`CATALOGUE_V2`. The contract is a separate repository, pinned here to `v3.2.0`.
+`CATALOGUE_V2`. The contract is a separate repository, pinned here to `v3.3.0`.
 
 Money travels as an integer count of minor units, and only on the wire: the
 stored columns are unchanged and stay `numeric`. `sinks/outbox.py` converts at

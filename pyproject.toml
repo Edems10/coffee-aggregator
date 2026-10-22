@@ -1,12 +1,12 @@
 [project]
 name = "coffee-aggregator"
-version = "0.14.1"
+version = "0.14.2"
 description = "Polite multi-site collector of Czech and Slovak coffee bean data."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "beautifulsoup4>=4.13.3",
-    "coffee-contracts>=3.2.0",
+    "coffee-contracts>=3.3.0",
     "httpx2>=2.13.1",
     "lxml>=5.3.0",
     "nats-py>=2.9.0",
@@ -104,4 +104,4 @@ module = ["lxml.*"]
 ignore_missing_imports = true
 
 [tool.uv.sources]
-coffee-contracts = { git = "https://github.com/Edems10/coffee-contracts.git", rev = "v3.2.0" }
+coffee-contracts = { git = "https://github.com/Edems10/coffee-contracts.git", rev = "v3.3.0" }

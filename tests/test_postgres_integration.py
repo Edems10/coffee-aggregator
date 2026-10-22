@@ -1208,6 +1208,62 @@ def test_the_crawl_event_matches_the_republish_of_the_row_it_wrote(sink: Postgre
     assert json.dumps(republished, sort_keys=True) == json.dumps(crawled, sort_keys=True)
 
 
+#: The columns the contract gained in 3.3.0, which no event carries yet.
+HELD_BACK: dict[str, object] = {
+    "description": None,
+    "origin_farm": None,
+    "origin_producer": None,
+    "origin_washing_station": None,
+    "altitude_max_m": None,
+    "body": None,
+    "acidity": None,
+    "sweetness": None,
+    "bitterness": None,
+    "brewing_methods": [],
+}
+
+
+def _with_held_back_values(site: str, external_id: str) -> Coffee:
+    coffee = make_coffee(site=site, external_id=external_id)
+    coffee.taste.body = 7
+    coffee.taste.brewing_methods = ["zrnková", "Espresso"]
+    return coffee
+
+
+@pytest.mark.parametrize("name", sorted(HELD_BACK))
+def test_a_stored_value_of_a_held_back_field_never_reaches_an_event(
+    sink: PostgresSink, name: str
+) -> None:
+    """Each of the ten fields of contract 3.3.0 stays at its default on every path.
+
+    The column holds the stored value, the free-text brewing strings and the
+    out-of-range score included, and the event does not, whether it is built from
+    the crawl, a delisting, a retire or a republish.
+    """
+    sink.upsert(
+        [
+            _with_held_back_values("demo", "1"),
+            _with_held_back_values("demo", "2"),
+            _with_held_back_values("gone", "1"),
+        ]
+    )
+    stored = _scalar(sink, f"SELECT {name} FROM coffee WHERE site = 'demo'")  # noqa: S608  (test-owned name)
+    sink.mark_delisted("demo", {"2"})
+    sink.retire("gone")
+    with sink.connection.cursor() as cursor:
+        cursor.execute(f"SELECT {outbox.STATE_SELECT} FROM coffee")  # noqa: S608  (a module constant)
+        republished = [json.loads(row[2]) for row in outbox.event_rows_from_db(cursor.fetchall())]
+    sink.connection.commit()
+    events = [row[3] for row in _outbox(sink)]
+
+    assert stored not in (None, [])
+    assert len(events) == 5
+    assert len(republished) == 3
+    for event in (*events, *republished):
+        check(event)
+        assert event[name] == HELD_BACK[name]
+
+
 def test_a_null_key_matches_between_the_crawl_event_and_the_republish(sink: PostgresSink) -> None:
     coffee = make_coffee(site="kava", external_id="1", name="-", url=None)
 

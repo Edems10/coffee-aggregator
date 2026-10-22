@@ -116,7 +116,7 @@ wheels = [
 
 [[package]]
 name = "coffee-aggregator"
-version = "0.14.1"
+version = "0.14.2"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -144,7 +144,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.13.3" },
-    { name = "coffee-contracts", git = "https://github.com/Edems10/coffee-contracts.git?rev=v3.2.0" },
+    { name = "coffee-contracts", git = "https://github.com/Edems10/coffee-contracts.git?rev=v3.3.0" },
     { name = "httpx2", specifier = ">=2.13.1" },
     { name = "lxml", specifier = ">=5.3.0" },
     { name = "nats-py", specifier = ">=2.9.0" },
@@ -167,8 +167,8 @@ dev = [
 
 [[package]]
 name = "coffee-contracts"
-version = "3.2.0"
-source = { git = "https://github.com/Edems10/coffee-contracts.git?rev=v3.2.0#1b82b44cd51836315ce4549ae5e5bc4b9014af81" }
+version = "3.3.0"
+source = { git = "https://github.com/Edems10/coffee-contracts.git?rev=v3.3.0#7b85f7b296b98ca8d87b2c5dd5a3055c03307572" }
 dependencies = [
     { name = "jsonschema" },
 ]
