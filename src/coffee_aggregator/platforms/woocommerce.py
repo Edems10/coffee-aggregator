@@ -258,9 +258,25 @@ def _minor_unit(prices: dict[str, Any], default: int) -> int:
         default: The exponent to use when the object states none.
 
     Returns:
-        ``prices.currency_minor_unit``, or ``default``.
+        ``prices.currency_minor_unit``, or ``default`` when it is not a whole number.
     """
-    return int(prices.get("currency_minor_unit", default) or 0)
+    try:
+        return int(prices.get("currency_minor_unit", default) or 0)
+    except TypeError, ValueError:
+        return default
+
+
+def _multi_variations(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return a product's variation entries when it has more than one.
+
+    Args:
+        item: One Store API product object.
+
+    Returns:
+        The entries, or an empty list for a product with none or one.
+    """
+    entries = kit.records(item.get("variations"))
+    return entries if len(entries) > 1 else []
 
 
 def _stated_price(prices: dict[str, Any], default_unit: int) -> float | None:
@@ -821,12 +837,15 @@ class WooSite(ConfiguredSite[WooConfig]):
         return notes
 
     def _discover_api(self, fetcher: PoliteFetcher, cap: int) -> Iterator[ProductRef]:
-        """Walk the Store API, price the variations once, and yield the products.
+        """Walk the Store API, price the variations in windows, and yield the products.
 
-        The whole walk is read before the first reference is yielded, because the
-        variations of every category are priced together: one request per
-        :data:`MAX_PER_PAGE` variations of the shop, not one per page or per
-        category.
+        Products are held back while the variations of the held ones fit one
+        request of :data:`MAX_PER_PAGE`, or until the walk ends, and are then
+        priced together and yielded. A shop therefore costs about one variations
+        request per 100 variations however many categories and pages it has, and a
+        caller that stops consuming (``--limit``, a deadline) stops the walk
+        within about one window. A shop that lists fewer variations than a window
+        holds is walked to the end first.
 
         Args:
             fetcher: The shared polite fetcher.
@@ -839,9 +858,40 @@ class WooSite(ConfiguredSite[WooConfig]):
             StoreApiUnavailableError: When the API failed before a single
                 product came back, so the caller may still fall back to HTML.
         """
-        walked = list(self._walk_api(fetcher, cap))
-        self._attach_variation_prices(fetcher, [item for item, _ in walked])
-        for item, ref in walked:
+        window: list[tuple[dict[str, Any], ProductRef]] = []
+        asked = 0
+        pricing = True
+        for item, ref in self._walk_api(fetcher, cap):
+            count = len(_multi_variations(item))
+            if window and asked + count > MAX_PER_PAGE:
+                pricing = pricing and self._attach_variation_prices(
+                    fetcher, [held for held, _ in window]
+                )
+                yield from self._held_refs(window)
+                window, asked = [], 0
+            window.append((item, ref))
+            asked += count
+            if asked >= MAX_PER_PAGE:
+                pricing = pricing and self._attach_variation_prices(
+                    fetcher, [held for held, _ in window]
+                )
+                yield from self._held_refs(window)
+                window, asked = [], 0
+        if window:
+            if pricing:
+                self._attach_variation_prices(fetcher, [held for held, _ in window])
+            yield from self._held_refs(window)
+
+    def _held_refs(self, window: list[tuple[dict[str, Any], ProductRef]]) -> Iterator[ProductRef]:
+        """Yield the references of held products, rebuilt from their possibly priced JSON.
+
+        Args:
+            window: The held products and the references built before pricing.
+
+        Yields:
+            One reference per held product.
+        """
+        for item, ref in window:
             yield self._api_ref(item) or ref
 
     def _walk_api(
@@ -898,7 +948,7 @@ class WooSite(ConfiguredSite[WooConfig]):
 
     def _attach_variation_prices(
         self, fetcher: PoliteFetcher, items: Sequence[dict[str, Any]]
-    ) -> None:
+    ) -> bool:
         """Copy each variation's own ``prices`` into the product that lists it.
 
         The product listing names a product's variations but prices none of
@@ -906,38 +956,43 @@ class WooSite(ConfiguredSite[WooConfig]):
         that has more than one are read together, one request per
         :data:`MAX_PER_PAGE` variations, and matched by id and ``parent``.
         Products that are ignored, or have one variation or none, are never
-        asked for. A product is changed only when the listing answered for every
-        one of its variations: a bag priced next to a bag nobody answered for
-        would let the chooser of :mod:`~coffee_aggregator.price_option` take the
-        one it can see. A variation the listing answers with price ``"0"`` stays
-        unpriced, as :func:`minor_amount` reads it.
+        asked for. A product is changed only when the listing states a price for
+        every one of its variations, so the price and weight the product is
+        stored under always come from one option: a variation answered with
+        price ``"0"``, or not answered for, leaves the whole product unpriced.
 
         The first listing that cannot be read, is not a JSON array, or answers
-        for none of the variations asked for ends the lookups and leaves the
-        variations it did not answer for unpriced, as they were before this
-        existed; the walk of the catalogue itself is untouched.
+        for none of the variations asked for ends the lookups.
 
         Args:
             fetcher: The shared polite fetcher.
             items: The products that will be yielded; changed in place.
+
+        Returns:
+            False when a listing failed, so the caller stops asking; True otherwise.
         """
         parents = {
             str(entry["id"]): str(item.get("id"))
             for item in items
-            if len(variations := kit.records(item.get("variations"))) > 1
-            for entry in variations
+            for entry in _multi_variations(item)
             if entry.get("id")
         }
-        if not parents:
-            return
         ids = list(parents)
         found: dict[str, dict[str, Any]] = {}
+        healthy = True
         for start in range(0, len(ids), MAX_PER_PAGE):
-            url = self.variations_url(ids[start : start + MAX_PER_PAGE])
+            chunk = ids[start : start + MAX_PER_PAGE]
+            url = self.variations_url(chunk)
             try:
                 records = _items(self._fetch(fetcher, url), url)
             except StoreApiUnavailableError as exc:
-                logger.warning("%s: variation prices unavailable (%s)", self.site_id, exc)
+                logger.warning(
+                    "%s: variation prices unavailable for %d variations (%s)",
+                    self.site_id,
+                    len(chunk),
+                    exc.reason.replace(url, "<url>"),
+                )
+                healthy = False
                 break
             usable = {
                 str(record["id"]): kit.as_dict(record.get("prices"))
@@ -946,14 +1001,23 @@ class WooSite(ConfiguredSite[WooConfig]):
                 and record.get("prices")
             }
             if not usable:
-                logger.warning("%s: %s answered for no variation", self.site_id, url)
+                logger.warning(
+                    "%s: the variations listing answered for none of %d variations",
+                    self.site_id,
+                    len(chunk),
+                )
+                healthy = False
                 break
             found.update(usable)
         for item in items:
-            entries = kit.records(item.get("variations"))
-            if len(entries) > 1 and all(str(entry.get("id")) in found for entry in entries):
+            entries = _multi_variations(item)
+            if entries and all(
+                _stated_price(found.get(str(entry.get("id")), {}), 2) is not None
+                for entry in entries
+            ):
                 for entry in entries:
                     entry["prices"] = found[str(entry["id"])]
+        return healthy
 
     def _fetch(self, fetcher: PoliteFetcher, url: str) -> str:
         """Retrieve one Store API URL, turning every refusal into one error.

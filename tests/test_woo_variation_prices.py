@@ -271,8 +271,8 @@ def test_a_product_whose_variations_are_not_all_priced_stays_unpriced() -> None:
     assert (coffee.price, coffee.weight_g) == (10.9, 250)
 
 
-def test_a_variation_the_shop_prices_at_zero_is_left_unpriced_beside_the_others() -> None:
-    """bonte's "price on request" bag: the listing answers, with "0"."""
+def test_a_variation_the_shop_prices_at_zero_leaves_the_whole_product_unpriced() -> None:
+    """bonte's "price on request" bag: the price and weight stored stay one option's."""
     site = site_of("seriouscoffee")
     listing = items("seriouscoffee_3532_variations.json")
     for entry in listing:
@@ -282,7 +282,81 @@ def test_a_variation_the_shop_prices_at_zero_is_left_unpriced_beside_the_others(
 
     (coffee,) = crawl(site, shop)
 
-    assert prices_of(coffee) == [(250, None), (1000, 27.9)]
+    assert prices_of(coffee) == [(250, None), (1000, None)]
+    assert (coffee.price, coffee.weight_g, coffee.currency) == (10.9, 250, "EUR")
+
+
+def test_a_variation_with_a_malformed_minor_unit_does_not_stop_the_parse() -> None:
+    site = site_of("seriouscoffee")
+    listing = items("seriouscoffee_3532_variations.json")
+    listing[0]["prices"]["currency_minor_unit"] = "two"
+    shop = serve(site, items("seriouscoffee_3532_product.json"), json.dumps(listing))
+
+    (coffee,) = crawl(site, shop)
+
+    assert [weight for weight, _ in prices_of(coffee)] == [250, 1000]
+
+
+def test_a_listing_that_ignores_include_prices_nothing() -> None:
+    """A shop that answers with other products' variations: no id asked for comes back."""
+    site = site_of("seriouscoffee")
+    listing = items("seriouscoffee_3532_variations.json")
+    for number, entry in enumerate(listing):
+        entry["id"] = 100 + number
+    shop = serve(site, items("seriouscoffee_3532_product.json"), json.dumps(listing))
+
+    (coffee,) = crawl(site, shop)
+
+    assert prices_of(coffee) == [(250, None), (1000, None)]
+    assert len(shop.variation_requests) == 1
+
+
+def many_variations(site: WooSite, count: int) -> tuple[dict[str, Any], list[str]]:
+    """A product of `count` variations, and the ids it lists."""
+    product = items("seriouscoffee_3532_product.json")[0]
+    template = items("seriouscoffee_3532_variations.json")[0]
+    ids = [str(9000 + number) for number in range(count)]
+    product["variations"] = [{"id": int(number), "attributes": []} for number in ids]
+    product["_records"] = [{**template, "id": int(number)} for number in ids]
+    return product, ids
+
+
+def test_a_failing_second_chunk_leaves_the_product_unpriced_and_the_crawl_going() -> None:
+    site = site_of("seriouscoffee")
+    product, ids = many_variations(site, 101)
+    records = product.pop("_records")
+    shop = serve(site, [product], "[]", fail=("include=9100",))
+    shop.bodies[variations_url(site, ids[:100])] = json.dumps(records[:100])
+
+    (coffee,) = crawl(site, shop)
+
+    assert len(shop.variation_requests) == 2
+    assert {variant.price for variant in coffee.variants} == {None}
+    assert (coffee.price, coffee.currency) == (10.9, "EUR")
+
+
+def test_a_caller_that_stops_after_one_product_does_not_walk_the_next_page() -> None:
+    """--limit and a deadline stop consuming; a full window is priced and the walk halts."""
+    site = site_of("seriouscoffee")
+    product, ids = many_variations(site, 100)
+    records = product.pop("_records")
+    other = copy.deepcopy(items("seriouscoffee_3532_product.json")[0])
+    other["id"] = 3533
+    other["permalink"] = "https://www.seriouscoffee.sk/produkt/another/"
+    category = site.config.api_category_ids[0]
+    shop = Shop(
+        {
+            site.api_url(1, category): json.dumps([product]),
+            site.api_url(2, category): json.dumps([other]),
+            variations_url(site, ids): json.dumps(records),
+        }
+    )
+
+    first = next(iter(site.discover(cast("PoliteFetcher", shop))))
+
+    assert first.external_id == "3532"
+    assert site.api_url(2, category) not in shop.requested
+    assert len(shop.variation_requests) == 1
 
 
 # --- a listing that fails is not a new way for a crawl to fail ----------------

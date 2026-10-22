@@ -449,9 +449,10 @@ is skipped:
 A product with one option, with no option, or whose priced options all state one
 price is left as its adapter built it, and so is one whose options state weights
 but no price (a WooCommerce shop whose variations listing could not be read). The
-Store API path prices each variation from `/wp-json/wc/store/v1/products?type=variation`,
-read with `include=` for the variations of the shop's multi-variation products, one
-request per 100 variations. When no priced option states a
+Store API path prices each variation from the variations listing
+(`/wp-json/wc/store/v1/products?type=variation`), read with `include=` for the
+variations of the shop's multi-variation products, one request per 100 variations.
+When no priced option states a
 weight, the pack the product name or a weight label states is every option's pack;
 when the page states none, `price`, `weight_g`, `currency` and `original_price`
 are NULL.
