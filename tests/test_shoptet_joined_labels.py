@@ -135,3 +135,28 @@ def test_a_radio_that_tracking_data_maps_to_another_sku_weighs_that_sku(
     parent.insert(parent.index(offers[0]), offers[1].extract())
 
     assert _weights(_parse("cafegape", str(soup))) == {"2166/504": 500, "2166/503": 250}
+
+
+def test_an_offer_whose_sku_matches_no_label_keeps_its_sku_and_the_sku_weight(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """The unmatched `77/300` is named by its sku and weighs what its suffix says."""
+    html = fixture_html(HIPPOCAFE[1], HIPPOCAFE[2]).replace(
+        'content="77/ZRN3" itemprop="sku"', 'content="77/300" itemprop="sku"'
+    )
+    coffee = _parse("hippocafe", html)
+    variants = {v.external_id: v for v in coffee.variants}
+
+    assert (variants["77/300"].label, variants["77/300"].weight_g) == ("77/300", 300)
+    assert variants["77/ZRN2"].weight_g == 150
+    assert variants["77/ZRN5"].weight_g == 1000
+    assert variants["77/ZRN4"].label == "Druh kávy: Zrnková, Hmotnost: 500g"
+
+
+def test_a_size_that_states_several_bags_stores_their_total(
+    fixture_html: Callable[[str, str], str],
+) -> None:
+    """`3x1kg` is priced for three bags, so the joined path reads 3000 g as the others do."""
+    html = fixture_html(HIPPOCAFE[1], HIPPOCAFE[2]).replace("Hmotnost: 250g", "Hmotnost: 3x1kg")
+
+    assert _weights(_parse("hippocafe", html))["77/ZRN3"] == 3000

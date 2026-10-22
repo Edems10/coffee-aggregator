@@ -1361,9 +1361,12 @@ def _joined_labels(soup: BeautifulSoup, root: Tag, label_map: dict[str, str]) ->
         ``{sku: label}`` for every ``priceId`` radio button whose label states a
         size as one of its ``Name: value`` parts; empty when none does.
     """
+    radios = root.select("input[type=radio][name=priceId]")
+    if not radios:
+        return {}
     skus = _tracked_skus(soup)
     labels: dict[str, str] = {}
-    for radio in root.select("input[type=radio][name=priceId]"):
+    for radio in radios:
         identifier = dom.attr(radio, "value")
         block = radio.find_parent("div")
         if not identifier or identifier not in skus or block is None or not _own(root, radio):
