@@ -10,6 +10,21 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.2 (2026-10-22)
+
+### Changed
+
+- Pins `coffee-contracts` to `v3.3.0` (#251), which adds ten fields to
+  `coffee.state`: `description`, `origin_farm`, `origin_producer`,
+  `origin_washing_station`, `altitude_max_m`, `body`, `acidity`, `sweetness`,
+  `bitterness` and `brewing_methods`. This repository publishes none of them yet,
+  so every event carries each at its default (`null`, and `[]` for
+  `brewing_methods`) on the crawl, delisting, retire and republish paths alike.
+  Nothing a consumer reads changes: the stored `brewing_methods` and `body` can
+  still hold values that `check` refuses, and `coffee-api` and `coffee-cupper`
+  drop a message that fails it. Each field is released, from its column, by its
+  own pull request (#252 to #255). No migration, and nothing to do on the server.
+
 ## 0.14.1 (2026-10-22)
 
 ### Fixed

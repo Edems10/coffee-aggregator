@@ -52,11 +52,31 @@ STATE_FIELDS: tuple[str, ...] = tuple(CoffeeState.__dataclass_fields__)
 #: The two money fields read the ``numeric`` columns they are counted from, and
 #: :func:`state_from_row` turns each into minor units. ``price_history`` is a
 #: series the producer does not fill, so it selects an empty list.
+#:
+#: The ten fields ``description``, ``origin_farm``, ``origin_producer``,
+#: ``origin_washing_station``, ``altitude_max_m``, ``body``, ``acidity``,
+#: ``sweetness``, ``bitterness`` and ``brewing_methods`` are columns of ``coffee``
+#: that the contract gained in 3.3.0 and that this producer does not publish yet.
+#: Each selects its default, a typed NULL or an empty list, so a delisting and a
+#: republish carry what a crawl event carries, which leaves them at their
+#: defaults. A stored ``brewing_methods`` item or ``body`` score may not satisfy
+#: ``check``, and the consumers drop a message that fails it. Each is read from its
+#: column in the pull request that publishes it (coffee-aggregator#252 to #255).
 _EXPRESSION_FOR: dict[str, str] = {
     "observed_at": "greatest(coalesce(scraped_at, last_seen_at), delisted_at)",
     "price_minor": "price",
     "price_per_kg_eur_cents": "price_per_kg_eur",
     "price_history": "jsonb_build_array()",
+    "description": "NULL::text",
+    "origin_farm": "NULL::text",
+    "origin_producer": "NULL::text",
+    "origin_washing_station": "NULL::text",
+    "altitude_max_m": "NULL::integer",
+    "body": "NULL::integer",
+    "acidity": "NULL::integer",
+    "sweetness": "NULL::integer",
+    "bitterness": "NULL::integer",
+    "brewing_methods": "jsonb_build_array()",
 }
 
 #: The ``RETURNING``/``SELECT`` list that produces a row :func:`state_from_row`
@@ -68,9 +88,9 @@ STATE_SELECT: str = ", ".join(STATE_EXPRESSIONS)
 #: encoder refuses outright rather than guess a representation for.
 _FLOAT_FIELDS = frozenset({"sca_score"})
 #: ``jsonb`` columns arrive as lists, or as None where the crawl stored nothing;
-#: ``price_history`` is no column but the expression ``jsonb_build_array()``,
-#: always ``[]``.
-_LIST_FIELDS = frozenset({"variety", "flavor_notes", "images", "price_history"})
+#: ``price_history`` and ``brewing_methods`` are no column reads but the expression
+#: ``jsonb_build_array()``, always ``[]`` until ``brewing_methods`` is published.
+_LIST_FIELDS = frozenset({"variety", "flavor_notes", "images", "price_history", "brewing_methods"})
 
 #: How many decimal places the minor unit of each currency the catalogue prices
 #: in sits below the major one. Only CZK and EUR occur in the data, and the

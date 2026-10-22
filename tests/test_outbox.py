@@ -19,6 +19,20 @@ from conftest import delisted_row, make_coffee
 from test_postgres_sink import FakeConnection
 
 FIRST_SEEN = datetime(2026, 9, 1, 8, 0, tzinfo=UTC)
+#: The ``coffee.state`` fields the contract gained in 3.3.0 and this producer holds
+#: back at their defaults until each publish pull request releases them.
+HELD_BACK: dict[str, object] = {
+    "description": None,
+    "origin_farm": None,
+    "origin_producer": None,
+    "origin_washing_station": None,
+    "altitude_max_m": None,
+    "body": None,
+    "acidity": None,
+    "sweetness": None,
+    "bitterness": None,
+    "brewing_methods": [],
+}
 #: A row the kind decider and the seed loader have not reached.
 NOT_DECIDED = outbox.StoredFields(FIRST_SEEN, None, None)
 #: A row a seed has decided.
@@ -66,7 +80,8 @@ def test_the_crawl_event_fills_every_field_the_row_holds() -> None:
 
     Every contract field is set on the coffee or read back from the row, so the
     only ones allowed to stay empty are ``delisted_at``, which a crawl never sets,
-    and ``price_history``, a series this producer does not fill.
+    ``price_history``, a series this producer does not fill, and the ten fields
+    held back until their publish pull requests.
     """
     coffee = make_coffee(
         site="demo",
@@ -81,9 +96,34 @@ def test_the_crawl_event_fills_every_field_the_row_holds() -> None:
     empty = sorted(
         name
         for name, value in asdict(state).items()
-        if (value is None or value == []) and name not in {"delisted_at", "price_history"}
+        if (value is None or value == [])
+        and name not in {"delisted_at", "price_history", *HELD_BACK}
     )
     assert empty == []
+
+
+@pytest.mark.parametrize("name", sorted(HELD_BACK))
+def test_a_held_back_field_publishes_its_default_on_the_crawl_event(name: str) -> None:
+    coffee = make_coffee()
+    coffee.taste.body = 7
+    coffee.taste.brewing_methods = ["zrnková", "Espresso"]
+    assert coffee.description
+
+    payload = _validated(outbox.state_for(coffee, DECIDED))
+
+    assert payload[name] == HELD_BACK[name]
+
+
+@pytest.mark.parametrize("name", sorted(HELD_BACK))
+def test_a_held_back_field_is_selected_as_an_expression_not_read_from_its_column(name: str) -> None:
+    expression = outbox.STATE_EXPRESSIONS[outbox.STATE_FIELDS.index(name)]
+    row = list(delisted_row())
+    row[outbox.STATE_FIELDS.index(name)] = None
+    state = outbox.state_from_row(row)
+
+    assert not expression.isidentifier()
+    assert getattr(state, name) == HELD_BACK[name]
+    assert _validated(state)[name] == HELD_BACK[name]
 
 
 def test_a_decaf_coffee_publishes_decaf_true_and_its_species_split() -> None:
