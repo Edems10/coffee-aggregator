@@ -209,3 +209,34 @@ def test_the_documented_update_never_rewrites_a_secret_in_place() -> None:
         f"secret: {offenders}. Generate only what is missing or empty — an operator running "
         "the documented update must not lose a credential that already works."
     )
+
+
+BACKUP_SCRIPT = DEPLOY / "backup.sh"
+
+
+def _backup_commands() -> list[str]:
+    return [
+        line.strip()
+        for line in BACKUP_SCRIPT.read_text("utf-8").splitlines()
+        if "pg_restore" in line and not line.lstrip().startswith("#")
+    ]
+
+
+def test_the_backup_verifies_the_dump_with_a_full_read() -> None:
+    """`pg_restore --list` reads only the table of contents at the front of a
+    custom-format dump, so a dump cut at 50 % or at 99 % of its data passed it
+    and was uploaded as the night's backup (#247). `pg_restore -f /dev/null`
+    reads and decompresses all of it and exits non-zero on the same files.
+
+    A static check on the script's text, because nothing in the suite runs
+    shell against a Postgres server; the behaviour was measured against a real
+    `pg_dump` in #247's pull request.
+    """
+    commands = _backup_commands()
+    assert any("pg_restore -f /dev/null" in command for command in commands), (
+        f"deploy/backup.sh must verify the dump with `pg_restore -f /dev/null`: {commands}"
+    )
+    assert not any("--list" in command or " -l " in command for command in commands), (
+        f"deploy/backup.sh verifies the dump with a table-of-contents read, which a "
+        f"truncated dump passes: {commands}"
+    )

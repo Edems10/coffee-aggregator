@@ -1,6 +1,6 @@
 [project]
 name = "coffee-aggregator"
-version = "0.14.6"
+version = "0.14.7"
 description = "Polite multi-site collector of Czech and Slovak coffee bean data."
 readme = "README.md"
 requires-python = ">=3.14"

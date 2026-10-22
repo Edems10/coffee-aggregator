@@ -24,10 +24,11 @@ compose exec -T db pg_dump \
     --format=custom --compress=9 --no-owner --no-privileges \
     -U coffee -d coffee > "${BACKUP_DIR}/${name}.part"
 
-# A truncated custom-format dump still looks like a file. pg_restore --list
-# reads the whole table of contents, so it fails on one that was cut short —
-# which is the difference between having a backup and believing you have one.
-if ! compose exec -T db pg_restore --list > /dev/null < "${BACKUP_DIR}/${name}.part"; then
+# pg_restore --list reads only the table of contents at the front of a
+# custom-format dump, so one cut short in its data passes it. Restoring to
+# /dev/null reads and decompresses all of it, which is the difference between
+# having a backup and believing you have one.
+if ! compose exec -T db pg_restore -f /dev/null < "${BACKUP_DIR}/${name}.part"; then
     echo "backup: dump did not verify, keeping the previous ones" >&2
     rm -f "${BACKUP_DIR}/${name}.part"
     exit 1
@@ -56,7 +57,7 @@ if [[ -n "$RCLONE_REMOTE" ]]; then
     #
     # Dropping rclone's own check is sound here only because the PUT carries
     # Content-Md5, which R2 verifies server-side and rejects on a mismatch, and
-    # because the dump was already verified with pg_restore --list. The size is
+    # because the dump was already read back in full with pg_restore. The size is
     # still read back below, with a plain HEAD that R2 does implement.
     rclone --s3-no-head copyto "${BACKUP_DIR}/${name}" "${RCLONE_REMOTE}/${name}"
 

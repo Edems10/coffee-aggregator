@@ -531,10 +531,10 @@ so the dump contains that morning's data. Dumps are named by UTC timestamp
 (`coffee-20260930T050412Z.dump`), which makes them sort chronologically by
 name — the pruning relies on that.
 
-One dump per day, `pg_dump --format=custom --compress=9`, verified with
-`pg_restore --list` before it is trusted — a dump cut off half-way still looks
-like a file, and that check is the difference between having a backup and
-believing you have one.
+One dump per day, `pg_dump --format=custom --compress=9`, read back in full
+with `pg_restore -f /dev/null` before it is trusted — a dump cut off half-way
+still looks like a file, and `pg_restore --list` reads only its table of
+contents, so only a full read tells a whole dump from a cut one.
 
 On the remote, one new object per night, never an overwrite and never a delete
 from this side — see the R2 section above for why. Old ones are expired by the
