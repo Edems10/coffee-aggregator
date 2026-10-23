@@ -10,6 +10,17 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.14.7 (2026-10-22)
+
+### Fixed
+
+- The nightly backup now verifies each dump with a full read, `pg_restore -f
+  /dev/null`, instead of `pg_restore --list` (#247). `--list` reads only the table
+  of contents at the front of a custom-format dump, so a dump cut at 50 % or at
+  99 % of its data passed it and was uploaded as the night's backup. Both now
+  exit non-zero, keep the earlier dumps, upload nothing and leave no `.part`
+  behind. A whole dump uploads, reads its size back and prunes as before.
+
 ## 0.14.6 (2026-10-22)
 
 ### Fixed
