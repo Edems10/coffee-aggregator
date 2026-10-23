@@ -1,0 +1,765 @@
+{
+  "products": [
+    {
+      "id": 8424261091676,
+      "title": "Colombia Las Delicias washed",
+      "handle": "colombia-las-delicias-washed",
+      "body_html": "<p>Káva z farmy Las Delicias od farmáře Angela Marii Lópeze patří mezi naše nejoblíbenější a Angela se nám v září 2023 podařilo osobně navštívit. Super šťavnatá pecka s vysokou sladkostí a dlouhotrvající dochutí.</p>",
+      "published_at": "2026-05-25T14:51:19+02:00",
+      "created_at": "2023-06-01T18:05:45+02:00",
+      "updated_at": "2026-10-23T18:05:19+02:00",
+      "vendor": "Alf & Bet",
+      "product_type": "Coffee",
+      "tags": [
+        "dph-12",
+        "Espresso",
+        "Filtr",
+        "juicy",
+        "kafe-tag",
+        "káva",
+        "slevakafe",
+        "teamsleva"
+      ],
+      "variants": [
+        {
+          "id": 55838108483932,
+          "title": "espresso / 250 g / sáček",
+          "option1": "espresso / 250 g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0367.FS",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8424261091676,
+          "created_at": "2025-10-29T10:13:00+01:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 49243058176348,
+          "title": "espresso / 250 g / tubus",
+          "option1": "espresso / 250 g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0366.FT",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8424261091676,
+          "created_at": "2024-08-22T11:56:22+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 57731133473116,
+          "title": "filtr / 250g / sáček",
+          "option1": "filtr / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": null,
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 3,
+          "product_id": 8424261091676,
+          "created_at": "2026-05-25T14:50:43+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 57731133440348,
+          "title": "filtr / 250g / tubus",
+          "option1": "filtr / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": null,
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 4,
+          "product_id": 8424261091676,
+          "created_at": "2026-05-25T14:50:43+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 83555982573916,
+          "created_at": "2026-08-22T19:18:25+02:00",
+          "position": 1,
+          "updated_at": "2026-08-22T19:18:27+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/2026_05_Colombia_LasDelicias_washed_coffeetoys_grey.png?v=1787419107",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 49772414927196,
+          "created_at": "2023-06-08T16:59:56+02:00",
+          "position": 2,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/LasDelicias_AngelMariawithwife.jpg?v=1754316066",
+          "width": 846,
+          "height": 846
+        },
+        {
+          "id": 53447046955356,
+          "created_at": "2024-04-17T10:27:57+02:00",
+          "position": 3,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/128C6BB0-DAF6-4B0B-BE77-FC74462C65B0_1_105_c.jpg?v=1754316066",
+          "width": 769,
+          "height": 769
+        },
+        {
+          "id": 53447046922588,
+          "created_at": "2024-04-17T10:27:57+02:00",
+          "position": 4,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/8C85A866-D365-40E5-8A80-37D4A5E50C55_1_105_c.jpg?v=1754316066",
+          "width": 769,
+          "height": 769
+        },
+        {
+          "id": 53447047283036,
+          "created_at": "2024-04-17T10:27:57+02:00",
+          "position": 5,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/7CCD0EF8-A9F5-4DB9-9303-46C8461C39B0_1_105_c.jpg?v=1754316066",
+          "width": 768,
+          "height": 668
+        },
+        {
+          "id": 53447046857052,
+          "created_at": "2024-04-17T10:27:57+02:00",
+          "position": 6,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/EB5F1D37-73C2-41D5-BC8D-E68DA07A6872_1_105_c.jpg?v=1754316066",
+          "width": 768,
+          "height": 768
+        },
+        {
+          "id": 53447080411484,
+          "created_at": "2024-04-17T10:30:07+02:00",
+          "position": 7,
+          "updated_at": "2025-08-04T16:01:06+02:00",
+          "product_id": 8424261091676,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/IMG_5760.jpg?v=1754316066",
+          "width": 3108,
+          "height": 3024
+        }
+      ],
+      "options": [
+        {
+          "name": "Pražení",
+          "position": 1,
+          "values": [
+            "espresso / 250 g",
+            "filtr / 250g"
+          ]
+        },
+        {
+          "name": "Typ balení",
+          "position": 2,
+          "values": [
+            "sáček",
+            "tubus"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7311429828799,
+      "title": "Colombia El Paraiso washed",
+      "handle": "colombia-el-paraiso-washed",
+      "body_html": "<p>Káva od farmáře Yannina Díaz je stálicí a láskou v naší nabídce a jeho farmu jsme v září 2023 navštívili. V šálku se můžete těšit na juicy ovocnou chuť, vysokou sladkost a dlouhotrvající dochuť.</p>",
+      "published_at": "2026-09-22T06:47:18+02:00",
+      "created_at": "2022-07-31T03:09:20+02:00",
+      "updated_at": "2026-10-23T18:05:19+02:00",
+      "vendor": "Alf & Bet",
+      "product_type": "Coffee",
+      "tags": [
+        "dph-12",
+        "Espresso",
+        "Filtr",
+        "juicy",
+        "kafe-tag",
+        "káva",
+        "slevakafe",
+        "teamsleva"
+      ],
+      "variants": [
+        {
+          "id": 55838110482780,
+          "title": "espresso / 250g / sáček",
+          "option1": "espresso / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0375.ES",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 7311429828799,
+          "created_at": "2025-10-29T10:13:32+01:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 49243058667868,
+          "title": "espresso / 250g / tubus",
+          "option1": "espresso / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0374.ET",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 7311429828799,
+          "created_at": "2024-08-22T11:56:32+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 59232626934108,
+          "title": "filtr / 250g / sáček",
+          "option1": "filtr / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": null,
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 3,
+          "product_id": 7311429828799,
+          "created_at": "2026-09-22T06:42:59+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 59232626901340,
+          "title": "filtr / 250g / tubus",
+          "option1": "filtr / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": null,
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 4,
+          "product_id": 7311429828799,
+          "created_at": "2026-09-22T06:42:59+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 84412004729180,
+          "created_at": "2026-09-21T16:26:51+02:00",
+          "position": 1,
+          "updated_at": "2026-09-21T16:26:53+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/2026_09_Colombia_ElParaiso_washed_alfabet_eshop.png?v=1790000813",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 32985416466623,
+          "created_at": "2022-07-31T03:16:29+02:00",
+          "position": 2,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/products/YanninDiaz_ElParaiso_family_d74cfd77-b28e-4b5e-ab4a-71e92cf7f45f.jpg?v=1754316024",
+          "width": 750,
+          "height": 739
+        },
+        {
+          "id": 53446860439900,
+          "created_at": "2024-04-17T10:12:14+02:00",
+          "position": 3,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/IMG_6273.jpg?v=1754316024",
+          "width": 3024,
+          "height": 3024
+        },
+        {
+          "id": 53446905987420,
+          "created_at": "2024-04-17T10:17:56+02:00",
+          "position": 4,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/2BAC76F6-CAA6-4F2A-B4AB-4F90B4E36502_1_105_c.jpg?v=1754316024",
+          "width": 768,
+          "height": 768
+        },
+        {
+          "id": 53446925287772,
+          "created_at": "2024-04-17T10:19:19+02:00",
+          "position": 5,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/8AE80D67-85B1-46B3-AFE7-AB058510D2CF_1_105_c.jpg?v=1754316024",
+          "width": 768,
+          "height": 768
+        },
+        {
+          "id": 53446929318236,
+          "created_at": "2024-04-17T10:19:38+02:00",
+          "position": 6,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/594B7C5D-24B3-4283-9A9A-B6860507368F_1_105_c.jpg?v=1754316024",
+          "width": 768,
+          "height": 768
+        },
+        {
+          "id": 53446931710300,
+          "created_at": "2024-04-17T10:19:48+02:00",
+          "position": 7,
+          "updated_at": "2025-08-04T16:00:24+02:00",
+          "product_id": 7311429828799,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/64E8EC04-1FD7-42AA-B58D-8800A7710ED0_1_105_c.jpg?v=1754316024",
+          "width": 768,
+          "height": 768
+        }
+      ],
+      "options": [
+        {
+          "name": "Pražení",
+          "position": 1,
+          "values": [
+            "espresso / 250g",
+            "filtr / 250g"
+          ]
+        },
+        {
+          "name": "Typ balení",
+          "position": 2,
+          "values": [
+            "sáček",
+            "tubus"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8424253620572,
+      "title": "Colombia La Cristalina natural",
+      "handle": "colombia-la-cristalina-natural",
+      "body_html": "<p>Super funky sladké kafe odrůdy Tabi ze sdružení farmářů Grupo Asociación Palestina z oblasti Huila. Pražíme jak na filtr tak i espresso.</p>",
+      "published_at": "2026-09-22T06:48:59+02:00",
+      "created_at": "2023-06-01T17:53:19+02:00",
+      "updated_at": "2026-10-23T18:05:19+02:00",
+      "vendor": "Alf & Bet",
+      "product_type": "Coffee",
+      "tags": [
+        "Espresso",
+        "Filtr",
+        "funky",
+        "juicy",
+        "kafe-tag",
+        "káva",
+        "slevakafe",
+        "teamsleva"
+      ],
+      "variants": [
+        {
+          "id": 55838109368668,
+          "title": "filtr / 250g / sáček",
+          "option1": "filtr / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0369.FS",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8424253620572,
+          "created_at": "2025-10-29T10:13:17+01:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 49243058405724,
+          "title": "filtr / 250g / tubus",
+          "option1": "filtr / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0368.FT",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8424253620572,
+          "created_at": "2024-08-22T11:56:27+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 55838109401436,
+          "title": "espresso / 250g / sáček",
+          "option1": "espresso / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0371.ES",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 3,
+          "product_id": 8424253620572,
+          "created_at": "2025-10-29T10:13:17+01:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 49243058438492,
+          "title": "espresso / 250g / tubus",
+          "option1": "espresso / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0370.ET",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "425.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 4,
+          "product_id": 8424253620572,
+          "created_at": "2024-08-22T11:56:27+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 84411912192348,
+          "created_at": "2026-09-21T16:25:06+02:00",
+          "position": 1,
+          "updated_at": "2026-09-21T16:25:08+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/2026_09_Colombia_LaCristalina_natural_coffeetoys.png?v=1790000708",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 49772533154140,
+          "created_at": "2023-06-08T17:06:22+02:00",
+          "position": 2,
+          "updated_at": "2025-08-04T15:36:23+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/LaCristalina_landscape_2.jpg?v=1754314583",
+          "width": 2962,
+          "height": 2962
+        },
+        {
+          "id": 49772533055836,
+          "created_at": "2023-06-08T17:06:22+02:00",
+          "position": 3,
+          "updated_at": "2025-08-04T15:36:23+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/LaCristalina_commondryers.jpg?v=1754314583",
+          "width": 1481,
+          "height": 1481
+        },
+        {
+          "id": 49772533023068,
+          "created_at": "2023-06-08T17:06:22+02:00",
+          "position": 4,
+          "updated_at": "2025-08-04T15:36:23+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/tabi.jpg?v=1754314583",
+          "width": 1481,
+          "height": 1481
+        },
+        {
+          "id": 49772533088604,
+          "created_at": "2023-06-08T17:06:22+02:00",
+          "position": 5,
+          "updated_at": "2025-08-04T15:36:23+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/LaCristalina_landscape.jpg?v=1754314583",
+          "width": 1481,
+          "height": 1481
+        },
+        {
+          "id": 49772532990300,
+          "created_at": "2023-06-08T17:06:22+02:00",
+          "position": 6,
+          "updated_at": "2025-08-04T15:36:23+02:00",
+          "product_id": 8424253620572,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/tabivariety.jpg?v=1754314583",
+          "width": 1481,
+          "height": 1481
+        }
+      ],
+      "options": [
+        {
+          "name": "Pražení",
+          "position": 1,
+          "values": [
+            "filtr / 250g",
+            "espresso / 250g"
+          ]
+        },
+        {
+          "name": "Typ balení",
+          "position": 2,
+          "values": [
+            "sáček",
+            "tubus"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 15733251342684,
+      "title": "Kenya Ichuga Nyeri AB washed",
+      "handle": "kenya-ichuga-nyeri-washed",
+      "body_html": "<div class=\"markdown markdown-main-panel md-content enable-luminous-fast-follows enable-updated-hr-color stronger\" id=\"model-response-message-contentr_d4d4e9e472be2f13\" dir=\"ltr\">\n<div class=\"\" dir=\"\">Plné šťavnaté tělo s tóny rybízu, bobulovitého ovoce a citrusů a středně vyšší aciditou. Pecka letošního roku na juicy filtr a hodně ovocné espresso.</div>\n</div>",
+      "published_at": "2026-08-11T07:58:24+02:00",
+      "created_at": "2026-08-07T08:51:48+02:00",
+      "updated_at": "2026-10-23T18:05:19+02:00",
+      "vendor": "Alf & Bet",
+      "product_type": "Coffee",
+      "tags": [
+        "Espresso",
+        "Filtr",
+        "juicy",
+        "kafe-tag",
+        "káva",
+        "slevakafe",
+        "teamsleva"
+      ],
+      "variants": [
+        {
+          "id": 58579004883292,
+          "title": "filtr / 250g / sáček",
+          "option1": "filtr / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0477.FS",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "375.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 15733251342684,
+          "created_at": "2026-08-07T08:51:49+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 58579004850524,
+          "title": "filtr / 250g / tubus",
+          "option1": "filtr / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0476.FT",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "375.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 15733251342684,
+          "created_at": "2026-08-07T08:51:49+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 58579004948828,
+          "title": "espresso / 250g / sáček",
+          "option1": "espresso / 250g",
+          "option2": "sáček",
+          "option3": null,
+          "sku": "AL.COF.0479.ES",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "375.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 3,
+          "product_id": 15733251342684,
+          "created_at": "2026-08-07T08:51:49+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        },
+        {
+          "id": 58579004916060,
+          "title": "espresso / 250g / tubus",
+          "option1": "espresso / 250g",
+          "option2": "tubus",
+          "option3": null,
+          "sku": "AL.COF.0478.ET",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "375.00",
+          "grams": 250,
+          "compare_at_price": null,
+          "position": 4,
+          "product_id": 15733251342684,
+          "created_at": "2026-08-07T08:51:49+02:00",
+          "updated_at": "2026-10-23T18:05:19+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 83555670786396,
+          "created_at": "2026-08-22T19:00:35+02:00",
+          "position": 1,
+          "updated_at": "2026-08-22T19:00:38+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/2026_08_Kenya_Ichuga_NyeriAB_ruiru11_washed_coffeetoys_grey.png?v=1787418038",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 83099379892572,
+          "created_at": "2026-08-07T09:25:00+02:00",
+          "position": 2,
+          "updated_at": "2026-08-07T09:25:22+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/D9A5260.jpg?v=1786087522",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 83099379925340,
+          "created_at": "2026-08-07T09:25:00+02:00",
+          "position": 3,
+          "updated_at": "2026-08-07T09:25:42+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/D9A5266.jpg?v=1786087542",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 83099379958108,
+          "created_at": "2026-08-07T09:25:00+02:00",
+          "position": 4,
+          "updated_at": "2026-08-07T09:26:02+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/D9A5271.jpg?v=1786087562",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 83099379990876,
+          "created_at": "2026-08-07T09:25:00+02:00",
+          "position": 5,
+          "updated_at": "2026-08-07T09:26:21+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/D9A5275.jpg?v=1786087581",
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "id": 83099380023644,
+          "created_at": "2026-08-07T09:25:00+02:00",
+          "position": 6,
+          "updated_at": "2026-08-07T09:26:39+02:00",
+          "product_id": 15733251342684,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0536/7686/7775/files/MG_5526.jpg?v=1786087599",
+          "width": 1000,
+          "height": 1000
+        }
+      ],
+      "options": [
+        {
+          "name": "Pražení",
+          "position": 1,
+          "values": [
+            "filtr / 250g",
+            "espresso / 250g"
+          ]
+        },
+        {
+          "name": "Typ balení",
+          "position": 2,
+          "values": [
+            "sáček",
+            "tubus"
+          ]
+        }
+      ]
+    }
+  ]
+}

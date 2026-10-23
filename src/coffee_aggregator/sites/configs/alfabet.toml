@@ -1,0 +1,11 @@
+# The two flavour collections cover the seven individual coffees listed in
+# "kava" on 2026-10-23. Unlike "kava", they omit the three-coffee gift set;
+# the roast collections also list subscriptions. No all-products feed is used.
+platform = "shopify"
+site_id = "alfabet"
+name = "Alf & Bet"
+country = "CZ"
+base_url = "https://alfabet.coffee/"
+# Shopify.currency.active and the Machine product's offers both state CZK.
+currency = "CZK"
+collections = ["sladke-jemne", "stavnate-svezi"]
