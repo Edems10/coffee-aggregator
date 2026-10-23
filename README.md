@@ -225,7 +225,7 @@ Every request in the project goes through one `PoliteFetcher`:
 
 ## Supported shops
 
-157 shops — 102 Czech, 55 Slovak. `coffee-aggregator list-sites` prints the live
+158 shops — 103 Czech, 55 Slovak. `coffee-aggregator list-sites` prints the live
 list with each shop's id, country, kind and base URL; it is generated from the
 registry, so it is never out of date the way a table here would be.
 
@@ -233,11 +233,11 @@ registry, so it is never out of date the way a table here would be.
 | --- | --- | --- |
 | Shoptet | 99 | `platforms/shoptet.py` + one TOML file per shop |
 | WooCommerce | 47 | `platforms/woocommerce.py` + one TOML file per shop |
-| Shopify | 8 | `platforms/shopify.py` + one TOML file per shop |
+| Shopify | 9 | `platforms/shopify.py` + one TOML file per shop |
 | bespoke | 3 | `sites/coffeein.py`, `sites/fathers.py`, `sites/nordbeans.py` |
 
 A shop needs a module of its own only when its pages fit none of the three
-platform adapters. The other 154 are configuration: see
+platform adapters. The other 155 are configuration: see
 [Adding a shop](#adding-a-shop).
 
 Czech and Slovak shops still outside the catalogue mostly run Upgates,

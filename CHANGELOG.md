@@ -10,6 +10,16 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.15.0 (2026-10-23)
+
+### Added
+
+- Alf & Bet's seven individual coffees are collected through the existing
+  Shopify adapter (#200). The two flavour collections cover those coffees
+  without the three-coffee set in the parent collection or the subscriptions
+  in the roast collections. Each option keeps its stated CZK price, stock and
+  pack weight; the first crawl after deployment adds the shop's rows.
+
 ## 0.14.7 (2026-10-22)
 
 ### Fixed
