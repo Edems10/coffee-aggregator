@@ -1,0 +1,2076 @@
+{
+  "products": [
+    {
+      "id": 8798165074261,
+      "title": "Late Harvest",
+      "handle": "autumn-blend-late-harvest",
+      "body_html": "<div>\n<span>Naše podzimní espresso směs vás zavede na výlet plný lahodných chutí. Late Harvest kombinuje vybrané kávy z Kolumbie, El Salvadoru a Guatemaly, které vytvářejí dokonalou espresso směs s bohatým a vyváženým chuťovým profilem. Užijte si jemné tóny kakaa, výrazné pekanové ořechy a sladké švestky, které se prolínají v každém doušků.</span><br>\n</div>",
+      "published_at": "2026-09-14T10:46:45+02:00",
+      "created_at": "2023-09-22T09:08:43+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "cart",
+        "Coffee",
+        "Direct Trade",
+        "Espresso",
+        "Out of stock",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 47291980120405,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E1500226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "299.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8798165074261,
+          "created_at": "2023-09-22T09:13:29+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 47291980153173,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E151000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1229.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8798165074261,
+          "created_at": "2023-09-22T09:13:29+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 51188865565013,
+          "created_at": "2023-10-05T10:21:41+02:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:02:53+01:00",
+          "product_id": 8798165074261,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Late-Harvest.webp?v=1737723773",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11455053529429,
+      "title": "Kolumbie Rose Bourbon",
+      "handle": "kolumbie-rose-bourbon",
+      "body_html": "<p><meta charset=\"UTF-8\"><strong>Výběrová káva z Kolumbie</strong><span> nabízí jemné květinové aroma, tóny broskve, marakuji a černého čaje, hedvábné tělo a svěží ovocnou aciditu. </span><strong>Střední pražení</strong><span> podtrhuje její přirozenou sladkost a komplexní chuťový profil, díky kterému je skvělá pro přípravu na </span><strong>filtr i espresso</strong><span>.</span></p>",
+      "published_at": "2026-09-01T10:19:19+02:00",
+      "created_at": "2026-07-21T10:10:52+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Jednodruhové kávy"
+      ],
+      "variants": [
+        {
+          "id": 54426690945365,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 1330226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "369.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 11455053529429,
+          "created_at": "2026-07-21T10:10:53+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 54426690978133,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 1331000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1379.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 11455053529429,
+          "created_at": "2026-07-21T10:10:53+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 75690246668629,
+          "created_at": "2026-07-21T11:00:10+02:00",
+          "position": 1,
+          "updated_at": "2026-07-21T11:00:14+02:00",
+          "product_id": 11455053529429,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/colombia-rose-bourbon-specialty.webp?v=1784624414",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76384719503701,
+          "created_at": "2026-08-27T11:38:27+02:00",
+          "position": 2,
+          "updated_at": "2026-08-27T11:38:33+02:00",
+          "product_id": 11455053529429,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Kolumbie_Rose_Bourbon.png?v=1787823513",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76384719339861,
+          "created_at": "2026-08-27T11:38:27+02:00",
+          "position": 3,
+          "updated_at": "2026-08-27T11:38:31+02:00",
+          "product_id": 11455053529429,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Kolumbie_Rose_Boheme.png?v=1787823511",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76384719307093,
+          "created_at": "2026-08-27T11:38:27+02:00",
+          "position": 4,
+          "updated_at": "2026-08-27T11:38:31+02:00",
+          "product_id": 11455053529429,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Kolumbie_Rose_Bourbon_Boheme.png?v=1787823511",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76466732826965,
+          "created_at": "2026-08-31T10:36:47+02:00",
+          "position": 5,
+          "updated_at": "2026-08-31T10:36:50+02:00",
+          "product_id": 11455053529429,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/colombia-rose-bourbon.jpg?v=1788165410",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11451705360725,
+      "title": "Keňa Kegwa AA",
+      "handle": "kena-kegwa-aa",
+      "body_html": "<p class=\"isSelectedEnd\"><meta charset=\"utf-8\"><span>Keňa Kegwa AA zaujme šťavnatou ovocností, svěží citrusovou aciditou a mimořádně čistým chuťovým profilem. Tóny třešní, ostružin a citronu vytvářejí elegantní šálek s dlouhou osvěžující dochutí. Je ukázkou toho nejlepšího, co keňské výběrové kávy nabízejí. </span></p>",
+      "published_at": "2026-08-10T10:52:13+02:00",
+      "created_at": "2026-07-20T13:33:40+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Jednodruhové kávy",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 54411293851989,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 6070226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "369.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 11451705360725,
+          "created_at": "2026-07-20T13:33:41+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 54411293884757,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 6071000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1379.00",
+          "grams": 0,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 11451705360725,
+          "created_at": "2026-07-20T13:33:41+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 75660452200789,
+          "created_at": "2026-07-20T13:34:03+02:00",
+          "position": 1,
+          "updated_at": "2026-07-20T13:34:06+02:00",
+          "product_id": 11451705360725,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kenya-kegwa-aa-shadow.webp?v=1784547246",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75661894189397,
+          "created_at": "2026-07-20T15:16:20+02:00",
+          "position": 2,
+          "updated_at": "2026-07-20T15:16:23+02:00",
+          "product_id": 11451705360725,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kenya-coffee-region.webp?v=1784553383",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75661894025557,
+          "created_at": "2026-07-20T15:16:19+02:00",
+          "position": 3,
+          "updated_at": "2026-07-20T15:16:23+02:00",
+          "product_id": 11451705360725,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/coffee-beans-kenya.webp?v=1784553383",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75958183723349,
+          "created_at": "2026-08-04T12:07:51+02:00",
+          "position": 4,
+          "updated_at": "2026-08-04T12:07:54+02:00",
+          "product_id": 11451705360725,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kenya-kegwa-specialty-coffee.webp?v=1785838074",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75661894091093,
+          "created_at": "2026-07-20T15:16:20+02:00",
+          "position": 5,
+          "updated_at": "2026-07-20T15:16:23+02:00",
+          "product_id": 11451705360725,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kenya-kagwa-aa-specialty-coffee.webp?v=1784553383",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11297876279637,
+      "title": "Peru Dwight Aguilar #5",
+      "handle": "peru-dwight-aguilar-5",
+      "body_html": "<p><meta charset=\"utf-8\"><meta charset=\"UTF-8\"><span>Elegantní peruánská káva s tóny malin, šťavnaté hrušky a exotického ovoce. Cup of Excellence #5, který jsme vybrali přímo z vítězné aukce. K dispozici je pouze 200 číslovaných balení. </span><br></p>",
+      "published_at": "2026-06-16T12:26:13+02:00",
+      "created_at": "2026-05-13T10:09:11+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Filtrovaná káva",
+        "Jednodruhové kávy",
+        "Peru Dwight Aguilar #5",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 53914761953621,
+          "title": "150 g",
+          "option1": "150 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P P20150",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "649.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 11297876279637,
+          "created_at": "2026-05-13T10:09:12+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 74764968001877,
+          "created_at": "2026-05-28T09:27:30+02:00",
+          "position": 1,
+          "updated_at": "2026-05-28T09:27:33+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/peru-dwight-aguilar-5.webp?v=1779953253",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 74886811812181,
+          "created_at": "2026-06-04T14:08:36+02:00",
+          "position": 2,
+          "updated_at": "2026-06-04T14:08:40+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/cup-of-excellence-peru-2025-winners.webp?v=1780574920",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75107241722197,
+          "created_at": "2026-06-17T09:15:40+02:00",
+          "position": 3,
+          "updated_at": "2026-06-17T09:15:43+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/peru-limited-mobile.webp?v=1781680543",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 75272540258645,
+          "created_at": "2026-06-26T09:08:55+02:00",
+          "position": 4,
+          "updated_at": "2026-06-26T09:15:50+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/peru-dwight-cup-of-excellance_43f79013-639d-4d6f-81c3-83ec3471e907.webp?v=1782458150",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 74501286330709,
+          "created_at": "2026-05-13T14:32:42+02:00",
+          "position": 5,
+          "updated_at": "2026-05-13T14:32:45+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/cup-of-exellance-specialty.webp?v=1778675565",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 74886811877717,
+          "created_at": "2026-06-04T14:08:36+02:00",
+          "position": 6,
+          "updated_at": "2026-06-04T14:08:40+02:00",
+          "product_id": 11297876279637,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/cup-of-excellence-peru-2025.webp?v=1780574920",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "150 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11246059979093,
+      "title": "Indonésie Kerinci Washed",
+      "handle": "indonesie-kerinci-washed",
+      "body_html": "<p><meta charset=\"utf-8\">Káva z družstva Koerintji Barokah Bersama pochází z úpatí hory Kerinci na Sumatře. Díky sopečné půdě, udržitelným postupům a vlastnímu zpracování i pražení nabízí tato mladá kooperativa výjimečně čistou a vyváženou kávu s původem.</p>",
+      "published_at": "2026-04-20T13:39:15+02:00",
+      "created_at": "2026-04-14T15:40:50+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Direct Trade",
+        "Indonesia",
+        "Indonesia Kerinci Washed",
+        "Indonésie",
+        "Jednodruhové kávy"
+      ],
+      "variants": [
+        {
+          "id": 53684046266709,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 450226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "339.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 11246059979093,
+          "created_at": "2026-04-14T15:40:51+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 53684046299477,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 451000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1279.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 11246059979093,
+          "created_at": "2026-04-14T15:40:51+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 73472868122965,
+          "created_at": "2026-04-14T15:41:12+02:00",
+          "position": 1,
+          "updated_at": "2026-04-14T15:43:30+02:00",
+          "product_id": 11246059979093,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/indonesia-kerinci-washed-la-boheme-cafe.webp?v=1776174210",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 73518311670101,
+          "created_at": "2026-04-15T11:23:24+02:00",
+          "position": 2,
+          "updated_at": "2026-04-15T11:23:27+02:00",
+          "product_id": 11246059979093,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/washed-indonesia-specialty.webp?v=1776245007",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 73518312620373,
+          "created_at": "2026-04-15T11:23:27+02:00",
+          "position": 3,
+          "updated_at": "2026-04-15T11:23:30+02:00",
+          "product_id": 11246059979093,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kerinci-boheme.webp?v=1776245010",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10878334533973,
+      "title": "Brazílie Caochoria da Grama",
+      "handle": "brazilie-caochoria-da-grama",
+      "body_html": "<p><meta charset=\"utf-8\">Káva z farmy <span class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"><span class=\"whitespace-normal\">Fazenda Cachoeira da Grama</span></span> v brazilské oblasti <span class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"><span class=\"whitespace-normal\">Vale da Grama</span></span> nabízí vyvážený a elegantní chuťový profil. Odrůda <span class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"><span class=\"whitespace-normal\">Arara</span></span> v šálku vyniká jemnou sladkostí, krémovým tělem a lehkými ovocnými tóny.</p>",
+      "published_at": "2026-03-30T10:48:00+02:00",
+      "created_at": "2026-03-09T13:55:45+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Brazil Caochoria da Grama",
+        "Brazílie",
+        "Coffee",
+        "fathers day coffee",
+        "Jednodruhové kávy",
+        "Natural",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 53118985601365,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P B10226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "299.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 10878334533973,
+          "created_at": "2026-03-09T13:55:46+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 53118985634133,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P B11000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1229.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 10878334533973,
+          "created_at": "2026-03-09T13:55:46+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 71748489511253,
+          "created_at": "2026-03-09T13:56:59+01:00",
+          "position": 1,
+          "updated_at": "2026-03-09T13:57:02+01:00",
+          "product_id": 10878334533973,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/brazil-cachoeira-da-grama.webp?v=1773061022",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76150552854869,
+          "created_at": "2026-08-14T12:09:20+02:00",
+          "position": 2,
+          "updated_at": "2026-08-14T12:09:24+02:00",
+          "product_id": 10878334533973,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Brazil_farmer.png?v=1786702164",
+          "width": 1080,
+          "height": 1080
+        },
+        {
+          "id": 71854529544533,
+          "created_at": "2026-03-11T11:36:22+01:00",
+          "position": 3,
+          "updated_at": "2026-03-11T11:36:26+01:00",
+          "product_id": 10878334533973,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/brazilian-new-coffee.webp?v=1773225386",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76150645031253,
+          "created_at": "2026-08-14T12:15:14+02:00",
+          "position": 4,
+          "updated_at": "2026-08-14T12:15:18+02:00",
+          "product_id": 10878334533973,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Brzil_Caconde_laBoheme.png?v=1786702518",
+          "width": 1080,
+          "height": 1080
+        },
+        {
+          "id": 76150644965717,
+          "created_at": "2026-08-14T12:15:14+02:00",
+          "position": 5,
+          "updated_at": "2026-08-14T12:15:18+02:00",
+          "product_id": 10878334533973,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Brazil_FrenchPress_Boheme.png?v=1786702518",
+          "width": 1080,
+          "height": 1080
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10417857560917,
+      "title": "Uganda Sironko Natural",
+      "handle": "uganda-sironko-natural",
+      "body_html": "<p>Výběrová káva z malých rodinných farem na svazích starobylé sopky na hranici Ugandy a Keni. Ručně sbírané třešně jsou zpracované metodou natural (suché zpracování) a sušené na slunci, což podporuje přirozenou sladkost a výrazný ovocný profil. V chuti dominuje mango, tmavé ovoce a jemná vínová sladkost s teplou kakaovou dochutí. Aromatická, šťavnatá a plná káva, která autenticky odráží charakter regionu Mount Elgon.</p>",
+      "published_at": "2026-02-26T09:06:01+01:00",
+      "created_at": "2026-02-10T09:40:33+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Espresso",
+        "Filtrovaná káva",
+        "Jednodruhové kávy",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 52530592317781,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 680226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "329.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 10417857560917,
+          "created_at": "2026-02-10T09:40:33+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 52530592350549,
+          "title": "1 kg",
+          "option1": "1 kg",
+          "option2": null,
+          "option3": null,
+          "sku": "P 681000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1249.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 10417857560917,
+          "created_at": "2026-02-10T09:40:33+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 70593155793237,
+          "created_at": "2026-02-11T15:06:01+01:00",
+          "position": 1,
+          "updated_at": "2026-02-11T15:06:04+01:00",
+          "product_id": 10417857560917,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Uganda-Sironko-Natural.webp?v=1770818764",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58856652996949,
+          "created_at": "2025-04-07T11:26:51+02:00",
+          "position": 2,
+          "updated_at": "2025-04-07T11:26:54+02:00",
+          "product_id": 10417857560917,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/womens-coffee-uganda.webp?v=1744018014",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58856652079445,
+          "created_at": "2025-04-07T11:26:51+02:00",
+          "position": 3,
+          "updated_at": "2025-04-07T11:26:54+02:00",
+          "product_id": 10417857560917,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/uganda-farm.webp?v=1744018014",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 70593561198933,
+          "created_at": "2026-02-11T15:15:15+01:00",
+          "position": 4,
+          "updated_at": "2026-02-11T15:15:18+01:00",
+          "product_id": 10417857560917,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Uganda-Siroko-Natural-La-Boheme-Cafe.webp?v=1770819318",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1 kg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10283203199317,
+      "title": "Etiopie Hamasho Kebena",
+      "handle": "etiopie-hamasho-kebena",
+      "body_html": "Vysokohorská etiopská káva s tóny jahod, broskve a jemné mléčné čokolády, podtržená pečlivým natural zpracováním ze stanice Adnan.",
+      "published_at": "2025-12-03T15:37:17+01:00",
+      "created_at": "2025-11-24T13:31:56+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Ethiopia",
+        "Ethiopia Hamasho Kebena",
+        "Etiopie",
+        "Jednodruhové kávy"
+      ],
+      "variants": [
+        {
+          "id": 51971666051413,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 0450226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "399.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 10283203199317,
+          "created_at": "2025-11-24T13:31:56+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 51971666084181,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 0451000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": false,
+          "price": "1479.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 10283203199317,
+          "created_at": "2025-11-24T13:31:56+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 67496183300437,
+          "created_at": "2025-11-24T13:56:58+01:00",
+          "position": 1,
+          "updated_at": "2025-11-24T13:57:01+01:00",
+          "product_id": 10283203199317,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/ethiopia-hamasho-kebena.webp?v=1763989021",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67496504394069,
+          "created_at": "2021-10-22T02:32:23+02:00",
+          "position": 2,
+          "updated_at": "2025-11-24T14:36:04+01:00",
+          "product_id": 10283203199317,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/vyberova-kava-etiopie-guji-la-boheme-cafe_d3a78908-2b58-4331-af70-bff7c3a28a5b.jpg?v=1763991364",
+          "width": 1120,
+          "height": 1200
+        },
+        {
+          "id": 67496493842773,
+          "created_at": "2025-11-24T14:35:05+01:00",
+          "position": 3,
+          "updated_at": "2025-11-24T14:36:04+01:00",
+          "product_id": 10283203199317,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/ethiopia-hamasho-mood.webp?v=1763991364",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67496504426837,
+          "created_at": "2021-05-14T21:20:38+02:00",
+          "position": 4,
+          "updated_at": "2021-05-14T21:20:38+02:00",
+          "product_id": 10283203199317,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/kava-etiopie-guji-la-boheme-cafe.jpg?v=1621020038",
+          "width": 1123,
+          "height": 1200
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10259443286357,
+      "title": "BIO Mexico Tebejapa",
+      "handle": "bio-mexico-tebejapa",
+      "body_html": "<p><meta charset=\"utf-8\">Káva z srdce Chiapasu, kde pěstování znamená životní styl. V každém šálku se snoubí tóny sušeného ovoce a mléčné čokolády s respektem k přírodě i tradici místních farmářů.<br></p>",
+      "published_at": "2026-06-26T09:37:16+02:00",
+      "created_at": "2025-11-10T13:33:03+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Bio",
+        "Coffee",
+        "Espresso",
+        "Filtrovaná káva",
+        "Jednodruhové kávy",
+        "TAX 15%"
+      ],
+      "variants": [
+        {
+          "id": 51884123455829,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P M10226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "299.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 10259443286357,
+          "created_at": "2025-11-10T13:33:03+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 51884123488597,
+          "title": "1 kg",
+          "option1": "1 kg",
+          "option2": null,
+          "option3": null,
+          "sku": "P M11000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1229.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 10259443286357,
+          "created_at": "2025-11-10T13:33:03+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 67286300459349,
+          "created_at": "2025-11-10T13:34:17+01:00",
+          "position": 1,
+          "updated_at": "2025-11-10T14:34:51+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/organic-mexiko-tebejapa.webp?v=1762781691",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67287355064661,
+          "created_at": "2025-11-10T14:33:02+01:00",
+          "position": 2,
+          "updated_at": "2025-11-10T14:34:51+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/mexican-coffee-chiapas.webp?v=1762781691",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67287355097429,
+          "created_at": "2025-11-10T14:33:02+01:00",
+          "position": 3,
+          "updated_at": "2025-11-10T14:34:51+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/mexico-tebejapa-dingle-origin.webp?v=1762781691",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67287354933589,
+          "created_at": "2025-11-10T14:33:02+01:00",
+          "position": 4,
+          "updated_at": "2025-11-10T14:34:51+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/tebejapa-organic.webp?v=1762781691",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67287357030741,
+          "created_at": "2025-11-10T14:33:12+01:00",
+          "position": 5,
+          "updated_at": "2025-11-10T14:33:16+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/mexiko-chiapas.webp?v=1762781596",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 67287368204629,
+          "created_at": "2025-11-10T14:33:39+01:00",
+          "position": 6,
+          "updated_at": "2025-11-10T14:33:42+01:00",
+          "product_id": 10259443286357,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/organic-single-orogon-mexico-tebejapa.webp?v=1762781622",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1 kg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9813468447061,
+      "title": "BIO Rwanda Kamonyi",
+      "handle": "bio-rwanda-kamonyi",
+      "body_html": "<p><meta charset=\"utf-8\"><meta charset=\"utf-8\">BIO káva z Women Coffee Extension (WCE) ze stanice Mbizi je pěstována na vysokohorských plantážích odrůdy Bourbon Arabica s důrazem na udržitelnost a podporu místních farmářek.<br></p>",
+      "published_at": "2025-09-15T13:30:49+02:00",
+      "created_at": "2025-02-26T13:23:06+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Bio",
+        "Coffee",
+        "Espresso",
+        "Jednodruhové kávy",
+        "Natural",
+        "Rwanda"
+      ],
+      "variants": [
+        {
+          "id": 50365525393749,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 560226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "319.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 9813468447061,
+          "created_at": "2025-02-26T13:23:07+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 50365525426517,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P 561000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1269.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 9813468447061,
+          "created_at": "2025-02-26T13:23:07+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 57881204556117,
+          "created_at": "2025-02-27T08:26:23+01:00",
+          "position": 1,
+          "updated_at": "2025-02-27T08:26:25+01:00",
+          "product_id": 9813468447061,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/rwanda-kamonyi-organic.webp?v=1740641185",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 61304037376341,
+          "created_at": "2025-07-14T11:32:37+02:00",
+          "position": 2,
+          "updated_at": "2025-07-14T11:32:52+02:00",
+          "product_id": 9813468447061,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/womens-coffee-from-rwanda.webp?v=1752485572",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 61303957160277,
+          "created_at": "2025-07-14T11:24:47+02:00",
+          "position": 3,
+          "updated_at": "2025-07-14T11:32:52+02:00",
+          "product_id": 9813468447061,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/rwanda-kamonyi-mood.webp?v=1752485572",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9650432246101,
+      "title": "Half Caff",
+      "handle": "half-caff",
+      "body_html": "<p><meta charset=\"utf-8\"><span data-olk-copy-source=\"MessageBody\">Half-Caff je vyvážená směs 50 % bezkofeinové a 50 % běžné kávy, ideální pro ty, kteří chtějí méně kofeinu, aniž by museli slevit z chuti. Kombinuje sezónní kávy, v současné době natural kolumbijskou a bezkofeinovou kolumbijskou, do harmonického profilu, vhodného jak pro espresso, tak pro filtrovanou kávu.</span><br></p>",
+      "published_at": "2026-06-16T13:40:29+02:00",
+      "created_at": "2024-10-30T11:58:53+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Bez kofeinu",
+        "Coffee",
+        "Espresso"
+      ],
+      "variants": [
+        {
+          "id": 49794913075541,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E450226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "329.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 9650432246101,
+          "created_at": "2024-10-30T14:48:37+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 49794913108309,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E451000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": false,
+          "price": "1349.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 9650432246101,
+          "created_at": "2024-10-30T14:48:37+01:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 56414453956949,
+          "created_at": "2024-10-30T09:29:03+01:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:01:20+01:00",
+          "product_id": 9650432246101,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Half-Calf-product-picture.webp?v=1737723680",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 60228995318101,
+          "created_at": "2025-05-26T15:07:03+02:00",
+          "position": 2,
+          "updated_at": "2025-07-14T13:26:20+02:00",
+          "product_id": 9650432246101,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/half-caff-mood.webp?v=1752492380",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 60228995187029,
+          "created_at": "2025-05-26T15:07:03+02:00",
+          "position": 3,
+          "updated_at": "2025-07-14T13:26:20+02:00",
+          "product_id": 9650432246101,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/half-caff-la-boheme-cafe.webp?v=1752492380",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 60228995973461,
+          "created_at": "2025-05-26T15:07:06+02:00",
+          "position": 4,
+          "updated_at": "2025-05-26T15:07:08+02:00",
+          "product_id": 9650432246101,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/half-caff-specialty-coffee.webp?v=1748264828",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8794861830485,
+      "title": "Guatemala La Bolsa Cascara",
+      "handle": "guatemala-la-bolsa-cascara",
+      "body_html": "<p>Čaj z promyté cascary z odrůdy geisha. Jemný sladký šálek s příchutí zralých fíků, jahod a lesního medu.</p>",
+      "published_at": "2026-03-12T14:30:38+01:00",
+      "created_at": "2023-09-19T15:59:41+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Jednodruhové kávy"
+      ],
+      "variants": [
+        {
+          "id": 47279887548757,
+          "title": "150 g",
+          "option1": "150 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P DCA0151",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "199.00",
+          "grams": 150,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8794861830485,
+          "created_at": "2023-09-19T15:59:41+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 47279887647061,
+          "title": "500 g",
+          "option1": "500 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P DCA0501",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "599.00",
+          "grams": 500,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8794861830485,
+          "created_at": "2023-09-19T15:59:43+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 52518873465173,
+          "created_at": "2024-01-30T15:04:55+01:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:02:54+01:00",
+          "product_id": 8794861830485,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Cascara.webp?v=1737723774",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "150 g",
+            "500 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8628172652885,
+      "title": "Espresso směs Decaff - bez kofeinu",
+      "handle": "espresso-smes-kolumbie-etiopie-bez-kofeinu",
+      "body_html": "<p><span style=\"font-weight: 400;\">Tato vyvážená směs káv z Kolumbie a Etiopie je ideální pro přípravu espressa. Káva byla zbavená kofeinu pomocí přírodního Mountain Water a CO2 procesu, bez použití chemických látek a s nízkou kyselostí. Očekávejte plnou chuť hořké čokolády, šťavnatých třešní a pražených vlašských ořechů. Skvělá pro milovníky večerního šálku kávy. </span><span style=\"font-weight: 400;\"></span></p>",
+      "published_at": "2025-12-12T15:06:50+01:00",
+      "created_at": "2023-06-08T12:35:03+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Coffee",
+        "Espresso",
+        "Espresso Blend Decaff",
+        "Ethiopia",
+        "Etiopie",
+        "Kolumbie"
+      ],
+      "variants": [
+        {
+          "id": 46859196170581,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E200226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "269.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8628172652885,
+          "created_at": "2023-06-08T12:35:03+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 46859196203349,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E201000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1109.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8628172652885,
+          "created_at": "2023-06-08T12:35:03+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 76103233962325,
+          "created_at": "2026-08-12T10:22:24+02:00",
+          "position": 1,
+          "updated_at": "2026-08-12T10:22:27+02:00",
+          "product_id": 8628172652885,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Espresso-Blend-Decaf-La-Boheme.png?v=1786522947",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58177340342613,
+          "created_at": "2023-07-28T17:19:21+02:00",
+          "position": 2,
+          "updated_at": "2023-07-28T17:19:24+02:00",
+          "product_id": 8628172652885,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/LBC_WEBSITE_1024x1024_1.webp?v=1690557564",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8372228424021,
+      "title": "House Blend - Filtr Směs",
+      "handle": "house-blend",
+      "body_html": "<p><span><span style=\"font-weight: 400;\">Základní směs pro přípravu filtrované kávy, která byla totiž namíchána tak, abyste si ji mohli vychutnávat každý den. </span></span>Jedná se o vyváženou směs káv z <meta charset=\"utf-8\"><span>nejznámějších pěstitelských oblastí Brazílie a Etiopie. <meta charset=\"utf-8\">V šálku kávy z této směsi objevíte bohatou chuť kvalitní hořké čokolády, karamelu a pomerančové kůry s nádechem citrusů a arašídů. Káva má střední aciditu a medovou dochuť.</span></p>",
+      "published_at": "2023-04-17T12:14:35+02:00",
+      "created_at": "2023-04-17T12:14:35+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Filtrovaná káva",
+        "Nízká acidita",
+        "Výrazná čokoláda"
+      ],
+      "variants": [
+        {
+          "id": 46547171639637,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P F020226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "269.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 8372228424021,
+          "created_at": "2023-04-17T12:14:35+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 46547171672405,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P F021000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1109.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 8372228424021,
+          "created_at": "2023-04-17T12:14:35+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 76103280591189,
+          "created_at": "2026-08-12T10:24:58+02:00",
+          "position": 1,
+          "updated_at": "2026-08-12T10:25:01+02:00",
+          "product_id": 8372228424021,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/House-Blend-La-Boheme.png?v=1786523101",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58155760124245,
+          "created_at": "2025-03-13T13:29:07+01:00",
+          "position": 2,
+          "updated_at": "2025-03-13T13:29:09+01:00",
+          "product_id": 8372228424021,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/house-blend.webp?v=1741868949",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Size",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7881405235445,
+      "title": "Mocha Java - espresso směs",
+      "handle": "mocha-java",
+      "body_html": "<p><span style=\"font-weight: 400;\" data-mce-style=\"font-weight: 400;\">Tato směs je určena pro milovníky tradiční kávy Mocha Java, ale na rozdíl od klasické směsi se skládá ze 100 % </span><span style=\"font-weight: 400;\" data-mce-style=\"font-weight: 400;\">Arabiky. Ideální jako klasické bohaté a sladké espresso bez nežádoucí hořkosti, ale stále dostatečně tmavé, aby po přidání mléka skutečně zazářilo. </span><span style=\"font-weight: 400;\" data-mce-style=\"font-weight: 400;\">Objevte bohaté tóny hořké čokolády a sladkého karamelu s komplexními podtóny lískových oříšků a orientálního koření.</span></p>",
+      "published_at": "2022-10-06T15:43:37+02:00",
+      "created_at": "2022-10-06T12:32:05+02:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Brazílie",
+        "Coffee",
+        "Espresso",
+        "Guatemala",
+        "Indonesia",
+        "Indonésie"
+      ],
+      "variants": [
+        {
+          "id": 43324122890485,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P F030226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "299.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 7881405235445,
+          "created_at": "2022-10-06T12:32:05+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 43324123152629,
+          "title": "1 kg",
+          "option1": "1 kg",
+          "option2": null,
+          "option3": null,
+          "sku": "P F031000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1229.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 7881405235445,
+          "created_at": "2022-10-06T12:32:06+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 76103201816917,
+          "created_at": "2026-08-12T10:20:36+02:00",
+          "position": 1,
+          "updated_at": "2026-08-12T10:20:40+02:00",
+          "product_id": 7881405235445,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/Mocha-Java-La-Boheme.png?v=1786522840",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58155788075349,
+          "created_at": "2025-03-13T13:30:31+01:00",
+          "position": 2,
+          "updated_at": "2025-03-13T13:30:39+01:00",
+          "product_id": 7881405235445,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/mocha-java.webp?v=1741869039",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1 kg"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4771793600557,
+      "title": "El Capitan Espresso směs",
+      "handle": "el-capitan",
+      "body_html": "<p>V La Bohème Café jsme se snažili vytvořit směs, která svou úžasnou vyvážeností, sladkostí a dochutí vyhoví každému. Nyní, po letech experimentování se složením a recepturami, můžeme s jistotou říci, že jsme svého cíle dosáhli. V těle samotného espressa je cítit kakao, pražené arašídy, trocha marcipánu, na slunci sušené švestky a po tom všem příjemná dochuť s nádechem hořké čokolády.</p>",
+      "published_at": "2020-03-18T18:54:32+01:00",
+      "created_at": "2020-03-18T18:54:32+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Coffee",
+        "Espresso",
+        "Nízká acidita",
+        "Výrazná čokoláda"
+      ],
+      "variants": [
+        {
+          "id": 34068613103661,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E160226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "249.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 4771793600557,
+          "created_at": "2020-04-24T13:00:08+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 34068612907053,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E161000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1029.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 4771793600557,
+          "created_at": "2020-04-24T13:00:08+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 76103147880789,
+          "created_at": "2026-08-12T10:17:34+02:00",
+          "position": 1,
+          "updated_at": "2026-08-12T10:17:37+02:00",
+          "product_id": 4771793600557,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/El-Capitan-La-Boheme.png?v=1786522657",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58155838112085,
+          "created_at": "2025-03-13T13:33:47+01:00",
+          "position": 2,
+          "updated_at": "2025-03-13T13:33:49+01:00",
+          "product_id": 4771793600557,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/el-capitan.webp?v=1741869229",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4771703881773,
+      "title": "Espresso směs - Cerebrum",
+      "handle": "cerebrum",
+      "body_html": "<p><span style=\"font-weight: 400;\">Cerebrum bylo stvořeno našimi pražiči pro všechny milovníky kávy a je to něco! Směs Brazílie, dvou Salvadorů a Robusty se silným tělem a bohatou cremou, vyváženou chutí hořké čokolády, lískových oříšků, marcipánu, sladkostí nugátu a dlouhou čokoládovou dochutí.</span></p>",
+      "published_at": "2025-09-05T13:33:55+02:00",
+      "created_at": "2020-03-18T18:33:26+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "b2b-espresso",
+        "Coffee",
+        "Espresso"
+      ],
+      "variants": [
+        {
+          "id": 34068615659565,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E180226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "219.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 4771703881773,
+          "created_at": "2020-04-24T13:00:15+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 34068615462957,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E181000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "899.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 4771703881773,
+          "created_at": "2020-04-24T13:00:15+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 30457914261655,
+          "created_at": "2021-05-10T12:45:53+02:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:11:31+01:00",
+          "product_id": 4771703881773,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/products/LBC_Espresso_Cerebrum_CZ_M.png?v=1737724291",
+          "width": 1200,
+          "height": 1252
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4771679338541,
+      "title": "Kolumbie Zen Decaff - bez kofeinu",
+      "handle": "zen-decaff",
+      "body_html": "<p><span style=\"font-weight: 400;\">Zen Decaf je naše jednodruhová káva bez kofeinu pražená pro přípravu filtrovaných káv. Tato káva je byla zbavena kofeinu </span><span style=\"font-weight: 400;\">pomocí přírodního Mountain Water Process</span><span style=\"font-weight: 400;\">. Očekávejte šťavnaté tělo a tóny černého rybízu, melasy a vanilky. Ideální pro pro milovníky večerního šálku kávy.</span></p>",
+      "published_at": "2025-12-03T15:10:38+01:00",
+      "created_at": "2020-03-18T18:27:18+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Coffee",
+        "Colombia Zen Decaff",
+        "Jednodruhové kávy",
+        "Kolumbie",
+        "Organická"
+      ],
+      "variants": [
+        {
+          "id": 34068618510381,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E070226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "329.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 4771679338541,
+          "created_at": "2020-04-24T13:00:18+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 34068618248237,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E071000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1289.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 4771679338541,
+          "created_at": "2020-04-24T13:00:18+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 75972018897237,
+          "created_at": "2026-08-05T10:14:38+02:00",
+          "position": 1,
+          "updated_at": "2026-08-05T10:14:41+02:00",
+          "product_id": 4771679338541,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/zen-decaf.webp?v=1785917681",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 76405450047829,
+          "created_at": "2023-06-16T14:33:28+02:00",
+          "position": 2,
+          "updated_at": "2023-06-16T14:33:30+02:00",
+          "product_id": 4771679338541,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/LBC_WEBFOTOS_COLOMBIA_ZEN_DECAFF_1024x1024_1.webp?v=1686918810",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4380145188909,
+      "title": "Celebration Espresso směs",
+      "handle": "celebration-espresso-blend",
+      "body_html": "<p>V La Bohème jsme vytvořili espresso směs Celebration, která odráží radostné okamžiky života a oslav s blízkými. Jedná se o sladkou a ovocnou směs s bohatým plným tělem s chutí čokolády, koření a červených třešní.</p>",
+      "published_at": "2020-03-26T15:04:35+01:00",
+      "created_at": "2019-11-27T22:21:49+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Aeropress",
+        "b2b-espresso",
+        "Coffee",
+        "Espresso",
+        "Filtrovaná káva",
+        "Moccapot",
+        "TAX 15%",
+        "Vyvážená acidita",
+        "Vyvážený s ovocem a květinami"
+      ],
+      "variants": [
+        {
+          "id": 34068650852397,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E110226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "289.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 4380145188909,
+          "created_at": "2020-04-24T13:02:38+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 34071405723693,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E121000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1189.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 4380145188909,
+          "created_at": "2020-04-24T16:06:01+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 56313887359317,
+          "created_at": "2024-10-21T14:00:22+02:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:16:47+01:00",
+          "product_id": 4380145188909,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/celebration-blend.webp?v=1737724607",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58155843518805,
+          "created_at": "2024-02-29T09:40:15+01:00",
+          "position": 2,
+          "updated_at": "2024-02-29T09:40:18+01:00",
+          "product_id": 4380145188909,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/celebration_101a2fa3-ff5d-4c45-9a2c-d942d5d44eec.webp?v=1709196018",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4380141715501,
+      "title": "Bohème Espresso směs",
+      "handle": "espresso-boheme",
+      "body_html": "<p><meta charset=\"utf-8\">Boheme Espresso – jemné a sladké espresso pro každý den! Vyvážená směs s tóny mléčné čokolády, lískových oříšků, mandlí a červeného ovoce, doplněná květinovým nádechem. Kombinace kávových zrn z Brazílie, Guatemaly, El Salvadoru a Etiopie pro dokonalý zážitek.</p>",
+      "published_at": "2019-11-27T22:18:21+01:00",
+      "created_at": "2019-11-27T22:18:21+01:00",
+      "updated_at": "2026-10-23T18:36:00+02:00",
+      "vendor": "La Boheme Cafe - Pražírna výběrové kávy",
+      "product_type": "Čerstvě pražená výběrová káva",
+      "tags": [
+        "Aeropress",
+        "b2b-espresso",
+        "Coffee",
+        "Espresso",
+        "Filtrovaná káva",
+        "Moccapot",
+        "Nízká acidita",
+        "Pour Over / V60",
+        "TAX 15%",
+        "Výrazná čokoláda"
+      ],
+      "variants": [
+        {
+          "id": 34068651278381,
+          "title": "226 g",
+          "option1": "226 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E010226",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "269.00",
+          "grams": 226,
+          "compare_at_price": null,
+          "position": 1,
+          "product_id": 4380141715501,
+          "created_at": "2020-04-24T13:02:40+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        },
+        {
+          "id": 34071406510125,
+          "title": "1000 g",
+          "option1": "1000 g",
+          "option2": null,
+          "option3": null,
+          "sku": "P E011000",
+          "requires_shipping": true,
+          "taxable": true,
+          "featured_image": null,
+          "available": true,
+          "price": "1109.00",
+          "grams": 1000,
+          "compare_at_price": null,
+          "position": 2,
+          "product_id": 4380141715501,
+          "created_at": "2020-04-24T16:06:04+02:00",
+          "updated_at": "2026-10-23T18:36:00+02:00"
+        }
+      ],
+      "images": [
+        {
+          "id": 56313861308757,
+          "created_at": "2024-10-21T13:56:57+02:00",
+          "position": 1,
+          "updated_at": "2025-01-24T14:16:48+01:00",
+          "product_id": 4380141715501,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/boheme-blend_d6afe338-2bf5-4544-accf-391a525b3216.webp?v=1737724608",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "id": 58155853906261,
+          "created_at": "2024-05-14T10:19:42+02:00",
+          "position": 2,
+          "updated_at": "2024-05-14T10:19:45+02:00",
+          "product_id": 4380141715501,
+          "variant_ids": [],
+          "src": "https://cdn.shopify.com/s/files/1/0274/6259/8701/files/boheme-mobile.webp?v=1715674785",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "options": [
+        {
+          "name": "Hmotnost",
+          "position": 1,
+          "values": [
+            "226 g",
+            "1000 g"
+          ]
+        }
+      ]
+    }
+  ]
+}

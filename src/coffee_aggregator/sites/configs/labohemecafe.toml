@@ -1,0 +1,13 @@
+# The parent coffee collection has 19 bean coffees and one cascara on 2026-10-23.
+# The shared cascara marker excludes it; tea, chocolate and gear are elsewhere.
+platform = "shopify"
+site_id = "labohemecafe"
+name = "La Bohème Café"
+country = "CZ"
+base_url = "https://labohemecafe.cz/"
+# Both customer product pages state Shopify.currency.active=CZK.
+currency = "CZK"
+collections = ["vsechny-kavy"]
+# Peru's 150 g and Mocha Java's 1 kg options both carry shipping grams=226.
+# Their option labels and rendered product pages agree on net contents.
+variant_weight_source = "title"

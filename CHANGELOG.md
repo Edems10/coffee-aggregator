@@ -10,6 +10,19 @@ Stored rows change only when a crawl rewrites them. A release does not touch the
 database, so an entry that says a value is now `NULL` describes what the next
 crawl writes.
 
+## 0.16.0 (2026-10-23)
+
+### Added
+
+- La Bohème Café's coffee collection is collected through the Shopify adapter
+  (#189): 19 bean coffees and 37 variants at onboarding, with cascara excluded
+  by the shared rule. Its option-stated net weight is selected by the new
+  shop-scoped `variant_weight_source = "title"`: Peru's 649 CZK option is 150 g,
+  and Mocha Java's 1229 CZK option is 1 kg even though both have shipping
+  metadata of 226 g. Missing or conflicting option sizes stay unknown in this
+  mode; the default for existing shops is unchanged. Normal deployment and the
+  next crawl add the rows; no migration or backfill is required.
+
 ## 0.15.0 (2026-10-23)
 
 ### Added

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal
 from urllib.parse import urlencode, urljoin
@@ -32,7 +33,7 @@ from coffee_aggregator.labels import (
     specialty_grade,
 )
 from coffee_aggregator.models import Coffee, Popularity, Variant
-from coffee_aggregator.platforms.common import ConfiguredSite, common_fields
+from coffee_aggregator.platforms.common import ConfiguredSite, PlatformConfigError, common_fields
 from coffee_aggregator.platforms.shoptet import BRAND_KEY
 from coffee_aggregator.price_option import first_priced
 from coffee_aggregator.sites import html as dom
@@ -55,6 +56,17 @@ MAX_LIMIT: Final = 250
 PRODUCTS_PATH: Final = "products.json"
 COLLECTIONS_PATH: Final = "collections.json"
 PRODUCT_PATH: Final = "products/"
+
+#: Structural guards only: normalize.parse_option_grams still converts the size.
+_TITLE_SIZE: Final = r"\d(?:[\d\s.]|,(?!\s))*\s*(?:kg|kilogram\w*|kilo|gram\w*|gr|g)\b"
+_TITLE_PACK: Final = rf"(?:\d{{1,3}}\s*[x\u00d7]\s*)?{_TITLE_SIZE}"
+#: Every numeric part must belong to one supported size expression. Alternatives,
+#: shared-unit ranges and mixed multiplication/sums cannot be read partially.
+_TITLE_SHAPE: Final = re.compile(
+    rf"[^\d+()]*(?:{_TITLE_PACK}(?:\s*\(\s*{_TITLE_PACK}\s*\))?"
+    rf"|{_TITLE_SIZE}(?:\s*\+\s*{_TITLE_SIZE})+)[^\d+()]*",
+    re.IGNORECASE,
+)
 
 #: App-written tags (``__with:…`` bundles, ``__label:…`` badges) that describe
 #: the storefront rather than the coffee.
@@ -115,6 +127,8 @@ class ShopifyConfig:
             means the whole catalogue.
         products_path: An explicit products JSON path that overrides both — for
             a shop whose coffee lives behind a hand-built path.
+        variant_weight_source: ``grams`` uses shipping metadata with a title
+            fallback; ``title`` uses only an unambiguous option-stated pack size.
         label_map: Folded ``body_html`` label -> field, merged over
             :data:`DEFAULT_LABEL_MAP`.
         ignore: Extra folded markers for :meth:`ShopifySite.is_ignored`.
@@ -130,6 +144,7 @@ class ShopifyConfig:
     platform: str = PLATFORM
     collections: list[str] = field(default_factory=list)
     products_path: str | None = None
+    variant_weight_source: Literal["grams", "title"] = "grams"
     label_map: dict[str, str] = field(default_factory=dict)
     ignore: list[str] = field(default_factory=list)
     max_pages: int = DEFAULT_MAX_PAGES
@@ -158,6 +173,9 @@ class ShopifyConfig:
             also_required=("currency",),
         )
         products_path = str(config["products_path"]) if config.get("products_path") else None
+        weight_source = config.get("variant_weight_source", "grams")
+        if weight_source not in ("grams", "title"):
+            raise PlatformConfigError(path, "variant_weight_source must be grams or title")
         return cls(
             site_id=common.site_id,
             name=common.name,
@@ -170,6 +188,7 @@ class ShopifyConfig:
                 if str(handle).strip("/ ")
             ],
             products_path=products_path,
+            variant_weight_source=weight_source,
             label_map=common.label_map,
             ignore=common.ignore,
             max_pages=common.max_pages,
@@ -251,25 +270,56 @@ def _variants(item: dict[str, Any]) -> list[dict[str, Any]]:
     return kit.records(item.get("variants"))
 
 
-def _variant_weight(variant: dict[str, Any]) -> int | None:
+def _variant_weight(
+    variant: dict[str, Any], *, source: Literal["grams", "title"] = "grams"
+) -> int | None:
     """Read one variant's pack weight.
 
-    ``grams`` is the shipping weight the merchant typed into the variant, which
-    for a bag of coffee *is* the pack weight and needs no parsing. It is left
-    unset (``0``) often enough — coffia.sk never fills it — that the variant
-    title stays the fallback.
+    The default uses plausible shipping metadata, then the title. A shop that
+    selects ``title`` reads only its explicit option sizes, retaining uncertainty
+    when a title lists conflicting sizes or states no plausible size.
 
     Args:
         variant: One entry of the product's ``variants`` array.
+        source: The shop's configured source for pack weights.
 
     Returns:
-        The weight in grams, or None when neither source states a plausible one.
+        The pack weight in grams, or None when the selected source is uncertain.
     """
+    if source == "title":
+        return _title_weight(str(variant.get("title") or ""))
     grams = normalize.parse_int(str(variant.get("grams") or ""))
     if plausible_weight(grams):
         return grams
     titled = normalize.parse_option_grams(str(variant.get("title") or ""))
     return titled if plausible_weight(titled) else None
+
+
+def _title_weight(title: str) -> int | None:
+    """Read a single option size, a repeated size or a reconciled bundle total.
+
+    A completeness guard admits one size, one multiplied pack, equal-size
+    sums and parenthesized restatements. All numeric parts must fit that shape
+    before the shared option parser converts it. Distinct weights must then
+    reconcile as the multiplied pack's parts and total.
+
+    Args:
+        title: The purchasable option's title.
+
+    Returns:
+        Its plausible pack size, or None when the stated sizes conflict.
+    """
+    if _TITLE_SHAPE.fullmatch(normalize.dash_fold(title)) is None:
+        return None
+    grams = normalize.parse_option_grams(title)
+    if not plausible_weight(grams):
+        return None
+    separated = normalize.dash_fold(title).replace("/", " / ").replace("-", " - ")
+    stated = set(normalize.parse_weights_grams(separated))
+    multiplied = normalize.parse_multiplied_pack_grams(title)
+    if len(stated) > 1 and (multiplied is None or stated != set(multiplied)):
+        return None
+    return grams
 
 
 def _images(item: dict[str, Any]) -> list[str]:
@@ -590,6 +640,9 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
     def _build(self, item: dict[str, Any], ref: ProductRef, name: str) -> Coffee:
         """Assemble the coffee once the payload is known to be one.
 
+        Title-mode headlines take their weight from the first priced option.
+        Shared option settlement then chooses among differently priced options.
+
         Args:
             item: One ``products.json`` product object.
             ref: The product reference being parsed.
@@ -623,7 +676,9 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
             site_country=self.country,
             price=price,
             currency=self.config.currency if price is not None else None,
-            weight_g=headline_weight(labels, name, variants, price=price),
+            weight_g=(lead.weight_g if lead is not None else None)
+            if self.config.variant_weight_source == "title"
+            else headline_weight(labels, name, variants, price=price),
             available=any(entry.get("available") for entry in entries) if entries else None,
             decaf=is_decaf(labels, name, categories),
             origin=parse_origin(labels, name, blend=species.is_blend),
@@ -654,9 +709,9 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
     def _variants(self, item: dict[str, Any], entries: list[dict[str, Any]]) -> list[Variant]:
         """Build one variant per Shopify variant.
 
-        Unlike the WooCommerce Store API, Shopify states a price, a weight and
-        a stock flag for every single variant, so a shop's whole price ladder
-        arrives in the listing response.
+        Shopify's listing response carries the variant price ladder, stock and
+        shipping metadata. The configured source supplies each net pack size
+        from that metadata or the option's explicit label.
 
         Args:
             item: One ``products.json`` product object.
@@ -670,7 +725,7 @@ class ShopifySite(ConfiguredSite[ShopifyConfig]):
             Variant(
                 external_id=str(entry.get("id")) if entry.get("id") else None,
                 url=url,
-                weight_g=_variant_weight(entry),
+                weight_g=_variant_weight(entry, source=self.config.variant_weight_source),
                 price=_amount(entry.get("price")),
                 currency=self.config.currency,
                 available=bool(entry["available"]) if "available" in entry else None,

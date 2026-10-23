@@ -225,7 +225,7 @@ Every request in the project goes through one `PoliteFetcher`:
 
 ## Supported shops
 
-154 shops — 101 Czech, 53 Slovak. `coffee-aggregator list-sites` prints the live
+155 shops — 102 Czech, 53 Slovak. `coffee-aggregator list-sites` prints the live
 list with each shop's id, country, kind and base URL; it is generated from the
 registry, so it is never out of date the way a table here would be.
 
@@ -233,11 +233,11 @@ registry, so it is never out of date the way a table here would be.
 | --- | --- | --- |
 | Shoptet | 96 | `platforms/shoptet.py` + one TOML file per shop |
 | WooCommerce | 46 | `platforms/woocommerce.py` + one TOML file per shop |
-| Shopify | 9 | `platforms/shopify.py` + one TOML file per shop |
+| Shopify | 10 | `platforms/shopify.py` + one TOML file per shop |
 | bespoke | 3 | `sites/coffeein.py`, `sites/fathers.py`, `sites/nordbeans.py` |
 
 A shop needs a module of its own only when its pages fit none of the three
-platform adapters. The other 151 are configuration: see
+platform adapters. The other 152 are configuration: see
 [Adding a shop](#adding-a-shop).
 
 Czech and Slovak shops still outside the catalogue mostly run Upgates,
@@ -254,7 +254,7 @@ lands in `raw_attributes`, the known ones also in typed fields. Blends are kept.
 `CoffeeinSite(use_sitemap=True)` enumerates `/sitemap.xml` instead, which covers the
 whole catalogue (mugs and filters included), so the category walk stays the default.
 
-The 99 **Shoptet** shops are one adapter — `platforms/shoptet.py` — driven by
+The 96 **Shoptet** shops are one adapter — `platforms/shoptet.py` — driven by
 `sites/configs/*.toml`. The Shoptet adapter walks
 `/<category>/strana-<n>/` (or `?page=<n>`, set `pagination = "query"`) until a page
 lists nothing or repeats the page before it, reading only the real `#products` grid
@@ -398,6 +398,14 @@ validated against `KNOWN_FIELDS` when the file is loaded, so a typo is an error 
 names the label instead of a mapping that silently does nothing. The built-in
 `DEFAULT_LABEL_MAP` in `platforms/shoptet.py` already covers the common CZ/SK/EN
 parameter names, so most shops need no `label_map` at all.
+
+Shopify configs require `currency` and may select `variant_weight_source =
+"title"` when the shop's option labels state net pack sizes but its shipping
+metadata differs. The default, `"grams"`, reads plausible Shopify `grams` before
+trying the title. In `"title"` mode, an option needs one unambiguous plausible
+size (including a repeated unit or a reconciled bundle total); missing,
+conflicting and implausible titles keep the weight unknown. Shipping metadata,
+product names and description labels do not supply a fallback in that mode.
 
 ## Data model and schema
 
