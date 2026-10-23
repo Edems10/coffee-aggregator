@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal
 from urllib.parse import urlencode, urljoin
@@ -55,6 +56,17 @@ MAX_LIMIT: Final = 250
 PRODUCTS_PATH: Final = "products.json"
 COLLECTIONS_PATH: Final = "collections.json"
 PRODUCT_PATH: Final = "products/"
+
+#: Structural guards only: normalize.parse_option_grams still converts the size.
+_TITLE_SIZE: Final = r"\d(?:[\d\s.]|,(?!\s))*\s*(?:kg|kilogram\w*|kilo|gram\w*|gr|g)\b"
+_TITLE_PACK: Final = rf"(?:\d{{1,3}}\s*[x\u00d7]\s*)?{_TITLE_SIZE}"
+#: Every numeric part must belong to one supported size expression. Alternatives,
+#: shared-unit ranges and mixed multiplication/sums cannot be read partially.
+_TITLE_SHAPE: Final = re.compile(
+    rf"[^\d+()]*(?:{_TITLE_PACK}(?:\s*\(\s*{_TITLE_PACK}\s*\))?"
+    rf"|{_TITLE_SIZE}(?:\s*\+\s*{_TITLE_SIZE})+)[^\d+()]*",
+    re.IGNORECASE,
+)
 
 #: App-written tags (``__with:…`` bundles, ``__label:…`` badges) that describe
 #: the storefront rather than the coffee.
@@ -286,11 +298,10 @@ def _variant_weight(
 def _title_weight(title: str) -> int | None:
     """Read a single option size, a repeated size or a reconciled bundle total.
 
-    The shared option parser handles repeated units and equal-bag bundles. Its
-    fallback to the first weight is unsuitable for conflicting option sizes, so
-    distinct weights must reconcile as a multiplied pack's parts and total.
-    Separating slashes and dashes exposes sizes on both sides of an alternative
-    that the shared parser's fraction/range guards otherwise leave unread.
+    A completeness guard admits one size, one multiplied pack, equal-size
+    sums and parenthesized restatements. All numeric parts must fit that shape
+    before the shared option parser converts it. Distinct weights must then
+    reconcile as the multiplied pack's parts and total.
 
     Args:
         title: The purchasable option's title.
@@ -298,6 +309,8 @@ def _title_weight(title: str) -> int | None:
     Returns:
         Its plausible pack size, or None when the stated sizes conflict.
     """
+    if _TITLE_SHAPE.fullmatch(normalize.dash_fold(title)) is None:
+        return None
     grams = normalize.parse_option_grams(title)
     if not plausible_weight(grams):
         return None

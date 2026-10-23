@@ -180,3 +180,54 @@ def test_labohemecafe_robots_permit_collection_pages_and_the_real_products() -> 
     assert not rules.can_fetch(
         "coffee-aggregator", f"{site.base_url}collections/vsechny-kavy?sort_by=price-ascending"
     )
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "250–500 g",
+        "250 / 500 g",
+        "2 x 250g / 4 x 250g",
+        "2x250g / 3x250g",
+        "2x250g + 250g",
+        "2x250g + 2x250g",
+        "500g + 2x500g",
+    ],
+)
+def test_strict_titles_reject_partial_readings_through_the_product_parser(title: str) -> None:
+    site = cast("ShopifySite", get_site("labohemecafe"))
+    item = _product(PERU)
+    item["variants"][0]["title"] = title
+    coffee = _parse(site, item)
+    assert coffee.variants[0].weight_g is None
+    assert coffee.weight_g is None
+    assert coffee.price_per_kg is None
+    assert coffee.price == 649.0
+    legacy = ShopifySite(replace(site.config, variant_weight_source="grams"))
+    unchanged = _parse(legacy, item)
+    assert unchanged.variants[0].weight_g == 226
+    assert unchanged.weight_g == 226
+    assert unchanged.price_per_kg == 2871.68
+
+
+@pytest.mark.parametrize(
+    ("title", "weight"),
+    [
+        ("150 g", 150),
+        ("1 kg", 1000),
+        ("0.25 kg / zrno", 250),
+        ("1000g (1Kg)", 1000),
+        ("3x1000g", 3000),
+        ("500g+500g", 1000),
+        ("1000g (4x250g)", 1000),
+    ],
+)
+def test_strict_title_completeness_retains_supported_pack_shapes(title: str, weight: int) -> None:
+    site = cast("ShopifySite", get_site("labohemecafe"))
+    item = _product(PERU)
+    item["variants"][0]["title"] = title
+    coffee = _parse(site, item)
+    assert coffee.variants[0].weight_g == weight
+    assert coffee.weight_g == weight
+    assert coffee.price == 649.0
+    assert coffee.price_per_kg == round(649000 / weight, 2)
